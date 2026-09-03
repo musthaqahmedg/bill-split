@@ -1,58 +1,53 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+
+interface ReceiptItem {
+  name: string;
+  price: number;
+  rawText: string;
+}
+
+// Mock items for demo/testing
+const MOCK_ITEMS: ReceiptItem[] = [
+  { name: 'Biryani', price: 350, rawText: 'Biryani 350' },
+  { name: 'Naan', price: 50, rawText: 'Naan 50' },
+  { name: 'Raita', price: 80, rawText: 'Raita 80' },
+  { name: 'Gulab Jamun', price: 120, rawText: 'Gulab Jamun 120' },
+  { name: 'Mango Lassi', price: 60, rawText: 'Mango Lassi 60' },
+];
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageBase64 } = await request.json();
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
 
-    if (!imageBase64) {
-      return NextResponse.json({ error: "No image provided" }, { status: 400 });
+    if (!file) {
+      return NextResponse.json(
+        { success: false, items: [], rawText: '', error: 'No file provided' },
+        { status: 400 }
+      );
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_VISION_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: "API key not configured" }, { status: 500 });
-    }
-
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [{
-            image: { content: imageBase64 },
-            features: [{ type: "TEXT_DETECTION" }],
-          }],
-        }),
-      }
+    // Mock response - returns demo items
+    const mockRawText = MOCK_ITEMS.map((item) => `${item.name} ₹${item.price}`).join(
+      '\n'
     );
-
-    const data = await response.json();
-    const annotations = data.responses?.[0]?.textAnnotations || [];
-    const fullText = annotations[0]?.description || "";
-    const lines = fullText.split("\n").filter((l: string) => l.trim());
 
     return NextResponse.json({
       success: true,
-      extractedText: fullText,
-      items: parseItems(lines),
+      items: MOCK_ITEMS,
+      rawText: mockRawText,
     });
   } catch (error) {
-    return NextResponse.json({ error: "Failed to extract receipt" }, { status: 500 });
-  }
-}
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
-function parseItems(lines: string[]) {
-  const items = [];
-  for (const line of lines) {
-    const priceMatch = line.match(/(\d+\.?\d*)\s*$/);
-    if (priceMatch) {
-      const price = parseFloat(priceMatch[1]);
-      const itemName = line.replace(priceMatch[0], "").trim();
-      if (itemName && price > 0) {
-        items.push({ name: itemName, price, selected: false });
-      }
-    }
+    return NextResponse.json(
+      {
+        success: false,
+        items: [],
+        rawText: '',
+        error: errorMessage,
+      },
+      { status: 500 }
+    );
   }
-  return items;
 }
