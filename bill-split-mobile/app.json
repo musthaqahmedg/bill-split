@@ -1,0 +1,21 @@
+{
+  "expo": {
+    "name": "bill-split-mobile",
+    "slug": "bill-split-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "billsplitmobile",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#208AEF",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ]
+    ]
+  }
+}
