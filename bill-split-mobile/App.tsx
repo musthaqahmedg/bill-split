@@ -1,9 +1,9 @@
-import { View, Text } from 'react-native';
+import { registerRootComponent } from 'expo';
+import { Alert } from 'react-native';
+import LoginScreen from './screens/LoginScreen';
 
 export default function App() {
-  return (
-    <View style={{ flex: 1, backgroundColor: 'blue' }}>
-      <Text style={{ color: 'white', marginTop: 100 }}>HELLO WORLD TEST</Text>
-    </View>
-  );
+  return <LoginScreen onLoginSuccess={() => Alert.alert('Logged in!')} />;
 }
+
+registerRootComponent(App);
