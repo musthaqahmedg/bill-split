@@ -1,9 +1,21 @@
 import { registerRootComponent } from 'expo';
-import { Alert } from 'react-native';
+import { useState } from 'react';
+import HomeScreen from './screens/HomeScreen';
 import LoginScreen from './screens/LoginScreen';
 
 export default function App() {
-  return <LoginScreen onLoginSuccess={() => Alert.alert('Logged in!')} />;
+  const [loggedIn, setLoggedIn] = useState(false);
+
+  if (!loggedIn) {
+    return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
+  }
+
+  return (
+    <HomeScreen
+      onNewBill={() => {}}
+      onLogout={() => setLoggedIn(false)}
+    />
+  );
 }
 
 registerRootComponent(App);
