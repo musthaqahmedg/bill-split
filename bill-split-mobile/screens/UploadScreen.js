@@ -3,7 +3,7 @@ import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicat
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../services/supabaseClient';
 
-export default function UploadScreen({ onBack }) {
+export default function UploadScreen({ onBack, onNext }) {
   const [image, setImage] = useState(null);
   const [base64, setBase64] = useState(null);
   const [items, setItems] = useState([]);
@@ -42,10 +42,7 @@ export default function UploadScreen({ onBack }) {
 
       setItems(data.items);
       if (data.items.length === 0) {
-        const debug = data.rows
-          ? 'ROWS:\n' + data.rows.slice(0, 20).join('\n')
-          : 'OLD CODE:\n' + (data.text || '').slice(0, 300);
-        Alert.alert('No items found', debug);
+        Alert.alert('No items found', 'Try a clearer, straight-on photo');
       }
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -66,7 +63,9 @@ export default function UploadScreen({ onBack }) {
         <ScrollView style={styles.list}>
           {items.map((item, i) => (
             <View key={i} style={styles.row}>
-              <Text style={styles.itemName}>{item.name}</Text>
+              <Text style={styles.itemName}>
+                {item.qty > 1 ? `${item.qty} × ` : ''}{item.name}
+              </Text>
               <Text style={styles.itemPrice}>Rs {item.price}</Text>
             </View>
           ))}
@@ -84,6 +83,12 @@ export default function UploadScreen({ onBack }) {
           {loading
             ? <ActivityIndicator color="#fff" />
             : <Text style={styles.buttonText}>Read Receipt</Text>}
+        </TouchableOpacity>
+      )}
+
+      {items.length > 0 && (
+        <TouchableOpacity style={styles.button} onPress={() => onNext(items)}>
+          <Text style={styles.buttonText}>Next: Add People</Text>
         </TouchableOpacity>
       )}
 
