@@ -75,3 +75,18 @@ export async function listBills() {
   if (error) throw error;
   return data;
 }
+
+export async function getBill(id) {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('*, bill_items(id, name, price, quantity, item_claims(participant_id)), bill_participants(id, name, amount_due)')
+    .eq('id', id)
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteBill(id) {
+  const { error } = await supabase.from('bills').delete().eq('id', id);
+  if (error) throw error;
+}

@@ -6,6 +6,7 @@ import UploadScreen from './screens/UploadScreen';
 import PeopleScreen from './screens/PeopleScreen';
 import ItemsScreen from './screens/ItemsScreen';
 import SplitScreen from './screens/SplitScreen';
+import BillDetailScreen from './screens/BillDetailScreen';
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -14,6 +15,7 @@ export default function App() {
   const [bill, setBill] = useState(null);
   const [people, setPeople] = useState([]);
   const [claims, setClaims] = useState([]);
+  const [openBillId, setOpenBillId] = useState(null);
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -71,10 +73,24 @@ export default function App() {
     );
   }
 
+  if (screen === 'detail') {
+    return (
+      <BillDetailScreen
+        billId={openBillId}
+        onBack={() => setScreen('home')}
+        onDeleted={() => setScreen('home')}
+      />
+    );
+  }
+
   return (
     <HomeScreen
       onNewBill={() => setScreen('upload')}
       onLogout={() => setLoggedIn(false)}
+      onOpenBill={(id) => {
+        setOpenBillId(id);
+        setScreen('detail');
+      }}
     />
   );
 }

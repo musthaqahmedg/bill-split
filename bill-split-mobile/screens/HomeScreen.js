@@ -4,7 +4,7 @@ import { listBills } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onLogout }) {
+export default function HomeScreen({ onNewBill, onLogout, onOpenBill }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -25,7 +25,7 @@ export default function HomeScreen({ onNewBill, onLogout }) {
     const when = new Date(item.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
     const people = item.bill_participants || [];
     return (
-      <View style={styles.card}>
+      <TouchableOpacity style={styles.card} onPress={() => onOpenBill(item.id)}>
         <View style={styles.cardTop}>
           <Text style={styles.cardTitle}>{item.title || 'Night out'}</Text>
           <Text style={styles.cardTotal}>{inr(item.total)}</Text>
@@ -36,7 +36,7 @@ export default function HomeScreen({ onNewBill, onLogout }) {
             <Text key={p.name} style={styles.person}>{p.name} {inr(p.amount_due)}</Text>
           ))}
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
