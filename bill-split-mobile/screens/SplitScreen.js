@@ -1,10 +1,13 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { saveBill } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({ items, people, claims, bill, onBack, onDone }) {
+  const [saving, setSaving] = useState(false);
+
   const itemsTotal = items.reduce((s, it) => s + it.price, 0);
   const billTotal = bill && bill.total > 0
     ? bill.total
@@ -36,6 +39,21 @@ export default function SplitScreen({ items, people, claims, bill, onBack, onDon
 
   const rows = shares.map((s, i) => ({ ...s, pay: final[i] })).sort((a, b) => b.pay - a.pay);
   const sum = final.reduce((a, b) => a + b, 0);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const amounts = Object.fromEntries(shares.map((s, i) => [s.name, final[i]]));
+      await saveBill({ bill: { ...bill, total: billTotal }, items, people, claims, amounts });
+      Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [
+        { text: 'OK', onPress: onDone },
+      ]);
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -93,8 +111,10 @@ export default function SplitScreen({ items, people, claims, bill, onBack, onDon
         Everyone adds up to {inr(sum)} {sum === target ? '✓' : ''}
       </Text>
 
-      <TouchableOpacity style={styles.button} onPress={onDone}>
-        <Text style={styles.buttonText}>Done</Text>
+      <TouchableOpacity style={styles.button} onPress={save} disabled={saving}>
+        {saving
+          ? <ActivityIndicator color="#fff" />
+          : <Text style={styles.buttonText}>Save bill</Text>}
       </TouchableOpacity>
     </View>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../services/supabaseClient';
+import { findDuplicate } from '../services/bills';
 
 export default function UploadScreen({ onBack, onNext }) {
   const [image, setImage] = useState(null);
@@ -42,15 +43,27 @@ export default function UploadScreen({ onBack, onNext }) {
       if (error) throw error;
       if (data.error) throw new Error(data.error);
 
-      setItems(data.items);
-      setBill({
+      const info = {
+        restaurant: data.restaurant || '',
+        bill_no: data.bill_no || '',
+        date: data.date || '',
         tax: data.tax || 0,
         service_charge: data.service_charge || 0,
         discount: data.discount || 0,
         total: data.total || 0,
-      });
+      };
+      setItems(data.items);
+      setBill(info);
+
       if (data.items.length === 0) {
         Alert.alert('No items found', 'Try a clearer, straight-on photo');
+        return;
+      }
+
+      const dup = await findDuplicate(info);
+      if (dup) {
+        const when = new Date(dup.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+        Alert.alert('Seen this bill before 👀', `Looks like you already saved this bill on ${when}. You can still continue if it's a different one.`);
       }
     } catch (e) {
       Alert.alert('Error', e.message);
@@ -66,6 +79,7 @@ export default function UploadScreen({ onBack, onNext }) {
       </TouchableOpacity>
 
       <Text style={styles.title}>Scan Receipt</Text>
+      {bill && bill.restaurant ? <Text style={styles.restaurant}>{bill.restaurant}</Text> : null}
 
       {items.length > 0 ? (
         <ScrollView style={styles.list}>
@@ -120,9 +134,10 @@ export default function UploadScreen({ onBack, onNext }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: '#007AFF', fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
-  preview: { flex: 1, borderRadius: 8, marginBottom: 15, resizeMode: 'contain' },
-  placeholder: { flex: 1, borderWidth: 2, borderColor: '#eee', borderStyle: 'dashed', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
+  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 4 },
+  restaurant: { fontSize: 15, color: '#888', marginBottom: 12 },
+  preview: { flex: 1, borderRadius: 8, marginBottom: 15, marginTop: 12, resizeMode: 'contain' },
+  placeholder: { flex: 1, borderWidth: 2, borderColor: '#eee', borderStyle: 'dashed', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },
   placeholderText: { color: '#bbb', fontSize: 16 },
   list: { flex: 1, marginBottom: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
