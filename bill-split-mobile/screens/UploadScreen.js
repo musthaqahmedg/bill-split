@@ -7,6 +7,7 @@ export default function UploadScreen({ onBack, onNext }) {
   const [image, setImage] = useState(null);
   const [base64, setBase64] = useState(null);
   const [items, setItems] = useState([]);
+  const [bill, setBill] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const pickImage = async (fromCamera) => {
@@ -28,6 +29,7 @@ export default function UploadScreen({ onBack, onNext }) {
       setImage(result.assets[0].uri);
       setBase64(result.assets[0].base64);
       setItems([]);
+      setBill(null);
     }
   };
 
@@ -41,6 +43,12 @@ export default function UploadScreen({ onBack, onNext }) {
       if (data.error) throw new Error(data.error);
 
       setItems(data.items);
+      setBill({
+        tax: data.tax || 0,
+        service_charge: data.service_charge || 0,
+        discount: data.discount || 0,
+        total: data.total || 0,
+      });
       if (data.items.length === 0) {
         Alert.alert('No items found', 'Try a clearer, straight-on photo');
       }
@@ -69,6 +77,12 @@ export default function UploadScreen({ onBack, onNext }) {
               <Text style={styles.itemPrice}>Rs {item.price}</Text>
             </View>
           ))}
+          {bill && bill.total > 0 && (
+            <View style={styles.totalRow}>
+              <Text style={styles.totalLabel}>Bill total</Text>
+              <Text style={styles.totalValue}>Rs {bill.total}</Text>
+            </View>
+          )}
         </ScrollView>
       ) : image ? (
         <Image source={{ uri: image }} style={styles.preview} />
@@ -87,7 +101,7 @@ export default function UploadScreen({ onBack, onNext }) {
       )}
 
       {items.length > 0 && (
-        <TouchableOpacity style={styles.button} onPress={() => onNext(items)}>
+        <TouchableOpacity style={styles.button} onPress={() => onNext(items, bill)}>
           <Text style={styles.buttonText}>Next: Add People</Text>
         </TouchableOpacity>
       )}
@@ -114,6 +128,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
   itemName: { fontSize: 16, flex: 1, marginRight: 10 },
   itemPrice: { fontSize: 16, fontWeight: '600' },
+  totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14 },
+  totalLabel: { fontSize: 16, fontWeight: 'bold' },
+  totalValue: { fontSize: 16, fontWeight: 'bold' },
   button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   buttonAlt: { borderWidth: 1, borderColor: '#007AFF', padding: 14, borderRadius: 8, alignItems: 'center', marginBottom: 10 },
