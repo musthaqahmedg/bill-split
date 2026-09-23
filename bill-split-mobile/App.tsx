@@ -3,6 +3,7 @@ import { useState } from 'react';
 import LoginScreen from './screens/LoginScreen';
 import HomeScreen from './screens/HomeScreen';
 import UploadScreen from './screens/UploadScreen';
+import RecheckScreen from './screens/RecheckScreen';
 import PeopleScreen from './screens/PeopleScreen';
 import ItemsScreen from './screens/ItemsScreen';
 import SplitScreen from './screens/SplitScreen';
@@ -28,6 +29,21 @@ export default function App() {
         onNext={(scanned, billInfo) => {
           setItems(scanned);
           setBill(billInfo);
+          setScreen('recheck');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'recheck') {
+    return (
+      <RecheckScreen
+        items={items}
+        bill={bill}
+        onBack={() => setScreen('upload')}
+        onNext={(fixedItems, fixedBill) => {
+          setItems(fixedItems);
+          setBill(fixedBill);
           setScreen('people');
         }}
       />
@@ -37,7 +53,7 @@ export default function App() {
   if (screen === 'people') {
     return (
       <PeopleScreen
-        onBack={() => setScreen('upload')}
+        onBack={() => setScreen('recheck')}
         onNext={(names) => {
           setPeople(names);
           setScreen('items');

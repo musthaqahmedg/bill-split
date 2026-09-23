@@ -116,7 +116,7 @@ export default function UploadScreen({ onBack, onNext }) {
 
       {items.length > 0 && (
         <TouchableOpacity style={styles.button} onPress={() => onNext(items, bill)}>
-          <Text style={styles.buttonText}>Next: Add People</Text>
+                    <Text style={styles.buttonText}>Next: Check the bill</Text>
         </TouchableOpacity>
       )}
 
