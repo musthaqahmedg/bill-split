@@ -19,7 +19,8 @@ export async function findDuplicate(bill) {
   return data && data.length ? data[0] : null;
 }
 
-export async function saveBill({ bill, items, people, claims, amounts, createdAt }) {
+// payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
+export async function saveBill({ bill, items, people, claims, payers, amounts, createdAt }) {
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
     .from('bills')
@@ -54,11 +55,18 @@ export async function saveBill({ bill, items, people, claims, amounts, createdAt
     .select();
   if (e3) throw e3;
 
-  // 4. Who had what
+  // 4. Who had what, and who's paying for it
   const idOf = Object.fromEntries(savedPeople.map((p) => [p.name, p.id]));
   const rows = [];
   items.forEach((_, i) => {
-    (claims[i] || []).forEach((name) => rows.push({ item_id: savedItems[i].id, participant_id: idOf[name] }));
+    (claims[i] || []).forEach((name) => {
+      const payer = payers && payers[i] && payers[i][name];
+      rows.push({
+        item_id: savedItems[i].id,
+        participant_id: idOf[name],
+        paid_by: payer && idOf[payer] ? idOf[payer] : null,
+      });
+    });
   });
   if (rows.length) {
     const { error: e4 } = await supabase.from('item_claims').insert(rows);
@@ -82,7 +90,7 @@ export async function updateBill(oldId, payload) {
   return saved;
 }
 
-// Turn a saved bill back into the shapes the screens use (items, bill, people, claims)
+// Turn a saved bill back into the shapes the screens use (items, bill, people, claims, payers)
 export function billToFlow(saved) {
   const items = (saved.bill_items || []).map((it) => ({
     name: it.name,
@@ -108,7 +116,17 @@ export function billToFlow(saved) {
     (it.item_claims || []).map((c) => nameOf[c.participant_id]).filter(Boolean)
   );
 
-  return { items, bill, people, claims };
+  const payers = (saved.bill_items || []).map((it) => {
+    const map = {};
+    (it.item_claims || []).forEach((c) => {
+      if (c.paid_by && c.paid_by !== c.participant_id && nameOf[c.paid_by]) {
+        map[nameOf[c.participant_id]] = nameOf[c.paid_by];
+      }
+    });
+    return map;
+  });
+
+  return { items, bill, people, claims, payers };
 }
 
 export async function listBills() {
@@ -123,7 +141,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, item_claims(participant_id)), bill_participants(id, name, amount_due)')
+    .select('*, bill_items(id, name, price, quantity, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due)')
     .eq('id', id)
     .single();
   if (error) throw error;
