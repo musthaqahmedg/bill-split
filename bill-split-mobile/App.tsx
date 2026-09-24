@@ -9,14 +9,35 @@ import ItemsScreen from './screens/ItemsScreen';
 import SplitScreen from './screens/SplitScreen';
 import BillDetailScreen from './screens/BillDetailScreen';
 
+// If items were changed on the Recheck screen, keep each item's "who had it" attached to the right item
+function realignClaims(oldItems: any[], oldClaims: any[], newItems: any[]) {
+  const used = new Set();
+  return newItems.map((it) => {
+    const i = oldItems.findIndex((o, k) => !used.has(k) && o.name === it.name);
+    if (i === -1) return [];
+    used.add(i);
+    return oldClaims[i] || [];
+  });
+}
+
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [screen, setScreen] = useState('home');
-  const [items, setItems] = useState([]);
-  const [bill, setBill] = useState(null);
-  const [people, setPeople] = useState([]);
-  const [claims, setClaims] = useState([]);
-  const [openBillId, setOpenBillId] = useState(null);
+  const [items, setItems] = useState<any[]>([]);
+  const [bill, setBill] = useState<any>(null);
+  const [people, setPeople] = useState<any[]>([]);
+  const [claims, setClaims] = useState<any[]>([]);
+  const [openBillId, setOpenBillId] = useState<any>(null);
+  const [editingBillId, setEditingBillId] = useState<any>(null);
+
+  const startNewBill = () => {
+    setItems([]);
+    setBill(null);
+    setPeople([]);
+    setClaims([]);
+    setEditingBillId(null);
+    setScreen('upload');
+  };
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -26,7 +47,7 @@ export default function App() {
     return (
       <UploadScreen
         onBack={() => setScreen('home')}
-        onNext={(scanned, billInfo) => {
+        onNext={(scanned: any, billInfo: any) => {
           setItems(scanned);
           setBill(billInfo);
           setScreen('recheck');
@@ -40,8 +61,9 @@ export default function App() {
       <RecheckScreen
         items={items}
         bill={bill}
-        onBack={() => setScreen('upload')}
-        onNext={(fixedItems, fixedBill) => {
+        onBack={() => setScreen(editingBillId ? 'detail' : 'upload')}
+        onNext={(fixedItems: any, fixedBill: any) => {
+          if (editingBillId) setClaims(realignClaims(items, claims, fixedItems));
           setItems(fixedItems);
           setBill(fixedBill);
           setScreen('people');
@@ -53,9 +75,11 @@ export default function App() {
   if (screen === 'people') {
     return (
       <PeopleScreen
+        initialPeople={people}
         onBack={() => setScreen('recheck')}
-        onNext={(names) => {
+        onNext={(names: any) => {
           setPeople(names);
+          setClaims((old) => items.map((_, i) => (old[i] || []).filter((n: any) => names.includes(n))));
           setScreen('items');
         }}
       />
@@ -67,8 +91,9 @@ export default function App() {
       <ItemsScreen
         items={items}
         people={people}
+        initialClaims={claims}
         onBack={() => setScreen('people')}
-        onNext={(picked) => {
+        onNext={(picked: any) => {
           setClaims(picked);
           setScreen('split');
         }}
@@ -83,8 +108,12 @@ export default function App() {
         people={people}
         claims={claims}
         bill={bill}
+        editingBillId={editingBillId}
         onBack={() => setScreen('items')}
-        onDone={() => setScreen('home')}
+        onDone={() => {
+          setEditingBillId(null);
+          setScreen('home');
+        }}
       />
     );
   }
@@ -95,15 +124,23 @@ export default function App() {
         billId={openBillId}
         onBack={() => setScreen('home')}
         onDeleted={() => setScreen('home')}
+        onEdit={(flow: any, id: any) => {
+          setItems(flow.items);
+          setBill(flow.bill);
+          setPeople(flow.people);
+          setClaims(flow.claims);
+          setEditingBillId(id);
+          setScreen('recheck');
+        }}
       />
     );
   }
 
   return (
     <HomeScreen
-      onNewBill={() => setScreen('upload')}
+      onNewBill={startNewBill}
       onLogout={() => setLoggedIn(false)}
-      onOpenBill={(id) => {
+      onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');
       }}

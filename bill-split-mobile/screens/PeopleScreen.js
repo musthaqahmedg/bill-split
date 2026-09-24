@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
-export default function PeopleScreen({ onBack, onNext }) {
-  const [people, setPeople] = useState(['Me']);
+export default function PeopleScreen({ initialPeople, onBack, onNext }) {
+  const [people, setPeople] = useState(
+    initialPeople && initialPeople.length ? initialPeople : ['Me']
+  );
   const [name, setName] = useState('');
 
   const addPerson = () => {
@@ -36,7 +38,7 @@ export default function PeopleScreen({ onBack, onNext }) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {people.map((p) => (
           <View key={p} style={styles.row}>
             <Text style={styles.name}>{p}</Text>

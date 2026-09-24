@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
-export default function ItemsScreen({ items, people, onBack, onNext }) {
-  const [claims, setClaims] = useState(items.map(() => []));
+export default function ItemsScreen({ items, people, initialClaims, onBack, onNext }) {
+  const [claims, setClaims] = useState(
+    items.map((_, i) => ((initialClaims && initialClaims[i]) || []).filter((p) => people.includes(p)))
+  );
 
   const toggle = (i, person) => {
     setClaims((prev) => prev.map((list, idx) => {

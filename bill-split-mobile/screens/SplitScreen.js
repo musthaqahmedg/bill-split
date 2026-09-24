@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { saveBill } from '../services/bills';
+import { saveBill, updateBill } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
-export default function SplitScreen({ items, people, claims, bill, onBack, onDone }) {
+export default function SplitScreen({ items, people, claims, bill, editingBillId, onBack, onDone }) {
   const [saving, setSaving] = useState(false);
 
   const itemsTotal = items.reduce((s, it) => s + it.price, 0);
@@ -44,10 +44,19 @@ export default function SplitScreen({ items, people, claims, bill, onBack, onDon
     setSaving(true);
     try {
       const amounts = Object.fromEntries(shares.map((s, i) => [s.name, final[i]]));
-      await saveBill({ bill: { ...bill, total: billTotal }, items, people, claims, amounts });
-      Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [
-        { text: 'OK', onPress: onDone },
-      ]);
+      const payload = { bill: { ...bill, total: billTotal }, items, people, claims, amounts };
+
+      if (editingBillId) {
+        await updateBill(editingBillId, payload);
+        Alert.alert('Updated! ✏️', 'Your changes are saved.', [
+          { text: 'OK', onPress: onDone },
+        ]);
+      } else {
+        await saveBill(payload);
+        Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [
+          { text: 'OK', onPress: onDone },
+        ]);
+      }
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
     } finally {
@@ -114,7 +123,7 @@ export default function SplitScreen({ items, people, claims, bill, onBack, onDon
       <TouchableOpacity style={styles.button} onPress={save} disabled={saving}>
         {saving
           ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>Save bill</Text>}
+          : <Text style={styles.buttonText}>{editingBillId ? 'Save changes' : 'Save bill'}</Text>}
       </TouchableOpacity>
     </View>
   );

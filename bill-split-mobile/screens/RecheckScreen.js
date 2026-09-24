@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
+  Keyboard, KeyboardAvoidingView, InputAccessoryView, Platform,
+} from 'react-native';
+
+const DONE_BAR = 'recheckDone';
 
 export default function RecheckScreen({ items, bill, onBack, onNext }) {
   const [rows, setRows] = useState(
@@ -17,8 +22,10 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
   const itemsTotal = rows.reduce((s, r) => s + (parseFloat(r.price) || 0), 0);
   const billTotal = parseFloat(total) || 0;
   const extras = billTotal - itemsTotal;
+  const discount = Number(bill?.discount) || 0;
 
   const done = () => {
+    Keyboard.dismiss();
     const clean = rows
       .map((r) => ({
         name: r.name.trim(),
@@ -32,15 +39,28 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       Alert.alert('Nothing to split', 'Add at least one item with a price.');
       return;
     }
-    if (billTotal < itemsTotal - 1) {
-      Alert.alert('Total looks low', 'The bill total is less than the items add up to. Check it before continuing.');
+
+    const proceed = () => onNext(clean, { ...bill, total: billTotal });
+
+    if (billTotal < itemsTotal - discount - 1) {
+      Alert.alert(
+        'Total looks low',
+        `Items add up to Rs ${itemsTotal.toFixed(2)}, but the bill total is Rs ${billTotal.toFixed(2)}. If the bill had a discount, that's fine.`,
+        [
+          { text: 'Check again', style: 'cancel' },
+          { text: 'Continue anyway', onPress: proceed },
+        ]
+      );
       return;
     }
-    onNext(clean, { ...bill, total: billTotal });
+    proceed();
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
@@ -48,7 +68,11 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       <Text style={styles.title}>Check the bill</Text>
       <Text style={styles.sub}>Fix anything the scan got wrong. Tap a name or price to edit.</Text>
 
-      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.list}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+      >
         {rows.map((r, i) => (
           <View key={i} style={styles.card}>
             <TextInput
@@ -56,6 +80,8 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
               value={r.name}
               onChangeText={(v) => update(i, 'name', v)}
               placeholder="Item name"
+              returnKeyType="done"
+              onSubmitEditing={Keyboard.dismiss}
             />
             <View style={styles.rowLine}>
               <View style={styles.qtyBox}>
@@ -65,6 +91,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                   value={r.qty}
                   onChangeText={(v) => update(i, 'qty', v)}
                   keyboardType="number-pad"
+                  inputAccessoryViewID={DONE_BAR}
                 />
               </View>
               <View style={styles.priceBox}>
@@ -74,6 +101,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                   value={r.price}
                   onChangeText={(v) => update(i, 'price', v)}
                   keyboardType="decimal-pad"
+                  inputAccessoryViewID={DONE_BAR}
                 />
               </View>
               <TouchableOpacity onPress={() => remove(i)}>
@@ -99,20 +127,31 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
               value={total}
               onChangeText={setTotal}
               keyboardType="decimal-pad"
+              inputAccessoryViewID={DONE_BAR}
             />
           </View>
           <Text style={styles.extras}>
             {extras >= 0
-              ? `Rs ${extras.toFixed(2)} tax, service & round-off — shared fairly`
-              : `Items are Rs ${Math.abs(extras).toFixed(2)} more than the total — check the prices`}
+              ? `Rs ${extras.toFixed(2)} tax, service & round-off - shared fairly`
+              : `Rs ${Math.abs(extras).toFixed(2)} less than the items (discount or round-off) - shared fairly`}
           </Text>
         </View>
       </ScrollView>
 
       <TouchableOpacity style={styles.button} onPress={done}>
-        <Text style={styles.buttonText}>Looks right — continue</Text>
+        <Text style={styles.buttonText}>Looks right - continue</Text>
       </TouchableOpacity>
-    </View>
+
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={DONE_BAR}>
+          <View style={styles.doneBar}>
+            <TouchableOpacity onPress={Keyboard.dismiss}>
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
+    </KeyboardAvoidingView>
   );
 }
 
@@ -140,4 +179,6 @@ const styles = StyleSheet.create({
   extras: { color: '#888', fontSize: 13, marginTop: 4 },
   button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  doneBar: { backgroundColor: '#F1F1F4', borderTopWidth: 1, borderTopColor: '#ddd', paddingVertical: 10, paddingHorizontal: 16, alignItems: 'flex-end' },
+  doneText: { color: '#007AFF', fontSize: 17, fontWeight: '600' },
 });

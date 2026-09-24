@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
-import { getBill, deleteBill } from '../services/bills';
+import { getBill, deleteBill, billToFlow } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
 
-export default function BillDetailScreen({ billId, onBack, onDeleted }) {
+export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) {
   const [bill, setBill] = useState(null);
 
   useEffect(() => {
@@ -49,13 +49,20 @@ export default function BillDetailScreen({ billId, onBack, onDeleted }) {
       },
     ]);
 
+  const startEdit = () => onEdit(billToFlow(bill), bill.id);
+
   const when = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
-      </TouchableOpacity>
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.back}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={startEdit}>
+          <Text style={styles.edit}>Edit</Text>
+        </TouchableOpacity>
+      </View>
 
       <Text style={styles.title}>{bill.title || 'Night out'}</Text>
       <Text style={styles.meta}>
@@ -105,7 +112,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
-  back: { color: '#007AFF', fontSize: 16, marginBottom: 10 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  back: { color: '#007AFF', fontSize: 16 },
+  edit: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
   title: { fontSize: 28, fontWeight: 'bold' },
   meta: { color: '#999', fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },

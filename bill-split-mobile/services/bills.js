@@ -19,7 +19,7 @@ export async function findDuplicate(bill) {
   return data && data.length ? data[0] : null;
 }
 
-export async function saveBill({ bill, items, people, claims, amounts }) {
+export async function saveBill({ bill, items, people, claims, amounts, createdAt }) {
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
     .from('bills')
@@ -34,6 +34,7 @@ export async function saveBill({ bill, items, people, claims, amounts }) {
       discount: bill.discount || 0,
       fingerprint: makeFingerprint(bill),
       status: 'split',
+      ...(createdAt ? { created_at: createdAt } : {}),
     })
     .select()
     .single();
@@ -65,6 +66,49 @@ export async function saveBill({ bill, items, people, claims, amounts }) {
   }
 
   return saved;
+}
+
+// Edit: save a clean new copy (keeping the original date), then remove the old one
+export async function updateBill(oldId, payload) {
+  const { data: old, error: e0 } = await supabase
+    .from('bills')
+    .select('created_at')
+    .eq('id', oldId)
+    .single();
+  if (e0) throw e0;
+
+  const saved = await saveBill({ ...payload, createdAt: old.created_at });
+  await deleteBill(oldId);
+  return saved;
+}
+
+// Turn a saved bill back into the shapes the screens use (items, bill, people, claims)
+export function billToFlow(saved) {
+  const items = (saved.bill_items || []).map((it) => ({
+    name: it.name,
+    qty: it.quantity || 1,
+    price: Number(it.price) || 0,
+  }));
+
+  const bill = {
+    restaurant: saved.restaurant || '',
+    bill_no: saved.bill_no || '',
+    date: saved.bill_date || '',
+    total: Number(saved.total) || 0,
+    tax: Number(saved.tax) || 0,
+    service_charge: Number(saved.service_charge) || 0,
+    discount: Number(saved.discount) || 0,
+  };
+
+  const participants = saved.bill_participants || [];
+  const people = participants.map((p) => p.name);
+  const nameOf = Object.fromEntries(participants.map((p) => [p.id, p.name]));
+
+  const claims = (saved.bill_items || []).map((it) =>
+    (it.item_claims || []).map((c) => nameOf[c.participant_id]).filter(Boolean)
+  );
+
+  return { items, bill, people, claims };
 }
 
 export async function listBills() {
