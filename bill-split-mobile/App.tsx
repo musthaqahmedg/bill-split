@@ -1,22 +1,21 @@
 import { registerRootComponent } from 'expo';
 import { useState } from 'react';
-import LoginScreen from './screens/LoginScreen';
-import HomeScreen from './screens/HomeScreen';
-import UploadScreen from './screens/UploadScreen';
-import RecheckScreen from './screens/RecheckScreen';
-import PeopleScreen from './screens/PeopleScreen';
-import ItemsScreen from './screens/ItemsScreen';
-import SplitScreen from './screens/SplitScreen';
 import BillDetailScreen from './screens/BillDetailScreen';
+import HomeScreen from './screens/HomeScreen';
+import ItemsScreen from './screens/ItemsScreen';
+import LoginScreen from './screens/LoginScreen';
+import PeopleScreen from './screens/PeopleScreen';
+import RecheckScreen from './screens/RecheckScreen';
+import SplitScreen from './screens/SplitScreen';
+import UploadScreen from './screens/UploadScreen';
 
-// If items were changed on the Recheck screen, keep each item's "who had it" attached to the right item
-function realignClaims(oldItems: any[], oldClaims: any[], newItems: any[]) {
+// After Recheck, find where each new item was in the old list (-1 = new item)
+function matchItems(oldItems: any[], newItems: any[]) {
   const used = new Set();
   return newItems.map((it) => {
     const i = oldItems.findIndex((o, k) => !used.has(k) && o.name === it.name);
-    if (i === -1) return [];
-    used.add(i);
-    return oldClaims[i] || [];
+    if (i !== -1) used.add(i);
+    return i;
   });
 }
 
@@ -27,6 +26,7 @@ export default function App() {
   const [bill, setBill] = useState<any>(null);
   const [people, setPeople] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
+  const [payers, setPayers] = useState<any[]>([]);
   const [openBillId, setOpenBillId] = useState<any>(null);
   const [editingBillId, setEditingBillId] = useState<any>(null);
 
@@ -35,6 +35,7 @@ export default function App() {
     setBill(null);
     setPeople([]);
     setClaims([]);
+    setPayers([]);
     setEditingBillId(null);
     setScreen('upload');
   };
@@ -63,7 +64,9 @@ export default function App() {
         bill={bill}
         onBack={() => setScreen(editingBillId ? 'detail' : 'upload')}
         onNext={(fixedItems: any, fixedBill: any) => {
-          if (editingBillId) setClaims(realignClaims(items, claims, fixedItems));
+          const map = matchItems(items, fixedItems);
+          setClaims(map.map((i) => (i === -1 ? [] : claims[i] || [])));
+          setPayers(map.map((i) => (i === -1 ? {} : payers[i] || {})));
           setItems(fixedItems);
           setBill(fixedBill);
           setScreen('people');
@@ -80,6 +83,15 @@ export default function App() {
         onNext={(names: any) => {
           setPeople(names);
           setClaims((old) => items.map((_, i) => (old[i] || []).filter((n: any) => names.includes(n))));
+          setPayers((old) =>
+            items.map((_, i) =>
+              Object.fromEntries(
+                Object.entries(old[i] || {}).filter(
+                  ([who, payer]) => names.includes(who) && names.includes(payer)
+                )
+              )
+            )
+          );
           setScreen('items');
         }}
       />
@@ -95,6 +107,14 @@ export default function App() {
         onBack={() => setScreen('people')}
         onNext={(picked: any) => {
           setClaims(picked);
+          // Drop sponsorships for anyone who no longer has that item
+          setPayers((old) =>
+            items.map((_, i) =>
+              Object.fromEntries(
+                Object.entries(old[i] || {}).filter(([who]) => (picked[i] || []).includes(who))
+              )
+            )
+          );
           setScreen('split');
         }}
       />
@@ -107,6 +127,8 @@ export default function App() {
         items={items}
         people={people}
         claims={claims}
+        payers={payers}
+        onPayersChange={setPayers}
         bill={bill}
         editingBillId={editingBillId}
         onBack={() => setScreen('items')}
@@ -129,6 +151,7 @@ export default function App() {
           setBill(flow.bill);
           setPeople(flow.people);
           setClaims(flow.claims);
+          setPayers(flow.payers || flow.items.map(() => ({})));
           setEditingBillId(id);
           setScreen('recheck');
         }}
