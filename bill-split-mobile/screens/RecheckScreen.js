@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert,
-  Keyboard, KeyboardAvoidingView, InputAccessoryView, Platform,
+  Alert,
+  InputAccessoryView,
+  Keyboard, KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text, TextInput, TouchableOpacity,
+  View,
 } from 'react-native';
+import { guessKind, KINDS, nextKind } from '../services/kinds';
 
 const DONE_BAR = 'recheckDone';
 
 export default function RecheckScreen({ items, bill, onBack, onNext }) {
   const [rows, setRows] = useState(
-    items.map((it) => ({ name: it.name, qty: String(it.qty || 1), price: String(it.price) }))
+    items.map((it) => ({
+      name: it.name,
+      qty: String(it.qty || 1),
+      price: String(it.price),
+      kind: it.kind || null, // null = guess from the name
+    }))
   );
   const [total, setTotal] = useState(String(bill?.total || 0));
 
@@ -17,7 +29,10 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
 
   const remove = (i) => setRows((prev) => prev.filter((_, idx) => idx !== i));
 
-  const addRow = () => setRows((prev) => [...prev, { name: '', qty: '1', price: '' }]);
+  const addRow = () => setRows((prev) => [...prev, { name: '', qty: '1', price: '', kind: null }]);
+
+  const kindFor = (r) => r.kind || guessKind(r.name);
+  const cycleKind = (i) => update(i, 'kind', nextKind(kindFor(rows[i])));
 
   const itemsTotal = rows.reduce((s, r) => s + (parseFloat(r.price) || 0), 0);
   const billTotal = parseFloat(total) || 0;
@@ -32,6 +47,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
         qty: parseInt(r.qty) || 1,
         rate: (parseFloat(r.price) || 0) / (parseInt(r.qty) || 1),
         price: parseFloat(r.price) || 0,
+        kind: kindFor(r),
       }))
       .filter((r) => r.name && r.price > 0);
 
@@ -66,50 +82,58 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       </TouchableOpacity>
 
       <Text style={styles.title}>Check the bill</Text>
-      <Text style={styles.sub}>Fix anything the scan got wrong. Tap a name or price to edit.</Text>
+      <Text style={styles.sub}>Fix anything the scan got wrong. Tap a tag to change an item's type.</Text>
 
       <ScrollView
         style={styles.list}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
       >
-        {rows.map((r, i) => (
-          <View key={i} style={styles.card}>
-            <TextInput
-              style={styles.name}
-              value={r.name}
-              onChangeText={(v) => update(i, 'name', v)}
-              placeholder="Item name"
-              returnKeyType="done"
-              onSubmitEditing={Keyboard.dismiss}
-            />
-            <View style={styles.rowLine}>
-              <View style={styles.qtyBox}>
-                <Text style={styles.label}>Qty</Text>
+        {rows.map((r, i) => {
+          const k = KINDS[kindFor(r)];
+          return (
+            <View key={i} style={styles.card}>
+              <View style={styles.nameRow}>
                 <TextInput
-                  style={styles.qty}
-                  value={r.qty}
-                  onChangeText={(v) => update(i, 'qty', v)}
-                  keyboardType="number-pad"
-                  inputAccessoryViewID={DONE_BAR}
+                  style={styles.name}
+                  value={r.name}
+                  onChangeText={(v) => update(i, 'name', v)}
+                  placeholder="Item name"
+                  returnKeyType="done"
+                  onSubmitEditing={Keyboard.dismiss}
                 />
+                <TouchableOpacity style={styles.kindTag} onPress={() => cycleKind(i)}>
+                  <Text style={styles.kindText}>{k.emoji} {k.label}</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.priceBox}>
-                <Text style={styles.label}>Rs</Text>
-                <TextInput
-                  style={styles.price}
-                  value={r.price}
-                  onChangeText={(v) => update(i, 'price', v)}
-                  keyboardType="decimal-pad"
-                  inputAccessoryViewID={DONE_BAR}
-                />
+              <View style={styles.rowLine}>
+                <View style={styles.qtyBox}>
+                  <Text style={styles.label}>Qty</Text>
+                  <TextInput
+                    style={styles.qty}
+                    value={r.qty}
+                    onChangeText={(v) => update(i, 'qty', v)}
+                    keyboardType="number-pad"
+                    inputAccessoryViewID={DONE_BAR}
+                  />
+                </View>
+                <View style={styles.priceBox}>
+                  <Text style={styles.label}>Rs</Text>
+                  <TextInput
+                    style={styles.price}
+                    value={r.price}
+                    onChangeText={(v) => update(i, 'price', v)}
+                    keyboardType="decimal-pad"
+                    inputAccessoryViewID={DONE_BAR}
+                  />
+                </View>
+                <TouchableOpacity onPress={() => remove(i)}>
+                  <Text style={styles.remove}>Remove</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity onPress={() => remove(i)}>
-                <Text style={styles.remove}>Remove</Text>
-              </TouchableOpacity>
             </View>
-          </View>
-        ))}
+          );
+        })}
 
         <TouchableOpacity style={styles.addBtn} onPress={addRow}>
           <Text style={styles.addText}>+ Add an item</Text>
@@ -162,7 +186,10 @@ const styles = StyleSheet.create({
   sub: { color: '#888', fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
   card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, marginBottom: 10 },
-  name: { fontSize: 16, fontWeight: '600', paddingVertical: 6 },
+  nameRow: { flexDirection: 'row', alignItems: 'center' },
+  name: { flex: 1, fontSize: 16, fontWeight: '600', paddingVertical: 6, marginRight: 8 },
+  kindTag: { backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  kindText: { fontSize: 13, color: '#333' },
   rowLine: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', marginRight: 20 },
   priceBox: { flexDirection: 'row', alignItems: 'center', flex: 1 },
