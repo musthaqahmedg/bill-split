@@ -310,7 +310,7 @@ export default function SplitScreen({
             <TouchableOpacity style={styles.wholeRow} onPress={resetAll}>
               <Text style={styles.resetText}>Everyone pays their own</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.cancelBtn, { marginTop: 10 }]} onPress={() => setWholeOpen(false)}>
+            <TouchableOpacity style={styles.wholeCancel} onPress={() => setWholeOpen(false)}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -374,4 +374,5 @@ const styles = StyleSheet.create({
   wholeName: { fontSize: 17, fontWeight: '600' },
   wholeAmt: { fontSize: 17, color: '#D6457F', fontWeight: '600' },
   resetText: { fontSize: 16, color: '#007AFF' },
+  wholeCancel: { padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#ddd', marginTop: 12 },
 });
