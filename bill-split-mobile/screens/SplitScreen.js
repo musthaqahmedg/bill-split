@@ -14,7 +14,7 @@ const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({
-  items, people, claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
+  items, people, nonDrinkers = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
 }) {
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
@@ -130,7 +130,9 @@ export default function SplitScreen({
   const save = async () => {
     setSaving(true);
     try {
-      const payload = { bill: { ...bill, total: billTotal }, items, people, claims, payers, amounts: finalOf };
+      const payload = {
+        bill: { ...bill, total: billTotal }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
+      };
       if (editingBillId) {
         await updateBill(editingBillId, payload);
         Alert.alert('Updated! ✏️', 'Your changes are saved.', [{ text: 'OK', onPress: onDone }]);
@@ -185,7 +187,9 @@ export default function SplitScreen({
               activeOpacity={0.7}
             >
               <View style={styles.cardTop}>
-                <Text style={styles.name}>{r.name}</Text>
+                <Text style={styles.name}>
+                  {r.name}{nonDrinkers.includes(r.name) ? ' 🥤' : ''}
+                </Text>
                 {fullyCovered && r.pay === 0
                   ? <Text style={styles.coveredPay}>Covered 💛</Text>
                   : <Text style={styles.pay}>{inr(r.pay)}</Text>}

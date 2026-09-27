@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function PeopleScreen({ initialPeople, onBack, onNext }) {
+export default function PeopleScreen({ initialPeople, initialNonDrinkers, onBack, onNext }) {
   const [people, setPeople] = useState(
     initialPeople && initialPeople.length ? initialPeople : ['Me']
   );
+  const [nonDrinkers, setNonDrinkers] = useState(initialNonDrinkers || []);
   const [name, setName] = useState('');
 
   const addPerson = () => {
@@ -14,7 +15,13 @@ export default function PeopleScreen({ initialPeople, onBack, onNext }) {
     setName('');
   };
 
-  const removePerson = (n) => setPeople(people.filter((p) => p !== n));
+  const removePerson = (n) => {
+    setPeople(people.filter((p) => p !== n));
+    setNonDrinkers(nonDrinkers.filter((p) => p !== n));
+  };
+
+  const toggleDrinking = (n) =>
+    setNonDrinkers(nonDrinkers.includes(n) ? nonDrinkers.filter((p) => p !== n) : [...nonDrinkers, n]);
 
   return (
     <View style={styles.container}>
@@ -39,25 +46,39 @@ export default function PeopleScreen({ initialPeople, onBack, onNext }) {
       </View>
 
       <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        {people.map((p) => (
-          <View key={p} style={styles.row}>
-            <Text style={styles.name}>{p}</Text>
-            {p !== 'Me' && (
-              <TouchableOpacity onPress={() => removePerson(p)}>
-                <Text style={styles.remove}>Remove</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        ))}
+        {people.map((p) => {
+          const dry = nonDrinkers.includes(p);
+          return (
+            <View key={p} style={styles.row}>
+              <Text style={styles.name}>{p}</Text>
+              <View style={styles.rowRight}>
+                <TouchableOpacity
+                  style={[styles.pill, dry && styles.pillDry]}
+                  onPress={() => toggleDrinking(p)}
+                >
+                  <Text style={[styles.pillText, dry && styles.pillTextDry]}>
+                    {dry ? '🥤 Not drinking' : '🍺 Drinking'}
+                  </Text>
+                </TouchableOpacity>
+                {p !== 'Me' && (
+                  <TouchableOpacity onPress={() => removePerson(p)}>
+                    <Text style={styles.remove}>Remove</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          );
+        })}
       </ScrollView>
 
       <Text style={styles.count}>
         {people.length} {people.length === 1 ? 'person' : 'people'}
+        {nonDrinkers.length ? `  ·  ${nonDrinkers.length} not drinking` : ''}
       </Text>
 
       <TouchableOpacity
         style={[styles.button, people.length < 2 && styles.disabled]}
-        onPress={() => onNext(people)}
+        onPress={() => onNext(people, nonDrinkers.filter((p) => people.includes(p)))}
         disabled={people.length < 2}
       >
         <Text style={styles.buttonText}>Next: Who had what?</Text>
@@ -75,8 +96,13 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: '#007AFF', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
   addText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
   list: { flex: 1 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  name: { fontSize: 18 },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  rowRight: { flexDirection: 'row', alignItems: 'center' },
+  name: { fontSize: 18, flex: 1 },
+  pill: { backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 10, marginRight: 12 },
+  pillDry: { backgroundColor: '#E3F6E8' },
+  pillText: { fontSize: 13, color: '#555' },
+  pillTextDry: { color: '#1E8E3E', fontWeight: '600' },
   remove: { color: '#FF3B30', fontSize: 15 },
   count: { color: '#999', textAlign: 'center', marginVertical: 10 },
   button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },

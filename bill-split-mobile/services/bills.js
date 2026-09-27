@@ -1,3 +1,4 @@
+import { kindOf } from './kinds';
 import { supabase } from './supabaseClient';
 
 // A bill's "fingerprint": restaurant + bill number + date + total.
@@ -20,7 +21,8 @@ export async function findDuplicate(bill) {
 }
 
 // payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
-export async function saveBill({ bill, items, people, claims, payers, amounts, createdAt }) {
+// nonDrinkers: names of people marked "Not drinking"
+export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt }) {
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
     .from('bills')
@@ -41,17 +43,22 @@ export async function saveBill({ bill, items, people, claims, payers, amounts, c
     .single();
   if (e1) throw e1;
 
-  // 2. The items
+  // 2. The items (with their type: alcohol / soft / food)
   const { data: savedItems, error: e2 } = await supabase
     .from('bill_items')
-    .insert(items.map((it) => ({ bill_id: saved.id, name: it.name, price: it.price, quantity: it.qty })))
+    .insert(items.map((it) => ({
+      bill_id: saved.id, name: it.name, price: it.price, quantity: it.qty, kind: kindOf(it),
+    })))
     .select();
   if (e2) throw e2;
 
-  // 3. The people and what each owes
+  // 3. The people, what each owes, and who's not drinking
+  const dry = nonDrinkers || [];
   const { data: savedPeople, error: e3 } = await supabase
     .from('bill_participants')
-    .insert(people.map((name) => ({ bill_id: saved.id, name, amount_due: amounts[name] || 0 })))
+    .insert(people.map((name) => ({
+      bill_id: saved.id, name, amount_due: amounts[name] || 0, not_drinking: dry.includes(name),
+    })))
     .select();
   if (e3) throw e3;
 
@@ -90,12 +97,13 @@ export async function updateBill(oldId, payload) {
   return saved;
 }
 
-// Turn a saved bill back into the shapes the screens use (items, bill, people, claims, payers)
+// Turn a saved bill back into the shapes the screens use
 export function billToFlow(saved) {
   const items = (saved.bill_items || []).map((it) => ({
     name: it.name,
     qty: it.quantity || 1,
     price: Number(it.price) || 0,
+    ...(it.kind ? { kind: it.kind } : {}),
   }));
 
   const bill = {
@@ -110,6 +118,7 @@ export function billToFlow(saved) {
 
   const participants = saved.bill_participants || [];
   const people = participants.map((p) => p.name);
+  const nonDrinkers = participants.filter((p) => p.not_drinking).map((p) => p.name);
   const nameOf = Object.fromEntries(participants.map((p) => [p.id, p.name]));
 
   const claims = (saved.bill_items || []).map((it) =>
@@ -126,7 +135,7 @@ export function billToFlow(saved) {
     return map;
   });
 
-  return { items, bill, people, claims, payers };
+  return { items, bill, people, nonDrinkers, claims, payers };
 }
 
 export async function listBills() {
@@ -141,7 +150,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due)')
+    .select('*, bill_items(id, name, price, quantity, kind, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking)')
     .eq('id', id)
     .single();
   if (error) throw error;

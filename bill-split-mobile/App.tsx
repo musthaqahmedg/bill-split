@@ -8,6 +8,7 @@ import PeopleScreen from './screens/PeopleScreen';
 import RecheckScreen from './screens/RecheckScreen';
 import SplitScreen from './screens/SplitScreen';
 import UploadScreen from './screens/UploadScreen';
+import { kindOf } from './services/kinds';
 
 // After Recheck, find where each new item was in the old list (-1 = new item)
 function matchItems(oldItems: any[], newItems: any[]) {
@@ -25,6 +26,7 @@ export default function App() {
   const [items, setItems] = useState<any[]>([]);
   const [bill, setBill] = useState<any>(null);
   const [people, setPeople] = useState<any[]>([]);
+  const [nonDrinkers, setNonDrinkers] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [payers, setPayers] = useState<any[]>([]);
   const [openBillId, setOpenBillId] = useState<any>(null);
@@ -34,11 +36,22 @@ export default function App() {
     setItems([]);
     setBill(null);
     setPeople([]);
+    setNonDrinkers([]);
     setClaims([]);
     setPayers([]);
     setEditingBillId(null);
     setScreen('upload');
   };
+
+  // Keep sponsorships only for people still on each item
+  const trimPayers = (old: any[], newClaims: any[], names: any[]) =>
+    items.map((_, i) =>
+      Object.fromEntries(
+        Object.entries(old[i] || {}).filter(
+          ([who, payer]) => (newClaims[i] || []).includes(who) && names.includes(payer)
+        )
+      )
+    );
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -79,19 +92,19 @@ export default function App() {
     return (
       <PeopleScreen
         initialPeople={people}
+        initialNonDrinkers={nonDrinkers}
         onBack={() => setScreen('recheck')}
-        onNext={(names: any) => {
-          setPeople(names);
-          setClaims((old) => items.map((_, i) => (old[i] || []).filter((n: any) => names.includes(n))));
-          setPayers((old) =>
-            items.map((_, i) =>
-              Object.fromEntries(
-                Object.entries(old[i] || {}).filter(
-                  ([who, payer]) => names.includes(who) && names.includes(payer)
-                )
-              )
+        onNext={(names: any, dry: any = []) => {
+          // Remove people who left, and take non-drinkers off alcohol items
+          const newClaims = items.map((it, i) =>
+            (claims[i] || []).filter(
+              (n: any) => names.includes(n) && !(kindOf(it) === 'alcohol' && dry.includes(n))
             )
           );
+          setPeople(names);
+          setNonDrinkers(dry);
+          setClaims(newClaims);
+          setPayers((old) => trimPayers(old, newClaims, names));
           setScreen('items');
         }}
       />
@@ -104,17 +117,12 @@ export default function App() {
         items={items}
         people={people}
         initialClaims={claims}
+        initialNonDrinkers={nonDrinkers}
         onBack={() => setScreen('people')}
-        onNext={(picked: any) => {
+        onNext={(picked: any, dry: any) => {
+          if (dry) setNonDrinkers(dry);
           setClaims(picked);
-          // Drop sponsorships for anyone who no longer has that item
-          setPayers((old) =>
-            items.map((_, i) =>
-              Object.fromEntries(
-                Object.entries(old[i] || {}).filter(([who]) => (picked[i] || []).includes(who))
-              )
-            )
-          );
+          setPayers((old) => trimPayers(old, picked, people));
           setScreen('split');
         }}
       />
@@ -126,6 +134,7 @@ export default function App() {
       <SplitScreen
         items={items}
         people={people}
+        nonDrinkers={nonDrinkers}
         claims={claims}
         payers={payers}
         onPayersChange={setPayers}
@@ -150,6 +159,7 @@ export default function App() {
           setItems(flow.items);
           setBill(flow.bill);
           setPeople(flow.people);
+          setNonDrinkers(flow.nonDrinkers || []);
           setClaims(flow.claims);
           setPayers(flow.payers || flow.items.map(() => ({})));
           setEditingBillId(id);
