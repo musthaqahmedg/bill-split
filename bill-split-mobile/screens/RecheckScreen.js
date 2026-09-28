@@ -27,7 +27,20 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
   const update = (i, field, value) =>
     setRows((prev) => prev.map((r, idx) => (idx === i ? { ...r, [field]: value } : r)));
 
-  const remove = (i) => setRows((prev) => prev.filter((_, idx) => idx !== i));
+  const remove = (i) => {
+    Alert.alert(
+      'Remove this item?',
+      `Remove "${rows[i].name}"?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => setRows((prev) => prev.filter((_, idx) => idx !== i)),
+        },
+      ]
+    );
+  };
 
   const addRow = () => setRows((prev) => [...prev, { name: '', qty: '1', price: '', kind: null }]);
 
