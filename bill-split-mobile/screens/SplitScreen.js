@@ -14,13 +14,19 @@ const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({
-  items, people, nonDrinkers = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
+  items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
 }) {
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
   const [sponsor, setSponsor] = useState(null);   // who is covering them
   const [picked, setPicked] = useState([]);       // which of their items (by index)
   const [wholeOpen, setWholeOpen] = useState(false);
+
+  // Pairs: who is this person paired with?
+  const partnerOf = (name) => {
+    const pr = pairs.find((x) => x.a === name || x.b === name);
+    return pr ? (pr.a === name ? pr.b : pr.a) : null;
+  };
 
   const payerOf = (i, name) => {
     const p = payers[i] && payers[i][name];
@@ -195,6 +201,10 @@ export default function SplitScreen({
                   : <Text style={styles.pay}>{inr(r.pay)}</Text>}
               </View>
 
+              {partnerOf(r.name) && (
+                <Text style={styles.pairTag}>💑 with {partnerOf(r.name)}</Text>
+              )}
+
               {r.mine.length === 0 && <Text style={styles.line}>Didn't claim anything</Text>}
 
               {r.mine.map((m, j) => (
@@ -342,6 +352,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: 'bold' },
   pay: { fontSize: 22, fontWeight: 'bold', color: '#007AFF' },
   coveredPay: { fontSize: 18, fontWeight: 'bold', color: '#D6457F' },
+  pairTag: { color: '#D6457F', fontSize: 13, fontWeight: '600', marginTop: -4, marginBottom: 6 },
   line: { color: '#555', fontSize: 14, marginBottom: 3 },
   paidBy: { color: '#D6457F', fontWeight: '600' },
   extra: { color: '#999', fontSize: 13, marginTop: 4 },

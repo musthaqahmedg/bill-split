@@ -27,6 +27,7 @@ export default function App() {
   const [bill, setBill] = useState<any>(null);
   const [people, setPeople] = useState<any[]>([]);
   const [nonDrinkers, setNonDrinkers] = useState<any[]>([]);
+  const [pairs, setPairs] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [payers, setPayers] = useState<any[]>([]);
   const [openBillId, setOpenBillId] = useState<any>(null);
@@ -37,6 +38,7 @@ export default function App() {
     setBill(null);
     setPeople([]);
     setNonDrinkers([]);
+    setPairs([]);
     setClaims([]);
     setPayers([]);
     setEditingBillId(null);
@@ -52,6 +54,17 @@ export default function App() {
         )
       )
     );
+
+  // Pairs: the payer covers everything their partner had
+  const applyPairs = (base: any[], newClaims: any[]) =>
+    base.map((m, i) => {
+      const out = { ...(m || {}) };
+      pairs.forEach((pr: any) => {
+        const partner = pr.payer === pr.a ? pr.b : pr.a;
+        if ((newClaims[i] || []).includes(partner)) out[partner] = pr.payer;
+      });
+      return out;
+    });
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -93,8 +106,9 @@ export default function App() {
       <PeopleScreen
         initialPeople={people}
         initialNonDrinkers={nonDrinkers}
+        initialPairs={pairs}
         onBack={() => setScreen('recheck')}
-        onNext={(names: any, dry: any = []) => {
+        onNext={(names: any, dry: any = [], prs: any = []) => {
           // Remove people who left, and take non-drinkers off alcohol items
           const newClaims = items.map((it, i) =>
             (claims[i] || []).filter(
@@ -103,6 +117,7 @@ export default function App() {
           );
           setPeople(names);
           setNonDrinkers(dry);
+          setPairs(prs);
           setClaims(newClaims);
           setPayers((old) => trimPayers(old, newClaims, names));
           setScreen('items');
@@ -122,7 +137,7 @@ export default function App() {
         onNext={(picked: any, dry: any) => {
           if (dry) setNonDrinkers(dry);
           setClaims(picked);
-          setPayers((old) => trimPayers(old, picked, people));
+          setPayers((old) => applyPairs(trimPayers(old, picked, people), picked));
           setScreen('split');
         }}
       />
@@ -135,6 +150,7 @@ export default function App() {
         items={items}
         people={people}
         nonDrinkers={nonDrinkers}
+        pairs={pairs}
         claims={claims}
         payers={payers}
         onPayersChange={setPayers}
@@ -160,6 +176,7 @@ export default function App() {
           setBill(flow.bill);
           setPeople(flow.people);
           setNonDrinkers(flow.nonDrinkers || []);
+          setPairs([]);
           setClaims(flow.claims);
           setPayers(flow.payers || flow.items.map(() => ({})));
           setEditingBillId(id);
