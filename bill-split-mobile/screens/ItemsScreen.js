@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
 
 export default function ItemsScreen({ items, people, initialClaims, initialNonDrinkers, onBack, onNext }) {
@@ -9,6 +9,9 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
   const [claims, setClaims] = useState(
     items.map((_, i) => ((initialClaims && initialClaims[i]) || []).filter((p) => people.includes(p)))
   );
+
+  // "What's this?" pop-up: which item is open (-1 = none)
+  const [info, setInfo] = useState(-1);
 
   const isAlcohol = (i) => kindOf(items[i]) === 'alcohol';
   const canHave = (i, person) => !(isAlcohol(i) && nonDrinkers.includes(person));
@@ -71,9 +74,12 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
           return (
             <View key={i} style={[styles.card, mystery && styles.mysteryCard]}>
               <View style={styles.cardTop}>
-                <Text style={styles.itemName}>
-                  {mystery ? '🕵️ ' : ''}{k.emoji} {item.qty > 1 ? `${item.qty} × ` : ''}{item.name}
-                </Text>
+                <TouchableOpacity style={styles.nameTap} onPress={() => setInfo(i)}>
+                  <Text style={styles.itemName}>
+                    {mystery ? '🕵️ ' : ''}{k.emoji} {item.qty > 1 ? `${item.qty} × ` : ''}{item.name}
+                    <Text style={styles.infoIcon}>  🔍</Text>
+                  </Text>
+                </TouchableOpacity>
                 <Text style={styles.itemPrice}>Rs {item.price}</Text>
               </View>
 
@@ -120,6 +126,36 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       >
         <Text style={styles.buttonText}>See the split</Text>
       </TouchableOpacity>
+
+      {/* What's this? — a private pop-up about one item */}
+      <Modal visible={info >= 0} transparent animationType="fade" onRequestClose={() => setInfo(-1)}>
+        <TouchableOpacity style={styles.infoOverlay} activeOpacity={1} onPress={() => setInfo(-1)}>
+          {info >= 0 && (() => {
+            const it = items[info];
+            const kind = kindOf(it);
+            const tag = kind === 'alcohol'
+              ? { text: '🍺 Contains alcohol', style: styles.tagAlcohol }
+              : kind === 'soft'
+                ? { text: '🥤 No alcohol', style: styles.tagSoft }
+                : { text: '🍽️ Food', style: styles.tagFood };
+            return (
+              <View style={styles.infoCard}>
+                <Text style={styles.infoTitle}>{it.name}</Text>
+                <View style={[styles.infoTag, tag.style]}>
+                  <Text style={styles.infoTagText}>{tag.text}</Text>
+                </View>
+                <Text style={styles.infoAbout}>
+                  {it.about ? it.about : "We don't have a description for this one yet."}
+                </Text>
+                <Text style={styles.infoNote}>AI's best guess from the bill. Ask the staff if you're not sure.</Text>
+                <TouchableOpacity style={styles.infoBtn} onPress={() => setInfo(-1)}>
+                  <Text style={styles.buttonText}>Got it</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })()}
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
@@ -139,7 +175,9 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 14, marginBottom: 10 },
   mysteryCard: { borderColor: '#F5C451', backgroundColor: '#FFFBEB' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  itemName: { fontSize: 16, fontWeight: '600', flex: 1, marginRight: 10 },
+  nameTap: { flex: 1, marginRight: 10 },
+  itemName: { fontSize: 16, fontWeight: '600' },
+  infoIcon: { fontSize: 14 },
   itemPrice: { fontSize: 16, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderColor: '#007AFF', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
@@ -155,4 +193,16 @@ const styles = StyleSheet.create({
   button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },
   disabled: { backgroundColor: '#a0c4f5' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+
+  infoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 28 },
+  infoCard: { backgroundColor: '#fff', borderRadius: 16, padding: 22 },
+  infoTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12 },
+  infoTag: { alignSelf: 'flex-start', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 14 },
+  tagAlcohol: { backgroundColor: '#FDEBD3' },
+  tagSoft: { backgroundColor: '#E3F6E8' },
+  tagFood: { backgroundColor: '#F2F2F7' },
+  infoTagText: { fontSize: 14, fontWeight: '600', color: '#333' },
+  infoAbout: { fontSize: 16, color: '#333', lineHeight: 22 },
+  infoNote: { fontSize: 12, color: '#999', marginTop: 14 },
+  infoBtn: { backgroundColor: '#007AFF', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 18 },
 });
