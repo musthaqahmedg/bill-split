@@ -20,6 +20,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       qty: String(it.qty || 1),
       price: String(it.price),
       kind: it.kind || null, // null = guess from the name
+      about: it.about || '',
     }))
   );
   const [total, setTotal] = useState(String(bill?.total || 0));
@@ -61,6 +62,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
         rate: (parseFloat(r.price) || 0) / (parseInt(r.qty) || 1),
         price: parseFloat(r.price) || 0,
         kind: kindFor(r),
+        about: r.about || '',
       }))
       .filter((r) => r.name && r.price > 0);
 

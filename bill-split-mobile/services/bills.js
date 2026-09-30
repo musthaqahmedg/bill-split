@@ -43,11 +43,12 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
     .single();
   if (e1) throw e1;
 
-  // 2. The items (with their type: alcohol / soft / food)
+  // 2. The items (with their type: alcohol / soft / food, and a short description)
   const { data: savedItems, error: e2 } = await supabase
     .from('bill_items')
     .insert(items.map((it) => ({
       bill_id: saved.id, name: it.name, price: it.price, quantity: it.qty, kind: kindOf(it),
+      about: it.about || null,
     })))
     .select();
   if (e2) throw e2;
@@ -104,6 +105,7 @@ export function billToFlow(saved) {
     qty: it.quantity || 1,
     price: Number(it.price) || 0,
     ...(it.kind ? { kind: it.kind } : {}),
+    ...(it.about ? { about: it.about } : {}),
   }));
 
   const bill = {
@@ -150,7 +152,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, kind, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking)')
+    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking)')
     .eq('id', id)
     .single();
   if (error) throw error;
