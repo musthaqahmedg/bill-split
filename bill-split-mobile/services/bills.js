@@ -22,7 +22,7 @@ export async function findDuplicate(bill) {
 
 // payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
 // nonDrinkers: names of people marked "Not drinking"
-export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt }) {
+export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt }) {
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
     .from('bills')
@@ -59,6 +59,7 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
     .from('bill_participants')
     .insert(people.map((name) => ({
       bill_id: saved.id, name, amount_due: amounts[name] || 0, not_drinking: dry.includes(name),
+      paid_at: (paidAt && paidAt[name]) || null,
     })))
     .select();
   if (e3) throw e3;
@@ -88,12 +89,17 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
 export async function updateBill(oldId, payload) {
   const { data: old, error: e0 } = await supabase
     .from('bills')
-    .select('created_at')
+    .select('created_at, bill_participants(name, paid_at)')
     .eq('id', oldId)
     .single();
   if (e0) throw e0;
 
-  const saved = await saveBill({ ...payload, createdAt: old.created_at });
+  // Keep "paid" ticks for people who are still on the bill
+  const paidAt = Object.fromEntries(
+    (old.bill_participants || []).filter((p) => p.paid_at).map((p) => [p.name, p.paid_at])
+  );
+
+  const saved = await saveBill({ ...payload, createdAt: old.created_at, paidAt });
   await deleteBill(oldId);
   return saved;
 }
@@ -152,7 +158,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking)')
+    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking, paid_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -161,5 +167,14 @@ export async function getBill(id) {
 
 export async function deleteBill(id) {
   const { error } = await supabase.from('bills').delete().eq('id', id);
+  if (error) throw error;
+}
+
+// Settle up: tick (or untick) that someone has paid you
+export async function setPaid(participantId, paid) {
+  const { error } = await supabase
+    .from('bill_participants')
+    .update({ paid_at: paid ? new Date().toISOString() : null })
+    .eq('id', participantId);
   if (error) throw error;
 }

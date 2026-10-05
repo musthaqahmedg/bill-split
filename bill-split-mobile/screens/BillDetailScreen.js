@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { billToFlow, deleteBill, getBill } from '../services/bills';
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
@@ -53,6 +53,36 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
     });
     return Object.entries(out);
   };
+
+  // ---- Settle up: who still owes you ----
+  const owes = (p) => p.name !== 'Me' && Number(p.amount_due) > 0;
+  const toCollect = people.filter(owes);
+  const paidList = toCollect.filter((p) => p.paid_at);
+  const stillToCollect = toCollect.filter((p) => !p.paid_at).reduce((s, p) => s + Number(p.amount_due), 0);
+
+  const togglePaid = async (p) => {
+    const paid = !p.paid_at;
+    const stamp = paid ? new Date().toISOString() : null;
+    // Update the screen straight away, then save
+    setBill((b) => ({
+      ...b,
+      bill_participants: b.bill_participants.map((x) => (x.id === p.id ? { ...x, paid_at: stamp } : x)),
+    }));
+    try {
+      await setPaid(p.id, paid);
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+      setBill((b) => ({
+        ...b,
+        bill_participants: b.bill_participants.map((x) => (x.id === p.id ? { ...x, paid_at: p.paid_at } : x)),
+      }));
+    }
+  };
+
+  const remind = (p) =>
+    Share.share({
+      message: `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please send it when you can 🙏`,
+    });
 
   const confirmDelete = () =>
     Alert.alert('Delete this bill?', "This can't be undone.", [
@@ -107,6 +137,21 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </View>
         </View>
 
+        {toCollect.length > 0 && (
+          <View style={styles.settle}>
+            <View style={styles.settleTop}>
+              <Text style={styles.settleTitle}>💸 Settle up</Text>
+              <Text style={styles.settleCount}>{paidList.length} of {toCollect.length} paid</Text>
+            </View>
+            <View style={styles.barBg}>
+              <View style={[styles.barFill, { width: `${(paidList.length / toCollect.length) * 100}%` }]} />
+            </View>
+            <Text style={styles.settleNote}>
+              {stillToCollect > 0 ? `${inr(stillToCollect)} still to collect` : "Everyone's paid 🎉"}
+            </Text>
+          </View>
+        )}
+
         {people.map((p) => {
           const mine = itemsOf(p.id);
           const covers = coversOf(p.id);
@@ -136,6 +181,25 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
                   💛 Covering {nameOf[fid]}  ·  +{money(amt)}
                 </Text>
               ))}
+
+              {owes(p) && (
+                <View style={styles.payRow}>
+                  {p.paid_at ? (
+                    <TouchableOpacity style={styles.paidBtn} onPress={() => togglePaid(p)}>
+                      <Text style={styles.paidText}>✅ Paid</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <>
+                      <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(p)}>
+                        <Text style={styles.markText}>Mark paid</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.remindBtn} onPress={() => remind(p)}>
+                        <Text style={styles.remindText}>Remind</Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              )}
             </View>
           );
         })}
@@ -171,6 +235,20 @@ const styles = StyleSheet.create({
   line: { color: '#555', fontSize: 14, marginBottom: 3 },
   paidBy: { color: '#D6457F', fontWeight: '600' },
   covering: { color: '#D6457F', fontSize: 14, fontWeight: '600', marginTop: 6 },
+  settle: { backgroundColor: '#F4FBF6', borderRadius: 10, padding: 14, marginBottom: 15 },
+  settleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  settleTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E8E3E' },
+  settleCount: { fontSize: 14, fontWeight: '600', color: '#1E8E3E' },
+  barBg: { height: 8, backgroundColor: '#D7EEDD', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
+  barFill: { height: 8, backgroundColor: '#34A853', borderRadius: 4 },
+  settleNote: { color: '#555', fontSize: 13, marginTop: 8 },
+  payRow: { flexDirection: 'row', marginTop: 10 },
+  markBtn: { backgroundColor: '#34A853', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
+  markText: { color: '#fff', fontSize: 14, fontWeight: '600' },
+  remindBtn: { borderWidth: 1, borderColor: '#34A853', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
+  remindText: { color: '#1E8E3E', fontSize: 14, fontWeight: '600' },
+  paidBtn: { backgroundColor: '#E3F6E8', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
+  paidText: { color: '#1E8E3E', fontSize: 14, fontWeight: '600' },
   deleteBtn: { alignItems: 'center', paddingVertical: 20, marginBottom: 30 },
   deleteText: { color: '#FF3B30', fontSize: 16 },
 });
