@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
+import RecapCard from './RecapCard';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
 
 export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) {
   const [bill, setBill] = useState(null);
+  const [recapOpen, setRecapOpen] = useState(false);
 
   useEffect(() => {
     getBill(billId)
@@ -181,6 +183,10 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </View>
         </View>
 
+        <TouchableOpacity style={styles.recapBtn} onPress={() => setRecapOpen(true)}>
+          <Text style={styles.recapText}>🎉 Recap card</Text>
+        </TouchableOpacity>
+
         {toCollect.length > 0 && (
           <View style={styles.settle}>
             <View style={styles.settleTop}>
@@ -259,6 +265,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
     </View>
   );
 }
@@ -307,4 +315,6 @@ const styles = StyleSheet.create({
   archivedBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12, marginBottom: 12 },
   archivedText: { fontSize: 15, fontWeight: '600', color: '#555' },
   unarchive: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
+  recapBtn: { backgroundColor: '#24103F', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 15 },
+  recapText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
