@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
+import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
@@ -101,6 +101,39 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
       },
     ]);
 
+  // Once anyone has paid, the bill is a money record: archive instead of delete
+  const archived = bill.status === 'archived';
+  const anyPaid = participants.some((p) => p.paid_at);
+
+  const confirmArchive = () =>
+    Alert.alert(
+      'Archive this bill?',
+      'It moves off your home screen into Archived. Nothing is deleted.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Archive',
+          onPress: async () => {
+            try {
+              await archiveBill(bill.id, true);
+              onDeleted();
+            } catch (e) {
+              Alert.alert('Error', e.message);
+            }
+          },
+        },
+      ]
+    );
+
+  const unarchive = async () => {
+    try {
+      await archiveBill(bill.id, false);
+      setBill((b) => ({ ...b, status: 'split' }));
+    } catch (e) {
+      Alert.alert('Error', e.message);
+    }
+  };
+
   const startEdit = () => onEdit(billToFlow(bill), bill.id);
 
   const when = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -111,9 +144,11 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
         <TouchableOpacity onPress={onBack}>
           <Text style={styles.back}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={startEdit}>
-          <Text style={styles.edit}>Edit</Text>
-        </TouchableOpacity>
+        {!archived && (
+          <TouchableOpacity onPress={startEdit}>
+            <Text style={styles.edit}>Edit</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <Text style={styles.title}>{bill.title || 'Night out'}</Text>
@@ -122,6 +157,15 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
       </Text>
 
       <ScrollView style={styles.list}>
+        {archived && (
+          <View style={styles.archivedBox}>
+            <Text style={styles.archivedText}>📦 Archived</Text>
+            <TouchableOpacity onPress={unarchive}>
+              <Text style={styles.unarchive}>Move back to home</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={styles.summary}>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Items</Text>
@@ -204,9 +248,16 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           );
         })}
 
-        <TouchableOpacity onPress={confirmDelete} style={styles.deleteBtn}>
-          <Text style={styles.deleteText}>Delete this bill</Text>
-        </TouchableOpacity>
+        {archived ? null : anyPaid ? (
+          <TouchableOpacity onPress={confirmArchive} style={styles.deleteBtn}>
+            <Text style={styles.archiveText}>Archive this bill</Text>
+            <Text style={styles.archiveHint}>Someone has paid, so this bill can't be deleted</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity onPress={confirmDelete} style={styles.deleteBtn}>
+            <Text style={styles.deleteText}>Delete this bill</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -251,4 +302,9 @@ const styles = StyleSheet.create({
   paidText: { color: '#1E8E3E', fontSize: 14, fontWeight: '600' },
   deleteBtn: { alignItems: 'center', paddingVertical: 20, marginBottom: 30 },
   deleteText: { color: '#FF3B30', fontSize: 16 },
+  archiveText: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
+  archiveHint: { color: '#999', fontSize: 12, marginTop: 4 },
+  archivedBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12, marginBottom: 12 },
+  archivedText: { fontSize: 15, fontWeight: '600', color: '#555' },
+  unarchive: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
 });

@@ -149,7 +149,7 @@ export function billToFlow(saved) {
 export async function listBills() {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, title, total, bill_date, created_at, bill_participants(name, amount_due)')
+    .select('id, title, total, bill_date, created_at, status, bill_participants(name, amount_due, paid_at)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -176,5 +176,14 @@ export async function setPaid(participantId, paid) {
     .from('bill_participants')
     .update({ paid_at: paid ? new Date().toISOString() : null })
     .eq('id', participantId);
+  if (error) throw error;
+}
+
+// Archive (or un-archive) a bill: it leaves the home list but stays as a record
+export async function archiveBill(id, archived) {
+  const { error } = await supabase
+    .from('bills')
+    .update({ status: archived ? 'archived' : 'split' })
+    .eq('id', id);
   if (error) throw error;
 }
