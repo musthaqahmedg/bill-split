@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { supabase } from '../services/supabaseClient';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { findDuplicate } from '../services/bills';
+import { supabase } from '../services/supabaseClient';
+import { C } from '../services/theme';
 
 export default function UploadScreen({ onBack, onNext }) {
   const [image, setImage] = useState(null);
@@ -116,7 +117,7 @@ export default function UploadScreen({ onBack, onNext }) {
 
       {items.length > 0 && (
         <TouchableOpacity style={styles.button} onPress={() => onNext(items, bill)}>
-                    <Text style={styles.buttonText}>Next: Check the bill</Text>
+          <Text style={styles.buttonText}>Next: Check the bill</Text>
         </TouchableOpacity>
       )}
 
@@ -132,22 +133,22 @@ export default function UploadScreen({ onBack, onNext }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
-  back: { color: '#007AFF', fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 4 },
-  restaurant: { fontSize: 15, color: '#888', marginBottom: 12 },
-  preview: { flex: 1, borderRadius: 8, marginBottom: 15, marginTop: 12, resizeMode: 'contain' },
-  placeholder: { flex: 1, borderWidth: 2, borderColor: '#eee', borderStyle: 'dashed', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },
-  placeholderText: { color: '#bbb', fontSize: 16 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
+  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  title: { fontSize: 28, fontWeight: '800', marginBottom: 4, color: C.text },
+  restaurant: { fontSize: 15, color: C.sub, marginBottom: 12 },
+  preview: { flex: 1, borderRadius: 16, marginBottom: 15, marginTop: 12, resizeMode: 'contain' },
+  placeholder: { flex: 1, borderWidth: 2, borderColor: C.border, borderStyle: 'dashed', borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },
+  placeholderText: { color: C.faint, fontSize: 16 },
   list: { flex: 1, marginBottom: 15 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
-  itemName: { fontSize: 16, flex: 1, marginRight: 10 },
-  itemPrice: { fontSize: 16, fontWeight: '600' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
+  itemName: { fontSize: 16, flex: 1, marginRight: 10, color: C.text },
+  itemPrice: { fontSize: 16, fontWeight: '700', color: C.sub },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14 },
-  totalLabel: { fontSize: 16, fontWeight: 'bold' },
-  totalValue: { fontSize: 16, fontWeight: 'bold' },
-  button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 10 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  buttonAlt: { borderWidth: 1, borderColor: '#007AFF', padding: 14, borderRadius: 8, alignItems: 'center', marginBottom: 10 },
-  buttonAltText: { color: '#007AFF', fontSize: 16, fontWeight: 'bold' },
+  totalLabel: { fontSize: 16, fontWeight: '800', color: C.text },
+  totalValue: { fontSize: 16, fontWeight: '800', color: C.accentSoft },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  buttonAlt: { borderWidth: 1, borderColor: C.accent, padding: 14, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
+  buttonAltText: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
 });

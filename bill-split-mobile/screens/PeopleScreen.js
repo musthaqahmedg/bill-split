@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { C } from '../services/theme';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
   const [people, setPeople] = useState(
@@ -75,6 +76,8 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
         <TextInput
           style={styles.input}
           placeholder="Friend's name"
+          placeholderTextColor={C.faint}
+          keyboardAppearance="dark"
           value={name}
           onChangeText={setName}
           onSubmitEditing={addPerson}
@@ -202,50 +205,50 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
-  back: { color: '#007AFF', fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 20 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
+  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  title: { fontSize: 28, fontWeight: '800', marginBottom: 20, color: C.text },
   inputRow: { flexDirection: 'row', marginBottom: 15 },
-  input: { flex: 1, borderWidth: 1, borderColor: '#ddd', borderRadius: 8, padding: 14, fontSize: 16, marginRight: 10 },
-  addBtn: { backgroundColor: '#007AFF', borderRadius: 8, paddingHorizontal: 20, justifyContent: 'center' },
-  addText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, fontSize: 16, marginRight: 10, color: C.text },
+  addBtn: { backgroundColor: C.accent, borderRadius: 14, paddingHorizontal: 20, justifyContent: 'center' },
+  addText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   list: { flex: 1 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   rowRight: { flexDirection: 'row', alignItems: 'center' },
-  name: { fontSize: 18, flex: 1 },
-  pill: { backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 10, marginRight: 12 },
-  pillDry: { backgroundColor: '#E3F6E8' },
-  pillText: { fontSize: 13, color: '#555' },
-  pillTextDry: { color: '#1E8E3E', fontWeight: '600' },
-  remove: { color: '#FF3B30', fontSize: 15 },
+  name: { fontSize: 18, flex: 1, color: C.text },
+  pill: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 10, marginRight: 12 },
+  pillDry: { backgroundColor: C.greenBg },
+  pillText: { fontSize: 13, color: C.sub },
+  pillTextDry: { color: C.green, fontWeight: '700' },
+  remove: { color: C.red, fontSize: 15 },
 
-  pairBox: { backgroundColor: '#FFF5F9', borderRadius: 10, padding: 14, marginTop: 16 },
+  pairBox: { backgroundColor: '#3A1532', borderRadius: 16, padding: 14, marginTop: 16 },
   pairHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  pairTitle: { fontSize: 16, fontWeight: 'bold', color: '#D6457F' },
-  pairAdd: { fontSize: 15, fontWeight: '600', color: '#D6457F' },
-  pairAddOff: { color: '#E8A8C2' },
-  pairHint: { color: '#999', fontSize: 13, marginTop: 6 },
+  pairTitle: { fontSize: 16, fontWeight: '800', color: C.pink },
+  pairAdd: { fontSize: 15, fontWeight: '700', color: C.pink },
+  pairAddOff: { color: '#7A4A68' },
+  pairHint: { color: C.faint, fontSize: 13, marginTop: 6 },
   pairRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  pairText: { fontSize: 15, color: '#333', flex: 1 },
-  pairPayer: { color: '#D6457F', fontWeight: '600' },
+  pairText: { fontSize: 15, color: C.text, flex: 1 },
+  pairPayer: { color: C.pink, fontWeight: '700' },
 
-  count: { color: '#999', textAlign: 'center', marginVertical: 10 },
-  button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },
-  disabled: { backgroundColor: '#a0c4f5' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
+  disabled: { backgroundColor: '#4B3A73' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  sheet: { backgroundColor: '#fff', borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 20, paddingBottom: 40 },
-  sheetTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 10 },
-  sheetSub: { fontSize: 15, fontWeight: '600', color: '#555', marginTop: 10, marginBottom: 8 },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: C.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
+  sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 10, color: C.text },
+  sheetSub: { fontSize: 15, fontWeight: '700', color: C.sub, marginTop: 10, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },
-  chip: { borderWidth: 1, borderColor: '#D6457F', borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
-  chipOn: { backgroundColor: '#D6457F' },
-  chipText: { color: '#D6457F', fontSize: 14 },
-  chipTextOn: { color: '#fff' },
+  chip: { borderWidth: 1, borderColor: C.pink, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
+  chipOn: { backgroundColor: C.pink },
+  chipText: { color: C.pink, fontSize: 14 },
+  chipTextOn: { color: '#2A0E22', fontWeight: '700' },
   sheetButtons: { flexDirection: 'row', marginTop: 16 },
-  cancelBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#ddd', marginRight: 10 },
-  cancelText: { color: '#555', fontSize: 16, fontWeight: '600' },
-  doneBtn: { flex: 1, padding: 14, borderRadius: 8, alignItems: 'center', backgroundColor: '#D6457F' },
-  doneOff: { backgroundColor: '#E8A8C2' },
+  cancelBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: C.border, marginRight: 10 },
+  cancelText: { color: C.sub, fontSize: 16, fontWeight: '700' },
+  doneBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.pink },
+  doneOff: { backgroundColor: '#7A4A68' },
 });

@@ -10,6 +10,7 @@ import {
   View,
 } from 'react-native';
 import { guessKind, KINDS, nextKind } from '../services/kinds';
+import { C } from '../services/theme';
 
 const DONE_BAR = 'recheckDone';
 
@@ -114,6 +115,8 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                   value={r.name}
                   onChangeText={(v) => update(i, 'name', v)}
                   placeholder="Item name"
+                  placeholderTextColor={C.faint}
+                  keyboardAppearance="dark"
                   returnKeyType="done"
                   onSubmitEditing={Keyboard.dismiss}
                 />
@@ -129,6 +132,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                     value={r.qty}
                     onChangeText={(v) => update(i, 'qty', v)}
                     keyboardType="number-pad"
+                    keyboardAppearance="dark"
                     inputAccessoryViewID={DONE_BAR}
                   />
                 </View>
@@ -139,6 +143,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                     value={r.price}
                     onChangeText={(v) => update(i, 'price', v)}
                     keyboardType="decimal-pad"
+                    keyboardAppearance="dark"
                     inputAccessoryViewID={DONE_BAR}
                   />
                 </View>
@@ -166,6 +171,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
               value={total}
               onChangeText={setTotal}
               keyboardType="decimal-pad"
+              keyboardAppearance="dark"
               inputAccessoryViewID={DONE_BAR}
             />
           </View>
@@ -195,32 +201,32 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
-  back: { color: '#007AFF', fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: 'bold' },
-  sub: { color: '#888', fontSize: 14, marginTop: 4, marginBottom: 15 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
+  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  sub: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
-  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 12, marginBottom: 10 },
+  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 12, marginBottom: 10 },
   nameRow: { flexDirection: 'row', alignItems: 'center' },
-  name: { flex: 1, fontSize: 16, fontWeight: '600', paddingVertical: 6, marginRight: 8 },
-  kindTag: { backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
-  kindText: { fontSize: 13, color: '#333' },
+  name: { flex: 1, fontSize: 16, fontWeight: '700', paddingVertical: 6, marginRight: 8, color: C.text },
+  kindTag: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  kindText: { fontSize: 13, color: C.text },
   rowLine: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
   qtyBox: { flexDirection: 'row', alignItems: 'center', marginRight: 20 },
   priceBox: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  label: { color: '#999', fontSize: 14, marginRight: 6 },
-  qty: { borderBottomWidth: 1, borderBottomColor: '#ddd', minWidth: 40, fontSize: 16, paddingVertical: 4, textAlign: 'center' },
-  price: { borderBottomWidth: 1, borderBottomColor: '#ddd', minWidth: 80, fontSize: 16, paddingVertical: 4 },
-  remove: { color: '#FF3B30', fontSize: 14 },
-  addBtn: { borderWidth: 1, borderColor: '#007AFF', borderStyle: 'dashed', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 15 },
-  addText: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
-  summary: { backgroundColor: '#F5F5F7', borderRadius: 10, padding: 14, marginBottom: 20 },
+  label: { color: C.faint, fontSize: 14, marginRight: 6 },
+  qty: { borderBottomWidth: 1, borderBottomColor: C.border, minWidth: 40, fontSize: 16, paddingVertical: 4, textAlign: 'center', color: C.text },
+  price: { borderBottomWidth: 1, borderBottomColor: C.border, minWidth: 80, fontSize: 16, paddingVertical: 4, color: C.text },
+  remove: { color: C.red, fontSize: 14 },
+  addBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 16, padding: 14, alignItems: 'center', marginBottom: 15 },
+  addText: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },
+  summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 20 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  sumLabel: { fontSize: 15, fontWeight: '600' },
-  totalInput: { borderBottomWidth: 1, borderBottomColor: '#bbb', minWidth: 90, fontSize: 16, fontWeight: '600', paddingVertical: 2, textAlign: 'right' },
-  extras: { color: '#888', fontSize: 13, marginTop: 4 },
-  button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  doneBar: { backgroundColor: '#F1F1F4', borderTopWidth: 1, borderTopColor: '#ddd', paddingVertical: 10, paddingHorizontal: 16, alignItems: 'flex-end' },
-  doneText: { color: '#007AFF', fontSize: 17, fontWeight: '600' },
+  sumLabel: { fontSize: 15, fontWeight: '700', color: C.text },
+  totalInput: { borderBottomWidth: 1, borderBottomColor: C.border, minWidth: 90, fontSize: 16, fontWeight: '700', paddingVertical: 2, textAlign: 'right', color: C.text },
+  extras: { color: C.sub, fontSize: 13, marginTop: 4 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  doneBar: { backgroundColor: C.card, borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 10, paddingHorizontal: 16, alignItems: 'flex-end' },
+  doneText: { color: C.accentSoft, fontSize: 17, fontWeight: '700' },
 });
