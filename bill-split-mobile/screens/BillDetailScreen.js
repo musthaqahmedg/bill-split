@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
+import { C } from '../services/theme';
 import RecapCard from './RecapCard';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -19,7 +20,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
   if (!bill) {
     return (
       <View style={[styles.container, styles.center]}>
-        <ActivityIndicator size="large" />
+        <ActivityIndicator size="large" color={C.accentSoft} />
       </View>
     );
   }
@@ -272,49 +273,49 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  back: { color: '#007AFF', fontSize: 16 },
-  edit: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
-  title: { fontSize: 28, fontWeight: 'bold' },
-  meta: { color: '#999', fontSize: 14, marginTop: 4, marginBottom: 15 },
+  back: { color: C.accentSoft, fontSize: 16 },
+  edit: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
+  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  meta: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
-  summary: { backgroundColor: '#F5F5F7', borderRadius: 10, padding: 14, marginBottom: 15 },
+  summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
-  sumLabel: { color: '#666', fontSize: 14 },
-  sumTotal: { borderTopWidth: 1, borderTopColor: '#ddd', paddingTop: 8, marginTop: 4, marginBottom: 0 },
-  sumBold: { fontSize: 16, fontWeight: 'bold' },
-  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 14, marginBottom: 10 },
-  coveredCard: { borderColor: '#F5B8D0', backgroundColor: '#FFF5F9' },
+  sumLabel: { color: C.sub, fontSize: 14 },
+  sumTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8, marginTop: 4, marginBottom: 0 },
+  sumBold: { fontSize: 16, fontWeight: '800', color: C.text },
+  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },
+  coveredCard: { borderColor: C.pink, backgroundColor: '#3A1532' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  name: { fontSize: 18, fontWeight: 'bold' },
-  pay: { fontSize: 22, fontWeight: 'bold', color: '#007AFF' },
-  coveredPay: { fontSize: 18, fontWeight: 'bold', color: '#D6457F' },
-  line: { color: '#555', fontSize: 14, marginBottom: 3 },
-  paidBy: { color: '#D6457F', fontWeight: '600' },
-  covering: { color: '#D6457F', fontSize: 14, fontWeight: '600', marginTop: 6 },
-  settle: { backgroundColor: '#F4FBF6', borderRadius: 10, padding: 14, marginBottom: 15 },
+  name: { fontSize: 18, fontWeight: '800', color: C.text },
+  pay: { fontSize: 22, fontWeight: '800', color: C.accentSoft },
+  coveredPay: { fontSize: 18, fontWeight: '800', color: C.pink },
+  line: { color: C.sub, fontSize: 14, marginBottom: 3 },
+  paidBy: { color: C.pink, fontWeight: '600' },
+  covering: { color: C.pink, fontSize: 14, fontWeight: '700', marginTop: 6 },
+  settle: { backgroundColor: C.greenBg, borderRadius: 16, padding: 16, marginBottom: 15 },
   settleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  settleTitle: { fontSize: 16, fontWeight: 'bold', color: '#1E8E3E' },
-  settleCount: { fontSize: 14, fontWeight: '600', color: '#1E8E3E' },
-  barBg: { height: 8, backgroundColor: '#D7EEDD', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
-  barFill: { height: 8, backgroundColor: '#34A853', borderRadius: 4 },
-  settleNote: { color: '#555', fontSize: 13, marginTop: 8 },
+  settleTitle: { fontSize: 16, fontWeight: '800', color: C.green },
+  settleCount: { fontSize: 14, fontWeight: '700', color: C.green },
+  barBg: { height: 8, backgroundColor: '#1E5A44', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
+  barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
+  settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },
   payRow: { flexDirection: 'row', marginTop: 10 },
-  markBtn: { backgroundColor: '#34A853', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
-  markText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  remindBtn: { borderWidth: 1, borderColor: '#34A853', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
-  remindText: { color: '#1E8E3E', fontSize: 14, fontWeight: '600' },
-  paidBtn: { backgroundColor: '#E3F6E8', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
-  paidText: { color: '#1E8E3E', fontSize: 14, fontWeight: '600' },
+  markBtn: { backgroundColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
+  markText: { color: '#0B2A1F', fontSize: 14, fontWeight: '800' },
+  remindBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
+  remindText: { color: C.green, fontSize: 14, fontWeight: '700' },
+  paidBtn: { backgroundColor: C.greenBg, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
+  paidText: { color: C.green, fontSize: 14, fontWeight: '700' },
   deleteBtn: { alignItems: 'center', paddingVertical: 20, marginBottom: 30 },
-  deleteText: { color: '#FF3B30', fontSize: 16 },
-  archiveText: { color: '#007AFF', fontSize: 16, fontWeight: '600' },
-  archiveHint: { color: '#999', fontSize: 12, marginTop: 4 },
-  archivedBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F2F2F7', borderRadius: 10, padding: 12, marginBottom: 12 },
-  archivedText: { fontSize: 15, fontWeight: '600', color: '#555' },
-  unarchive: { color: '#007AFF', fontSize: 15, fontWeight: '600' },
-  recapBtn: { backgroundColor: '#24103F', borderRadius: 10, padding: 14, alignItems: 'center', marginBottom: 15 },
-  recapText: { color: '#fff', fontSize: 16, fontWeight: '700' },
+  deleteText: { color: C.red, fontSize: 16 },
+  archiveText: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
+  archiveHint: { color: C.faint, fontSize: 12, marginTop: 4 },
+  archivedBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: C.card, borderRadius: 12, padding: 12, marginBottom: 12 },
+  archivedText: { fontSize: 15, fontWeight: '700', color: C.sub },
+  unarchive: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },
+  recapBtn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
+  recapText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

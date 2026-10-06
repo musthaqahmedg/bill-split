@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listBills } from '../services/bills';
+import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -68,7 +69,7 @@ export default function HomeScreen({ onNewBill, onLogout, onOpenBill }) {
         data={visible}
         keyExtractor={(item) => item.id}
         renderItem={renderBill}
-        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} />}
+        refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
           !loading && (
             <View style={styles.empty}>
@@ -90,24 +91,24 @@ export default function HomeScreen({ onNewBill, onLogout, onOpenBill }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingTop: 60, paddingHorizontal: 20 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { fontSize: 28, fontWeight: 'bold' },
-  logout: { color: '#007AFF', fontSize: 16 },
-  switch: { alignSelf: 'flex-start', backgroundColor: '#F2F2F7', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },
-  switchText: { color: '#555', fontSize: 14, fontWeight: '600' },
-  card: { borderWidth: 1, borderColor: '#eee', borderRadius: 10, padding: 15, marginBottom: 10 },
+  title: { fontSize: 30, fontWeight: '800', color: C.text },
+  logout: { color: C.accentSoft, fontSize: 16 },
+  switch: { alignSelf: 'flex-start', backgroundColor: C.card, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },
+  switchText: { color: C.sub, fontSize: 14, fontWeight: '600' },
+  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between' },
-  cardTitle: { fontSize: 17, fontWeight: 'bold', flex: 1, marginRight: 10 },
-  cardTotal: { fontSize: 17, fontWeight: 'bold', color: '#007AFF' },
-  cardMeta: { color: '#999', fontSize: 13, marginTop: 4 },
-  people: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
-  person: { backgroundColor: '#F2F2F7', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10, marginRight: 6, marginBottom: 6, fontSize: 13, color: '#333', overflow: 'hidden' },
-  personPaid: { backgroundColor: '#E3F6E8', color: '#1E8E3E' },
+  cardTitle: { fontSize: 17, fontWeight: '800', flex: 1, marginRight: 10, color: C.text },
+  cardTotal: { fontSize: 17, fontWeight: '800', color: C.accentSoft },
+  cardMeta: { color: C.faint, fontSize: 13, marginTop: 4 },
+  people: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
+  person: { backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10, marginRight: 6, marginBottom: 6, fontSize: 13, color: C.sub, overflow: 'hidden' },
+  personPaid: { backgroundColor: C.greenBg, color: C.green },
   emptyList: { flexGrow: 1, justifyContent: 'center' },
   empty: { alignItems: 'center' },
-  emptyText: { fontSize: 18, color: '#999' },
-  emptySub: { fontSize: 14, color: '#bbb', marginTop: 6 },
-  button: { backgroundColor: '#007AFF', padding: 16, borderRadius: 8, alignItems: 'center', marginBottom: 30 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  emptyText: { fontSize: 18, color: C.sub },
+  emptySub: { fontSize: 14, color: C.faint, marginTop: 6 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginBottom: 30 },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
