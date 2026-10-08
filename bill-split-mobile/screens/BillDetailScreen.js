@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
 import { C } from '../services/theme';
+import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -10,6 +11,7 @@ const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString(
 export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) {
   const [bill, setBill] = useState(null);
   const [recapOpen, setRecapOpen] = useState(false);
+  const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
 
   useEffect(() => {
     getBill(billId)
@@ -203,6 +205,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </View>
         )}
 
+        <Text style={styles.tapHint}>Tap any item to see what it is 🔍</Text>
+
         {people.map((p) => {
           const mine = itemsOf(p.id);
           const covers = coversOf(p.id);
@@ -217,7 +221,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
               </View>
 
               {mine.map((it) => (
-                <Text key={it.id} style={styles.line}>
+                <Text key={it.id} style={styles.line} onPress={() => setInfoItem(it)}>
                   {it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name}
                   {it.ways > 1 ? `  (shared ${it.ways} ways)` : ''}  ·  {money(Number(it.price) / it.ways)}
                   {it.paidBy !== p.id && nameOf[it.paidBy]
@@ -268,6 +272,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
       </ScrollView>
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
+      <ItemInfo item={infoItem} onClose={() => setInfoItem(null)} />
     </View>
   );
 }
@@ -318,4 +323,5 @@ const styles = StyleSheet.create({
   unarchive: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },
   recapBtn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
   recapText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  tapHint: { color: C.faint, fontSize: 13, marginBottom: 10, textAlign: 'center' },
 });
