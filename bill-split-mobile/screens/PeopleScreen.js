@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { recentFriends } from '../services/bills';
 import { C } from '../services/theme';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
@@ -9,6 +10,12 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
   const [nonDrinkers, setNonDrinkers] = useState(initialNonDrinkers || []);
   const [pairs, setPairs] = useState(initialPairs || []);
   const [name, setName] = useState('');
+  const [recent, setRecent] = useState([]);
+
+  // Friends from your recent bills, for one-tap adding
+  useEffect(() => {
+    recentFriends().then(setRecent).catch(() => {});
+  }, []);
 
   // Pair-up sheet
   const [pairOpen, setPairOpen] = useState(false);
@@ -24,6 +31,11 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
     setPeople([...people, n]);
     setName('');
   };
+
+  const quickAdd = (n) => {
+    if (!people.includes(n)) setPeople([...people, n]);
+  };
+  const suggestions = recent.filter((n) => !people.includes(n));
 
   const removePerson = (n) => {
     setPeople(people.filter((p) => p !== n));
@@ -87,6 +99,19 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
           <Text style={styles.addText}>Add</Text>
         </TouchableOpacity>
       </View>
+
+      {suggestions.length > 0 && (
+        <View style={styles.recentBox}>
+          <Text style={styles.recentLabel}>⚡ Recent friends</Text>
+          <View style={styles.recentChips}>
+            {suggestions.map((n) => (
+              <TouchableOpacity key={n} style={styles.recentChip} onPress={() => quickAdd(n)}>
+                <Text style={styles.recentText}>+ {n}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      )}
 
       <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {people.map((p) => {
@@ -212,6 +237,11 @@ const styles = StyleSheet.create({
   input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, fontSize: 16, marginRight: 10, color: C.text },
   addBtn: { backgroundColor: C.accent, borderRadius: 14, paddingHorizontal: 20, justifyContent: 'center' },
   addText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  recentBox: { marginBottom: 10 },
+  recentLabel: { color: C.sub, fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  recentChips: { flexDirection: 'row', flexWrap: 'wrap' },
+  recentChip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
+  recentText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
   list: { flex: 1 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   rowRight: { flexDirection: 'row', alignItems: 'center' },

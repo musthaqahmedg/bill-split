@@ -187,3 +187,26 @@ export async function archiveBill(id, archived) {
     .eq('id', id);
   if (error) throw error;
 }
+
+// Recent friends: names from your latest bills, newest first (for quick-add on People)
+export async function recentFriends(limit = 12) {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('created_at, bill_participants(name)')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+
+  const seen = new Set();
+  const names = [];
+  (data || []).forEach((b) =>
+    (b.bill_participants || []).forEach((p) => {
+      const key = p.name.trim().toLowerCase();
+      if (p.name !== 'Me' && !seen.has(key)) {
+        seen.add(key);
+        names.push(p.name);
+      }
+    })
+  );
+  return names.slice(0, limit);
+}
