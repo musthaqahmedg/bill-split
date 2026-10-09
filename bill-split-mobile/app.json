@@ -24,6 +24,18 @@
         }
       ],
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "fd2ebf8c-9576-4007-8202-e55857696902"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fd2ebf8c-9576-4007-8202-e55857696902"
+    },
+    "ios": {}
   }
 }
