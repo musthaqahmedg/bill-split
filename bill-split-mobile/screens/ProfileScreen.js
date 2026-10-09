@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
+  ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { deleteAccount, getProfile, isValidUpi, saveProfile } from '../services/profile';
@@ -124,6 +124,10 @@ export default function ProfileScreen({ onBack, onLogout }) {
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.linkBtn} onPress={() => Linking.openURL('https://bill-split-flax.vercel.app/privacy')}>
+          <Text style={styles.linkText}>Privacy policy</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.deleteBtn} onPress={confirmDelete}>
           <Text style={styles.deleteText}>Delete my account</Text>
         </TouchableOpacity>
@@ -146,6 +150,8 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.border, marginVertical: 28 },
   logoutBtn: { borderWidth: 1, borderColor: C.border, padding: 14, borderRadius: 14, alignItems: 'center', marginBottom: 12 },
   logoutText: { color: C.text, fontSize: 16, fontWeight: '700' },
+  linkBtn: { padding: 12, alignItems: 'center' },
+  linkText: { color: C.accentSoft, fontSize: 15 },
   deleteBtn: { padding: 14, alignItems: 'center', marginBottom: 40 },
   deleteText: { color: C.red, fontSize: 15 },
 });
