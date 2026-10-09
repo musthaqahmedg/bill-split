@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
+import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
@@ -12,6 +13,11 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
   const [bill, setBill] = useState(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
+  const [myUpi, setMyUpi] = useState(''); // your UPI ID, added to Remind messages
+
+  useEffect(() => {
+    getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {});
+  }, []);
 
   useEffect(() => {
     getBill(billId)
@@ -86,7 +92,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
 
   const remind = (p) =>
     Share.share({
-      message: `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please send it when you can 🙏`,
+      message: myUpi
+        ? `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please pay to UPI: ${myUpi} 🙏`
+        : `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please send it when you can 🙏`,
     });
 
   const confirmDelete = () =>
