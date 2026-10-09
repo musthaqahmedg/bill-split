@@ -97,6 +97,12 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
         : `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please send it when you can 🙏`,
     });
 
+  // Guest link: friends open it in the browser, see their share and pay with UPI
+  const shareLink = () =>
+    Share.share({
+      message: `🌙 ${bill.title || 'Our night out'}: see what you had and pay your share here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}`,
+    });
+
   const confirmDelete = () =>
     Alert.alert('Delete this bill?', "This can't be undone.", [
       { text: 'Cancel', style: 'cancel' },
@@ -194,9 +200,14 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </View>
         </View>
 
-        <TouchableOpacity style={styles.recapBtn} onPress={() => setRecapOpen(true)}>
-          <Text style={styles.recapText}>🎉 Recap card</Text>
-        </TouchableOpacity>
+        <View style={styles.actionRow}>
+          <TouchableOpacity style={[styles.recapBtn, styles.half]} onPress={shareLink}>
+            <Text style={styles.recapText}>🔗 Share link</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.recapBtn, styles.half, styles.recapAlt]} onPress={() => setRecapOpen(true)}>
+            <Text style={styles.recapText}>🎉 Recap card</Text>
+          </TouchableOpacity>
+        </View>
 
         {toCollect.length > 0 && (
           <View style={styles.settle}>
@@ -331,5 +342,8 @@ const styles = StyleSheet.create({
   unarchive: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },
   recapBtn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
   recapText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  actionRow: { flexDirection: 'row', marginBottom: 15 },
+  half: { flex: 1, marginBottom: 0 },
+  recapAlt: { backgroundColor: C.cardHi, marginLeft: 10 },
   tapHint: { color: C.faint, fontSize: 13, marginBottom: 10, textAlign: 'center' },
 });
