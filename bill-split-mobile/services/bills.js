@@ -86,10 +86,11 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
 }
 
 // Edit: save a clean new copy (keeping the original date), then remove the old one
+// Edit: save a clean new copy (keeping the original date, paid ticks and share link), then remove the old one
 export async function updateBill(oldId, payload) {
   const { data: old, error: e0 } = await supabase
     .from('bills')
-    .select('created_at, bill_participants(name, paid_at)')
+    .select('created_at, share_token, bill_participants(name, paid_at)')
     .eq('id', oldId)
     .single();
   if (e0) throw e0;
@@ -101,6 +102,11 @@ export async function updateBill(oldId, payload) {
 
   const saved = await saveBill({ ...payload, createdAt: old.created_at, paidAt });
   await deleteBill(oldId);
+
+  // Keep the same share link, so links already sent to friends still work
+  const { error: e5 } = await supabase.from('bills').update({ share_token: old.share_token }).eq('id', saved.id);
+  if (e5) throw e5;
+
   return saved;
 }
 
