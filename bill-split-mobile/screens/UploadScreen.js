@@ -1,9 +1,29 @@
+import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { findDuplicate } from '../services/bills';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
+
+// Shrink the photo before sending: smaller = faster upload and faster reading
+const MAX_WIDTH = 1400;
+async function shrink(asset) {
+  const width = Math.min(asset.width || MAX_WIDTH, MAX_WIDTH);
+  const IM = ImageManipulator.ImageManipulator;
+  if (IM && IM.manipulate) {
+    const ctx = IM.manipulate(asset.uri);
+    ctx.resize({ width });
+    const img = await ctx.renderAsync();
+    return img.saveAsync({ format: ImageManipulator.SaveFormat.JPEG, compress: 0.6, base64: true });
+  }
+  // Older versions of the tool
+  return ImageManipulator.manipulateAsync(
+    asset.uri,
+    [{ resize: { width } }],
+    { format: ImageManipulator.SaveFormat.JPEG, compress: 0.6, base64: true }
+  );
+}
 
 export default function UploadScreen({ onBack, onNext }) {
   const [image, setImage] = useState(null);
@@ -22,16 +42,21 @@ export default function UploadScreen({ onBack, onNext }) {
       return;
     }
 
-    const options = { quality: 0.5, base64: true };
+    const options = { quality: 0.8 };
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync(options)
       : await ImagePicker.launchImageLibraryAsync(options);
 
     if (!result.canceled) {
-      setImage(result.assets[0].uri);
-      setBase64(result.assets[0].base64);
-      setItems([]);
-      setBill(null);
+      try {
+        const small = await shrink(result.assets[0]);
+        setImage(small.uri);
+        setBase64(small.base64);
+        setItems([]);
+        setBill(null);
+      } catch (e) {
+        Alert.alert("Couldn't prepare the photo", e.message);
+      }
     }
   };
 
@@ -114,6 +139,7 @@ export default function UploadScreen({ onBack, onNext }) {
             : <Text style={styles.buttonText}>Read Receipt</Text>}
         </TouchableOpacity>
       )}
+      {loading && <Text style={styles.wait}>Reading your bill… usually 5–15 seconds</Text>}
 
       {items.length > 0 && (
         <TouchableOpacity style={styles.button} onPress={() => onNext(items, bill)}>
@@ -149,6 +175,7 @@ const styles = StyleSheet.create({
   totalValue: { fontSize: 16, fontWeight: '800', color: C.accentSoft },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  wait: { color: C.faint, fontSize: 13, textAlign: 'center', marginBottom: 10 },
   buttonAlt: { borderWidth: 1, borderColor: C.accent, padding: 14, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
   buttonAltText: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
 });
