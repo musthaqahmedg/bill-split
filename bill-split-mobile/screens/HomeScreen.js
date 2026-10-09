@@ -5,7 +5,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onLogout, onOpenBill }) {
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -52,8 +52,8 @@ export default function HomeScreen({ onNewBill, onLogout, onOpenBill }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
-        <TouchableOpacity onPress={onLogout}>
-          <Text style={styles.logout}>Logout</Text>
+        <TouchableOpacity style={styles.profileBtn} onPress={onProfile}>
+          <Text style={styles.profileIcon}>👤</Text>
         </TouchableOpacity>
       </View>
 
@@ -94,7 +94,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 30, fontWeight: '800', color: C.text },
-  logout: { color: C.accentSoft, fontSize: 16 },
+  profileBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  profileIcon: { fontSize: 20 },
   switch: { alignSelf: 'flex-start', backgroundColor: C.card, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },
   switchText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },

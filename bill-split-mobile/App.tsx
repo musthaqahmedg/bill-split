@@ -5,10 +5,12 @@ import HomeScreen from './screens/HomeScreen';
 import ItemsScreen from './screens/ItemsScreen';
 import LoginScreen from './screens/LoginScreen';
 import PeopleScreen from './screens/PeopleScreen';
+import ProfileScreen from './screens/ProfileScreen';
 import RecheckScreen from './screens/RecheckScreen';
 import SplitScreen from './screens/SplitScreen';
 import UploadScreen from './screens/UploadScreen';
 import { kindOf } from './services/kinds';
+import { supabase } from './services/supabaseClient';
 
 // After Recheck, find where each new item was in the old list (-1 = new item)
 function matchItems(oldItems: any[], newItems: any[]) {
@@ -65,6 +67,15 @@ export default function App() {
       });
       return out;
     });
+
+  // Log out properly (ends the Supabase session too)
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
+    setLoggedIn(false);
+    setScreen('home');
+  };
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -165,6 +176,10 @@ export default function App() {
     );
   }
 
+  if (screen === 'profile') {
+    return <ProfileScreen onBack={() => setScreen('home')} onLogout={logout} />;
+  }
+
   if (screen === 'detail') {
     return (
       <BillDetailScreen
@@ -189,7 +204,8 @@ export default function App() {
   return (
     <HomeScreen
       onNewBill={startNewBill}
-      onLogout={() => setLoggedIn(false)}
+      onLogout={logout}
+      onProfile={() => setScreen('profile')}
       onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');
