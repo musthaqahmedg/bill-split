@@ -85,12 +85,11 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
   return saved;
 }
 
-// Edit: save a clean new copy (keeping the original date), then remove the old one
 // Edit: save a clean new copy (keeping the original date, paid ticks and share link), then remove the old one
 export async function updateBill(oldId, payload) {
   const { data: old, error: e0 } = await supabase
     .from('bills')
-    .select('created_at, share_token, bill_participants(name, paid_at)')
+    .select('created_at, share_token, note, bill_participants(name, paid_at)')
     .eq('id', oldId)
     .single();
   if (e0) throw e0;
@@ -103,8 +102,11 @@ export async function updateBill(oldId, payload) {
   const saved = await saveBill({ ...payload, createdAt: old.created_at, paidAt });
   await deleteBill(oldId);
 
-  // Keep the same share link, so links already sent to friends still work
-  const { error: e5 } = await supabase.from('bills').update({ share_token: old.share_token }).eq('id', saved.id);
+  // Keep the same share link (so links already sent still work) and the note
+  const { error: e5 } = await supabase
+    .from('bills')
+    .update({ share_token: old.share_token, note: old.note || null })
+    .eq('id', saved.id);
   if (e5) throw e5;
 
   return saved;
@@ -182,6 +184,15 @@ export async function setPaid(participantId, paid) {
     .from('bill_participants')
     .update({ paid_at: paid ? new Date().toISOString() : null })
     .eq('id', participantId);
+  if (error) throw error;
+}
+
+// Save a short note on a bill (e.g. "Arun's birthday 🎂")
+export async function setNote(id, note) {
+  const { error } = await supabase
+    .from('bills')
+    .update({ note: note.trim() || null })
+    .eq('id', id);
   if (error) throw error;
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { archiveBill, billToFlow, deleteBill, getBill, setPaid } from '../services/bills';
+import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid } from '../services/bills';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
 import ItemInfo from './ItemInfo';
@@ -14,6 +14,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   const [recapOpen, setRecapOpen] = useState(false);
   const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
   const [myUpi, setMyUpi] = useState(''); // your UPI ID, added to Remind messages
+  const [note, setNoteText] = useState(''); // a short note on the bill
+  const [savingNote, setSavingNote] = useState(false);
 
   useEffect(() => {
     getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {});
@@ -21,7 +23,10 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 
   useEffect(() => {
     getBill(billId)
-      .then(setBill)
+      .then((b) => {
+        setBill(b);
+        setNoteText(b.note || '');
+      })
       .catch((e) => Alert.alert('Error', e.message));
   }, [billId]);
 
@@ -153,6 +158,20 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     }
   };
 
+  // Note: save only when it changed
+  const noteChanged = note.trim() !== (bill.note || '');
+  const saveNote = async () => {
+    setSavingNote(true);
+    try {
+      await setNote(bill.id, note);
+      setBill((b) => ({ ...b, note: note.trim() || null }));
+    } catch (e) {
+      Alert.alert("Couldn't save note", e.message);
+    } finally {
+      setSavingNote(false);
+    }
+  };
+
   const startEdit = () => onEdit(billToFlow(bill), bill.id);
 
   const when = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -198,6 +217,25 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
             <Text style={styles.sumBold}>Bill total</Text>
             <Text style={styles.sumBold}>{money(bill.total)}</Text>
           </View>
+        </View>
+
+        <View style={styles.noteBox}>
+          <Text style={styles.noteTitle}>📝 Note</Text>
+          <TextInput
+            style={styles.noteInput}
+            value={note}
+            onChangeText={setNoteText}
+            placeholder="e.g. Arun's birthday 🎂, pay by Sunday"
+            placeholderTextColor={C.faint}
+            keyboardAppearance="dark"
+            multiline
+            maxLength={300}
+          />
+          {noteChanged && (
+            <TouchableOpacity style={styles.noteSave} onPress={saveNote} disabled={savingNote}>
+              <Text style={styles.noteSaveText}>{savingNote ? 'Saving…' : 'Save note'}</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.actionRow}>
@@ -355,5 +393,10 @@ const styles = StyleSheet.create({
   roundBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
   roundText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
   roundHint: { color: C.faint, fontSize: 12, marginTop: 4 },
+  noteBox: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
+  noteTitle: { fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 8 },
+  noteInput: { color: C.text, fontSize: 15, minHeight: 40, borderWidth: 1, borderColor: C.border, borderRadius: 10, padding: 10 },
+  noteSave: { alignSelf: 'flex-end', backgroundColor: C.accent, borderRadius: 12, paddingVertical: 8, paddingHorizontal: 16, marginTop: 10 },
+  noteSaveText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   tapHint: { color: C.faint, fontSize: 13, marginBottom: 10, textAlign: 'center' },
 });
