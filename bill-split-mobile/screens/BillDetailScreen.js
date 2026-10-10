@@ -9,7 +9,7 @@ import RecapCard from './RecapCard';
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
 
-export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) {
+export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, onAddRound }) {
   const [bill, setBill] = useState(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
@@ -209,6 +209,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit }) 
           </TouchableOpacity>
         </View>
 
+        {!archived && (
+          <TouchableOpacity style={styles.roundBtn} onPress={() => onAddRound(billToFlow(bill), bill.id)}>
+            <Text style={styles.roundText}>➕ Add a round</Text>
+            <Text style={styles.roundHint}>Scan another receipt from the same night</Text>
+          </TouchableOpacity>
+        )}
+
         {toCollect.length > 0 && (
           <View style={styles.settle}>
             <View style={styles.settleTop}>
@@ -345,5 +352,8 @@ const styles = StyleSheet.create({
   actionRow: { flexDirection: 'row', marginBottom: 15 },
   half: { flex: 1, marginBottom: 0 },
   recapAlt: { backgroundColor: C.cardHi, marginLeft: 10 },
+  roundBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
+  roundText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  roundHint: { color: C.faint, fontSize: 12, marginTop: 4 },
   tapHint: { color: C.faint, fontSize: 13, marginBottom: 10, textAlign: 'center' },
 });

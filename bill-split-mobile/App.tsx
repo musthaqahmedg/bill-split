@@ -34,6 +34,7 @@ export default function App() {
   const [payers, setPayers] = useState<any[]>([]);
   const [openBillId, setOpenBillId] = useState<any>(null);
   const [editingBillId, setEditingBillId] = useState<any>(null);
+  const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
 
   const startNewBill = () => {
     setItems([]);
@@ -44,7 +45,20 @@ export default function App() {
     setClaims([]);
     setPayers([]);
     setEditingBillId(null);
+    setAddingRound(false);
     setScreen('upload');
+  };
+
+  // Load a saved bill into the flow (used by Edit and Add a round)
+  const loadBill = (flow: any, id: any) => {
+    setItems(flow.items);
+    setBill(flow.bill);
+    setPeople(flow.people);
+    setNonDrinkers(flow.nonDrinkers || []);
+    setPairs([]);
+    setClaims(flow.claims);
+    setPayers(flow.payers || flow.items.map(() => ({})));
+    setEditingBillId(id);
   };
 
   // Keep sponsorships only for people still on each item
@@ -84,10 +98,34 @@ export default function App() {
   if (screen === 'upload') {
     return (
       <UploadScreen
-        onBack={() => setScreen('home')}
+        title={addingRound ? 'Add a round ➕' : 'Scan Receipt'}
+        onBack={() => {
+          if (addingRound) {
+            setAddingRound(false);
+            setScreen('detail');
+          } else {
+            setScreen('home');
+          }
+        }}
         onNext={(scanned: any, billInfo: any) => {
-          setItems(scanned);
-          setBill(billInfo);
+          if (addingRound) {
+            // Rolling tab: add the new round's items to the same bill
+            const add = (k: string) => (Number(bill?.[k]) || 0) + (Number(billInfo?.[k]) || 0);
+            setItems([...items, ...scanned]);
+            setClaims([...claims, ...scanned.map(() => [])]);
+            setPayers([...payers, ...scanned.map(() => ({}))]);
+            setBill({
+              ...bill,
+              total: add('total'),
+              tax: add('tax'),
+              service_charge: add('service_charge'),
+              discount: add('discount'),
+            });
+            setAddingRound(false);
+          } else {
+            setItems(scanned);
+            setBill(billInfo);
+          }
           setScreen('recheck');
         }}
       />
@@ -187,15 +225,13 @@ export default function App() {
         onBack={() => setScreen('home')}
         onDeleted={() => setScreen('home')}
         onEdit={(flow: any, id: any) => {
-          setItems(flow.items);
-          setBill(flow.bill);
-          setPeople(flow.people);
-          setNonDrinkers(flow.nonDrinkers || []);
-          setPairs([]);
-          setClaims(flow.claims);
-          setPayers(flow.payers || flow.items.map(() => ({})));
-          setEditingBillId(id);
+          loadBill(flow, id);
           setScreen('recheck');
+        }}
+        onAddRound={(flow: any, id: any) => {
+          loadBill(flow, id);
+          setAddingRound(true);
+          setScreen('upload');
         }}
       />
     );

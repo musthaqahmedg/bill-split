@@ -25,7 +25,7 @@ async function shrink(asset) {
   );
 }
 
-export default function UploadScreen({ onBack, onNext }) {
+export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext }) {
   const [image, setImage] = useState(null);
   const [base64, setBase64] = useState(null);
   const [items, setItems] = useState([]);
@@ -104,7 +104,7 @@ export default function UploadScreen({ onBack, onNext }) {
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
 
-      <Text style={styles.title}>Scan Receipt</Text>
+      <Text style={styles.title}>{title}</Text>
       {bill && bill.restaurant ? <Text style={styles.restaurant}>{bill.restaurant}</Text> : null}
 
       {items.length > 0 ? (
