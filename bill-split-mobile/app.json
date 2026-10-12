@@ -12,7 +12,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#160A2B"
-      }
+      },
+      "package": "com.musthaq_ahmed_gaffoor.billsplitmobile"
     },
     "plugins": [
       [
