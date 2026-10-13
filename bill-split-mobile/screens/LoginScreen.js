@@ -42,6 +42,7 @@ export default function LoginScreen({ onLoginSuccess }) {
         method === 'email' ? { email: cleanEmail } : { phone: toE164(phone) }
       );
       if (error) throw error;
+      if (showOtp) Alert.alert('Sent again 📩', 'Check your inbox (and spam) for the new code');
       setShowOtp(true);
     } catch (error) {
       Alert.alert("Couldn't send the code", error.message);
@@ -156,6 +157,9 @@ export default function LoginScreen({ onLoginSuccess }) {
           />
           <TouchableOpacity style={styles.button} onPress={handleVerifyOtp} disabled={loading}>
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Let's go</Text>}
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
+            <Text style={styles.link}>Didn't get it? Send again</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { setShowOtp(false); setOtp(''); }}>
             <Text style={styles.link}>{method === 'email' ? 'Change email' : 'Change number'}</Text>
