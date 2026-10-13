@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput,
   TouchableOpacity, TouchableWithoutFeedback, View,
@@ -25,10 +26,22 @@ export default function LoginScreen({ onLoginSuccess }) {
   const [showOtp, setShowOtp] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const [lastEmail, setLastEmail] = useState(''); // the email used last time on this phone
+
+  // Remember the last email, so next time it's one tap instead of typing
+  useEffect(() => {
+    AsyncStorage.getItem('lastEmail').then((e) => e && setLastEmail(e)).catch(() => {});
+  }, []);
+
   const cleanEmail = email.trim().toLowerCase();
 
-  const handleSendOtp = async () => {
-    if (method === 'email' && !isEmail(email)) {
+  const handleSendOtp = async (override) => {
+    const useEmail = typeof override === 'string' ? override : cleanEmail;
+    if (typeof override === 'string') {
+      setMethod('email');
+      setEmail(override);
+    }
+    if (method === 'email' && !isEmail(useEmail) && typeof override !== 'string') {
       Alert.alert('Email needed', 'Please enter a valid email address');
       return;
     }
@@ -39,7 +52,7 @@ export default function LoginScreen({ onLoginSuccess }) {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOtp(
-        method === 'email' ? { email: cleanEmail } : { phone: toE164(phone) }
+        typeof override === 'string' || method === 'email' ? { email: useEmail } : { phone: toE164(phone) }
       );
       if (error) throw error;
       if (showOtp) Alert.alert('Sent again 📩', 'Check your inbox (and spam) for the new code');
@@ -65,6 +78,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           : { phone: toE164(phone), token: otp.trim(), type: 'sms' }
       );
       if (error) throw error;
+      if (method === 'email') AsyncStorage.setItem('lastEmail', cleanEmail).catch(() => {});
       onLoginSuccess();
     } catch (error) {
       Alert.alert("That code didn't work", error.message);
@@ -89,9 +103,16 @@ export default function LoginScreen({ onLoginSuccess }) {
 
       {!showOtp ? (
         <>
+          {method === 'email' && lastEmail ? (
+            <TouchableOpacity style={styles.quick} onPress={() => handleSendOtp(lastEmail)} disabled={loading}>
+              <Text style={styles.quickTitle}>Continue as</Text>
+              <Text style={styles.quickEmail}>{lastEmail}</Text>
+            </TouchableOpacity>
+          ) : null}
+
           {method === 'email' ? (
             <>
-              <Text style={styles.label}>Your email</Text>
+              <Text style={styles.label}>{lastEmail ? 'Or use another email' : 'Your email'}</Text>
               <TextInput
                 style={styles.input}
                 placeholder="you@gmail.com"
@@ -101,6 +122,8 @@ export default function LoginScreen({ onLoginSuccess }) {
                 onChangeText={setEmail}
                 editable={!loading}
                 keyboardType="email-address"
+                textContentType="emailAddress"
+                autoComplete="email"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
@@ -153,6 +176,8 @@ export default function LoginScreen({ onLoginSuccess }) {
             onChangeText={setOtp}
             editable={!loading}
             keyboardType="number-pad"
+            textContentType="oneTimeCode"
+            autoComplete="one-time-code"
             maxLength={8}
           />
           <TouchableOpacity style={styles.button} onPress={handleVerifyOtp} disabled={loading}>
@@ -177,6 +202,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 38, fontWeight: '800', textAlign: 'center', color: C.text, marginTop: 8 },
   subtitle: { fontSize: 16, color: C.accentSoft, marginTop: 6, marginBottom: 40, textAlign: 'center' },
   label: { color: C.sub, fontSize: 14, marginBottom: 8 },
+  quick: { backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.accent, borderRadius: 14, padding: 16, marginBottom: 20, alignItems: 'center' },
+  quickTitle: { color: C.sub, fontSize: 13 },
+  quickEmail: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 4 },
   hint: { color: C.faint, fontSize: 13, marginBottom: 10 },
   phoneRow: { flexDirection: 'row' },
   code: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingHorizontal: 14, justifyContent: 'center', marginRight: 10, marginBottom: 15 },

@@ -5,7 +5,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onProfile, onOpenBill }) {
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -52,9 +52,14 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
-        <TouchableOpacity style={styles.profileBtn} onPress={onProfile}>
-          <Text style={styles.profileIcon}>👤</Text>
-        </TouchableOpacity>
+        <View style={styles.headerBtns}>
+          <TouchableOpacity style={[styles.profileBtn, styles.partyBtn]} onPress={onParties}>
+            <Text style={styles.profileIcon}>🎉</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.profileBtn} onPress={onProfile}>
+            <Text style={styles.profileIcon}>👤</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {(archived.length > 0 || showArchived) && (
@@ -96,6 +101,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 30, fontWeight: '800', color: C.text },
   profileBtn: { width: 42, height: 42, borderRadius: 21, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   profileIcon: { fontSize: 20 },
+  headerBtns: { flexDirection: 'row' },
+  partyBtn: { marginRight: 10 },
   switch: { alignSelf: 'flex-start', backgroundColor: C.card, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },
   switchText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },

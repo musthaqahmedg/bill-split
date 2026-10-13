@@ -1,9 +1,15 @@
 import { registerRootComponent } from 'expo';
-import { useState } from 'react';
+import * as LocalAuthentication from 'expo-local-authentication';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
 import HomeScreen from './screens/HomeScreen';
 import ItemsScreen from './screens/ItemsScreen';
+import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
+import NewPartyScreen from './screens/NewPartyScreen';
+import PartiesScreen from './screens/PartiesScreen';
+import PartyScreen from './screens/PartyScreen';
 import PeopleScreen from './screens/PeopleScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import RecheckScreen from './screens/RecheckScreen';
@@ -11,6 +17,7 @@ import SplitScreen from './screens/SplitScreen';
 import UploadScreen from './screens/UploadScreen';
 import { kindOf } from './services/kinds';
 import { supabase } from './services/supabaseClient';
+import { C } from './services/theme';
 
 // After Recheck, find where each new item was in the old list (-1 = new item)
 function matchItems(oldItems: any[], newItems: any[]) {
@@ -24,6 +31,8 @@ function matchItems(oldItems: any[], newItems: any[]) {
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [checking, setChecking] = useState(true); // looking for a saved login
+  const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
   const [items, setItems] = useState<any[]>([]);
   const [bill, setBill] = useState<any>(null);
@@ -35,6 +44,7 @@ export default function App() {
   const [openBillId, setOpenBillId] = useState<any>(null);
   const [editingBillId, setEditingBillId] = useState<any>(null);
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
+  const [openPartyId, setOpenPartyId] = useState<any>(null);
 
   const startNewBill = () => {
     setItems([]);
@@ -82,6 +92,42 @@ export default function App() {
       return out;
     });
 
+  // Face ID (or the phone passcode). If the phone has no Face ID set up, just let them in.
+  const unlock = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      const enrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!hasHardware || !enrolled) {
+        setLocked(false);
+        setLoggedIn(true);
+        return;
+      }
+      const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock Vibe Out' });
+      if (result.success) {
+        setLocked(false);
+        setLoggedIn(true);
+      }
+    } catch (e) {
+      setLocked(false);
+      setLoggedIn(true);
+    }
+  };
+
+  // When the app opens: already logged in on this phone? Ask for Face ID instead of a code.
+  useEffect(() => {
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (data.session) setLocked(true);
+      })
+      .finally(() => setChecking(false));
+  }, []);
+
+  // Ask for Face ID straight away when the lock screen appears
+  useEffect(() => {
+    if (locked) unlock();
+  }, [locked]);
+
   // Log out properly (ends the Supabase session too)
   const logout = async () => {
     try {
@@ -90,6 +136,26 @@ export default function App() {
     setLoggedIn(false);
     setScreen('home');
   };
+
+  if (checking) {
+    return (
+      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color={C.accentSoft} />
+      </View>
+    );
+  }
+
+  if (locked) {
+    return (
+      <LockScreen
+        onUnlock={unlock}
+        onUseAnother={async () => {
+          setLocked(false);
+          await logout();
+        }}
+      />
+    );
+  }
 
   if (!loggedIn) {
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
@@ -218,6 +284,41 @@ export default function App() {
     return <ProfileScreen onBack={() => setScreen('home')} onLogout={logout} />;
   }
 
+  if (screen === 'parties') {
+    return (
+      <PartiesScreen
+        onBack={() => setScreen('home')}
+        onNewParty={() => setScreen('newParty')}
+        onOpenParty={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'newParty') {
+    return (
+      <NewPartyScreen
+        onBack={() => setScreen('parties')}
+        onCreated={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'party') {
+    return (
+      <PartyScreen
+        partyId={openPartyId}
+        onBack={() => setScreen('parties')}
+        onDeleted={() => setScreen('parties')}
+      />
+    );
+  }
+
   if (screen === 'detail') {
     return (
       <BillDetailScreen
@@ -242,6 +343,7 @@ export default function App() {
       onNewBill={startNewBill}
       onLogout={logout}
       onProfile={() => setScreen('profile')}
+      onParties={() => setScreen('parties')}
       onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');
