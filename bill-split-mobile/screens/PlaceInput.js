@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { DONE_ID } from './KeyboardDone';
-import { CATEGORIES, findPlaces, getMyLocation, openPhoneSettings, showKm } from '../services/places';
+import { CATEGORIES, findPlaces, getMyLocation, knownPlaces, openPhoneSettings, showKm } from '../services/places';
 import { C } from '../services/theme';
 
 // "Where" box: shows places near you straight away, and searches as you type.
@@ -10,6 +10,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
   const [loc, setLoc] = useState(null); // { status, coords }
   const [category, setCategory] = useState('all');
   const [results, setResults] = useState([]);
+  const [known, setKnown] = useState([]); // places with a menu on Vibe Out
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [limit, setLimit] = useState(8); // how many places are shown; "Show more" adds 10
@@ -30,7 +31,12 @@ export default function PlaceInput({ value, onChange, onFocus }) {
       setLoading(true);
       setError('');
       try {
-        setResults(await findPlaces(loc.coords, q.length >= 2 ? q : '', category));
+        const [map, ours] = await Promise.all([
+          findPlaces(loc.coords, q.length >= 2 ? q : '', category),
+          category === 'all' || category === 'bars' || category === 'food' ? knownPlaces(q.length >= 2 ? q : '') : Promise.resolve([]),
+        ]);
+        setKnown(ours);
+        setResults(map);
       } catch (e) {
         setResults([]);
         setError("Couldn't load places right now. Try again in a moment, or just type the name.");
@@ -105,6 +111,21 @@ export default function PlaceInput({ value, onChange, onFocus }) {
           {loading && <ActivityIndicator color={C.accentSoft} style={styles.loading} />}
           {!!error && <Text style={styles.none}>{error}</Text>}
 
+          {!loading && known.length > 0 && (
+            <>
+              <Text style={styles.section}>🔥 On Vibe Out · has a menu</Text>
+              {known.map((k) => (
+                <TouchableOpacity key={'k' + k.name} style={styles.row} onPress={() => pick({ name: k.name, area: '' })}>
+                  <View style={styles.rowTop}>
+                    <Text style={styles.name} numberOfLines={1}>⭐ {k.name}</Text>
+                    <Text style={styles.menuTag}>{k.items} dishes</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+              <Text style={styles.section}>🗺️ On the map</Text>
+            </>
+          )}
+
           {!loading && results.slice(0, limit).map((r) => (
             <TouchableOpacity key={r.id} style={styles.row} onPress={() => pick(r)}>
               <View style={styles.rowTop}>
@@ -121,7 +142,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
             </TouchableOpacity>
           )}
 
-          {!loading && !error && loc && results.length === 0 && (
+          {!loading && !error && loc && results.length === 0 && known.length === 0 && (
             <Text style={styles.none}>Nothing found nearby. You can just type the place name 👍</Text>
           )}
 
@@ -153,6 +174,8 @@ const styles = StyleSheet.create({
   km: { color: C.accentSoft, fontSize: 13, fontWeight: '700' },
   area: { color: C.faint, fontSize: 12, marginTop: 2 },
   none: { color: C.faint, fontSize: 13, paddingVertical: 8 },
+  section: { color: C.faint, fontSize: 11, fontWeight: '800', letterSpacing: 1, marginTop: 8, marginBottom: 2 },
+  menuTag: { color: C.pink, fontSize: 12, fontWeight: '700' },
   more: { borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 10, alignItems: 'center' },
   moreText: { color: C.accentSoft, fontSize: 14, fontWeight: '800' },
   close: { color: C.accentSoft, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingTop: 8 },

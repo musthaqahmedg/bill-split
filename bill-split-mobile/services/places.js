@@ -65,3 +65,10 @@ export async function findPlaces(coords, q = '', category = 'all') {
   cache.set(key, { at: Date.now(), places });
   return places;
 }
+
+// Places our users have scanned bills at (they have a "Popular here" menu)
+export async function knownPlaces(q = '') {
+  const { data, error } = await supabase.rpc('known_places', { p_q: q.trim() });
+  if (error) return [];
+  return data || [];
+}
