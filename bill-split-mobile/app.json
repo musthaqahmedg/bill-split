@@ -13,7 +13,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#160A2B"
       },
-      "package": "com.musthaq_ahmed_gaffoor.billsplitmobile"
+      "package": "com.maginfosystems.vibeout"
     },
     "plugins": [
       [
@@ -50,6 +50,8 @@
     "updates": {
       "url": "https://u.expo.dev/fd2ebf8c-9576-4007-8202-e55857696902"
     },
-    "ios": {}
+    "ios": {
+      "bundleIdentifier": "com.maginfosystems.vibeout"
+    }
   }
 }

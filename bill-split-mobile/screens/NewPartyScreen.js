@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Pla
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import PlaceInput from './PlaceInput';
+import PopularHere from './PopularHere';
 import { createParty, sharesFor } from '../services/parties';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
@@ -200,6 +201,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
           <Text style={styles.label}>Where</Text>
         </View>
         <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} />
+        {place.trim().length >= 3 ? <PopularHere place={place} /> : null}
 
         <View onLayout={keep('budget')}>
           <Text style={styles.label}>Total budget (Rs)</Text>
