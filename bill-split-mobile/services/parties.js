@@ -12,7 +12,7 @@ export function splitEqually(budget, count) {
 export async function listParties() {
   const { data, error } = await supabase
     .from('parties')
-    .select('id, title, party_date, place, budget, split_mode, special_person, created_at, party_members(name, share, paid_at)')
+    .select('id, title, party_date, place, budget, split_mode, special_person, created_at, party_members(name, share, paid_at, rsvp)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -21,7 +21,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -46,7 +46,7 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, party_date, place, budget, people, mode = 'equal', special = null, phones = {} }) {
+export async function createParty({ title, party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {} }) {
   const { data: party, error: e1 } = await supabase
     .from('parties')
     .insert({
@@ -64,7 +64,7 @@ export async function createParty({ title, party_date, place, budget, people, mo
   const shares = sharesFor(budget, people, mode, special);
   const { error: e2 } = await supabase
     .from('party_members')
-    .insert(people.map((name, i) => ({ party_id: party.id, name, share: shares[i], phone: phones[name] || null })));
+    .insert(people.map((name, i) => ({ party_id: party.id, name, share: shares[i], phone: phones[name] || null, email: emails[name] || null })));
   if (e2) throw e2;
 
   return party;
@@ -83,3 +83,12 @@ export async function deleteParty(id) {
   const { error } = await supabase.from('parties').delete().eq('id', id);
   if (error) throw error;
 }
+export const partyLink = (party) => `https://bill-split-flax.vercel.app/p/${party.share_token}`;
+
+// WhatsApp wants the number with country code and no "+" or spaces
+export const waNumber = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 10) return '91' + d;
+  if (d.length === 11 && d.startsWith('0')) return '91' + d.slice(1);
+  return d;
+};

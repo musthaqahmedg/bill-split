@@ -91,6 +91,8 @@ export default function NewPartyScreen({ onBack, onCreated }) {
   const [phones, setPhones] = useState({}); // name -> phone, for friends picked from contacts
   const [contactsOpen, setContactsOpen] = useState(false);
   const [newName, setNewName] = useState('');
+  const [newContact, setNewContact] = useState(''); // optional number or email for the friend being typed
+  const [emails, setEmails] = useState({}); // name -> email
   const [friends, setFriends] = useState([]);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState('equal'); // 'equal' | 'treat' | 'free'
@@ -134,6 +136,11 @@ export default function NewPartyScreen({ onBack, onCreated }) {
     }
     setPeople([...people, name]);
     setNewName('');
+    // Optional number or email typed under the name
+    const extra = newContact.trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(extra)) setEmails({ ...emails, [name]: extra.toLowerCase() });
+    else if (extra.replace(/\D/g, '').length >= 10) setPhones({ ...phones, [name]: extra });
+    setNewContact('');
   };
 
   const removePerson = (name) => {
@@ -153,7 +160,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
     if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
-      const party = await createParty({ title, party_date: date, place, budget, people, mode, special, phones });
+      const party = await createParty({ title, party_date: date, place, budget, people, mode, special, phones, emails });
       onCreated(party.id);
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -254,6 +261,11 @@ export default function NewPartyScreen({ onBack, onCreated }) {
             <Text style={styles.addText}>Add</Text>
           </TouchableOpacity>
         </View>
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={[styles.input, styles.small]} value={newContact} onChangeText={setNewContact}
+          placeholder="📱 Their number or ✉️ email (optional)" placeholderTextColor={C.faint} keyboardAppearance="dark"
+          autoCapitalize="none" autoCorrect={false} keyboardType="email-address"
+          onSubmitEditing={() => addPerson(newName)} returnKeyType="done" />
         <TouchableOpacity style={styles.contactsBtn} onPress={() => { Keyboard.dismiss(); setContactsOpen(true); }}>
           <Text style={styles.contactsText}>📇 Add from contacts</Text>
         </TouchableOpacity>
@@ -363,6 +375,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
   chip: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginRight: 6, marginBottom: 6 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '600' },
+  small: { fontSize: 14, paddingVertical: 10, marginTop: -6 },
   contactsBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginBottom: 14 },
   contactsText: { color: C.accentSoft, fontSize: 15, fontWeight: '800' },
   addBtn: { backgroundColor: C.cardHi, borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center', marginLeft: 8, marginBottom: 14 },
