@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = { title: 'Privacy Policy · Vibe Out' };
 
-// TODO: replace with the company email once decided
-const CONTACT = 'contact email coming soon';
-const UPDATED = '9 October 2026';
+const CONTACT = 'maginfosystems@gmail.com';
+const UPDATED = '13 October 2026';
 
 export default function Privacy() {
   return (
@@ -16,7 +15,7 @@ export default function Privacy() {
 
         <h2 style={s.h2}>What we collect</h2>
         <ul style={s.ul}>
-          <li><b>Your phone number</b>, to log you in.</li>
+          <li><b>Your email or phone number</b>, to log you in.</li>
           <li><b>Your name and UPI ID</b>, if you add them, so friends know who to pay.</li>
           <li><b>Your bills</b>: restaurant, items, prices, and the names of friends you add.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
@@ -48,7 +47,7 @@ export default function Privacy() {
         <p style={s.p}>The app is not meant for anyone under 18.</p>
 
         <h2 style={s.h2}>Contact us</h2>
-        <p style={s.p}>Questions about your data? Write to us: <b>{CONTACT}</b></p>
+        <p style={s.p}>Vibe Out is made by <b>MAG Infosystems</b>. Questions about your data? Write to us: <a href={`mailto:${CONTACT}`} style={s.link}>{CONTACT}</a></p>
       </div>
     </main>
   );
@@ -63,4 +62,5 @@ const s: Record<string, React.CSSProperties> = {
   h2: { fontSize: 18, fontWeight: 700, margin: '24px 0 8px', color: '#C9A8FF' },
   p: { color: '#E6DAFF', margin: 0 },
   ul: { color: '#E6DAFF', margin: 0, paddingLeft: 20 },
+  link: { color: '#C9A8FF', fontWeight: 700 },
 };
