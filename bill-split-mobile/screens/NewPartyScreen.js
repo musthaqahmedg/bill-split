@@ -3,6 +3,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
+import PlaceInput from './PlaceInput';
 import { createParty, sharesFor } from '../services/parties';
 import { C } from '../services/theme';
 
@@ -103,19 +104,10 @@ export default function NewPartyScreen({ onBack, onCreated }) {
         <TextInput style={styles.input} value={title} onChangeText={setTitle}
           placeholder={IDEAS[idea]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
 
-        <View style={styles.row}>
-          <View style={styles.half}>
-            <Text style={styles.label}>When</Text>
-            <TouchableOpacity style={styles.input} onPress={() => { Keyboard.dismiss(); setShowCal(!showCal); }}>
-              <Text style={date ? styles.dateText : styles.datePlaceholder}>{date || '📅 Pick a date'}</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={[styles.half, styles.gap]}>
-            <Text style={styles.label}>Where</Text>
-            <TextInput style={styles.input} value={place} onChangeText={setPlace}
-              placeholder="Rio Kitchen" placeholderTextColor={C.faint} keyboardAppearance="dark" />
-          </View>
-        </View>
+        <Text style={styles.label}>When</Text>
+        <TouchableOpacity style={styles.input} onPress={() => { Keyboard.dismiss(); setShowCal(!showCal); }}>
+          <Text style={date ? styles.dateText : styles.datePlaceholder}>{date || '📅 Pick a date'}</Text>
+        </TouchableOpacity>
 
         {showCal && (
           <View style={Platform.OS === 'ios' ? styles.calBox : null}>
@@ -135,6 +127,9 @@ export default function NewPartyScreen({ onBack, onCreated }) {
             )}
           </View>
         )}
+
+        <Text style={styles.label}>Where</Text>
+        <PlaceInput value={place} onChange={setPlace} />
 
         <Text style={styles.label}>Total budget (Rs)</Text>
         <TextInput style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
