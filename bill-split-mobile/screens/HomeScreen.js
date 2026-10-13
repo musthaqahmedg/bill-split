@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listBills } from '../services/bills';
+import { show } from '../services/names';
 import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -40,7 +41,7 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
         <View style={styles.people}>
           {people.map((p) => (
             <Text key={p.name} style={[styles.person, p.paid_at && styles.personPaid]}>
-              {p.paid_at ? '✅ ' : ''}{p.name} {inr(p.amount_due)}
+              {p.paid_at ? '✅ ' : ''}{show(p.name)} {inr(p.amount_due)}
             </Text>
           ))}
         </View>

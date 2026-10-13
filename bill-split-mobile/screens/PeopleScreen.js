@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
+import { show } from '../services/names';
 import { C } from '../services/theme';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
@@ -118,7 +119,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
           const dry = nonDrinkers.includes(p);
           return (
             <View key={p} style={styles.row}>
-              <Text style={styles.name}>{p}{isPaired(p) ? ' 💑' : ''}</Text>
+              <Text style={styles.name}>{show(p)}{isPaired(p) ? ' 💑' : ''}</Text>
               <View style={styles.rowRight}>
                 <TouchableOpacity
                   style={[styles.pill, dry && styles.pillDry]}
@@ -188,7 +189,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
                 const on = picked.includes(p);
                 return (
                   <TouchableOpacity key={p} style={[styles.chip, on && styles.chipOn]} onPress={() => togglePick(p)}>
-                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{p}</Text>
+                    <Text style={[styles.chipText, on && styles.chipTextOn]}>{show(p)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -202,7 +203,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
                     const on = payer === p;
                     return (
                       <TouchableOpacity key={p} style={[styles.chip, on && styles.chipOn]} onPress={() => setPayer(p)}>
-                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{p}</Text>
+                        <Text style={[styles.chipText, on && styles.chipTextOn]}>{show(p)}</Text>
                       </TouchableOpacity>
                     );
                   })}

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid } from '../services/bills';
 import { getProfile } from '../services/profile';
+import { show } from '../services/names';
 import { C } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
@@ -278,7 +279,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           return (
             <View key={p.id} style={[styles.card, fullyCovered && styles.coveredCard]}>
               <View style={styles.cardTop}>
-                <Text style={styles.name}>{p.name}</Text>
+                <Text style={styles.name}>{show(p.name)}</Text>
                 {fullyCovered && Number(p.amount_due) === 0
                   ? <Text style={styles.coveredPay}>Covered 💛</Text>
                   : <Text style={styles.pay}>{inr(p.amount_due)}</Text>}
@@ -289,7 +290,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
                   {it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name}
                   {it.ways > 1 ? `  (shared ${it.ways} ways)` : ''}  ·  {money(Number(it.price) / it.ways)}
                   {it.paidBy !== p.id && nameOf[it.paidBy]
-                    ? <Text style={styles.paidBy}>{`  ${nameOf[it.paidBy]} pays 💛`}</Text>
+                    ? <Text style={styles.paidBy}>{`  ${show(nameOf[it.paidBy])} ${nameOf[it.paidBy] === 'Me' ? 'pay' : 'pays'} 💛`}</Text>
                     : null}
                 </Text>
               ))}
@@ -297,7 +298,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 
               {covers.map(([fid, amt]) => (
                 <Text key={fid} style={styles.covering}>
-                  💛 Covering {nameOf[fid]}  ·  +{money(amt)}
+                  💛 Covering {show(nameOf[fid])}  ·  +{money(amt)}
                 </Text>
               ))}
 

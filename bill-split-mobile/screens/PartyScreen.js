@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, setMemberPaid } from '../services/parties';
+import { real, show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
 
@@ -9,9 +10,15 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 export default function PartyScreen({ partyId, onBack, onDeleted }) {
   const [party, setParty] = useState(null);
   const [myUpi, setMyUpi] = useState('');
+  const [myName, setMyName] = useState(''); // your name from Profile, shown to friends
 
   useEffect(() => {
-    getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {});
+    getProfile()
+      .then((p) => {
+        setMyUpi((p && p.upi_id) || '');
+        setMyName((p && p.name) || '');
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -67,7 +74,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted }) {
       message:
         `🎉 ${party.title}${details ? `\n📍 ${details}` : ''}\n💰 Budget ${inr(party.budget)}\n\n` +
         members
-          .map((m) => (Number(m.share) > 0 ? `${m.paid_at ? '✅' : '⏳'} ${m.name}: ${inr(m.share)}` : `${party.split_mode === 'free' && m.name === party.special_person ? '🎂' : '🎁'} ${m.name}: free`))
+          .map((m) => (Number(m.share) > 0 ? `${m.paid_at ? '✅' : '⏳'} ${real(m.name, myName)}: ${inr(m.share)}` : `${party.split_mode === 'free' && m.name === party.special_person ? '🎂' : '🎁'} ${real(m.name, myName)}: free`))
           .join('\n') +
         (myUpi ? `\n\nPay to UPI: ${myUpi}` : ''),
     });
@@ -131,7 +138,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted }) {
         {members.map((m) => (
           <View key={m.id} style={styles.card}>
             <View style={styles.cardTop}>
-              <Text style={styles.name}>{m.name}</Text>
+              <Text style={styles.name}>{show(m.name)}</Text>
               <Text style={styles.pay}>{inr(m.share)}</Text>
             </View>
             {tag(m) ? (

@@ -130,7 +130,7 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
             <div key={p.id} style={{ ...s.card, ...(isMe ? s.cardMe : {}) }}>
               <div style={s.cardTop}>
                 <span style={s.name}>
-                  {p.name}{p.not_drinking ? ' 🥤' : ''}{isMe ? ' (you)' : ''}
+                  {p.name === 'Me' ? bill.payee_name || 'Host' : p.name}{p.not_drinking ? ' 🥤' : ''}{isMe ? ' (you)' : ''}
                 </span>
                 <span style={s.amount}>
                   {p.paid ? '✅ ' : ''}

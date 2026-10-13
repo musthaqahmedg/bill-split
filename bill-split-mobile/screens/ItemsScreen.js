@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
+import { show } from '../services/names';
 import { C } from '../services/theme';
 
 export default function ItemsScreen({ items, people, initialClaims, initialNonDrinkers, onBack, onNext }) {
@@ -61,7 +62,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
             const dry = nonDrinkers.includes(p);
             return (
               <TouchableOpacity key={p} style={[styles.dryChip, dry && styles.dryChipOn]} onPress={() => toggleDrinking(p)}>
-                <Text style={[styles.dryText, dry && styles.dryTextOn]}>{dry ? `🥤 ${p}` : p}</Text>
+                <Text style={[styles.dryText, dry && styles.dryTextOn]}>{dry ? `🥤 ${show(p)}` : show(p)}</Text>
               </TouchableOpacity>
             );
           })}
@@ -96,7 +97,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                       disabled={blocked}
                     >
                       <Text style={[styles.chipText, on && styles.chipTextOn, blocked && styles.chipTextBlocked]}>
-                        {blocked ? `🥤 ${p}` : p}
+                        {blocked ? `🥤 ${show(p)}` : show(p)}
                       </Text>
                     </TouchableOpacity>
                   );

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
+import { show } from '../services/names';
 import { createParty, sharesFor } from '../services/parties';
 import { C } from '../services/theme';
 
@@ -143,7 +144,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
         <View style={styles.chips}>
           {people.map((p) => (
             <TouchableOpacity key={p} style={styles.chip} onPress={() => p !== 'Me' && removePerson(p)}>
-              <Text style={styles.chipText}>{p}{p !== 'Me' ? '  ✕' : ''}</Text>
+              <Text style={styles.chipText}>{show(p)}{p !== 'Me' ? '  ✕' : ''}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -190,7 +191,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
             <View style={styles.chips}>
               {people.map((p) => (
                 <TouchableOpacity key={p} style={[styles.mode, special === p && styles.modeOn]} onPress={() => setSpecial(p)}>
-                  <Text style={[styles.modeText, special === p && styles.modeTextOn]}>{p}</Text>
+                  <Text style={[styles.modeText, special === p && styles.modeTextOn]}>{show(p)}</Text>
                 </TouchableOpacity>
               ))}
             </View>

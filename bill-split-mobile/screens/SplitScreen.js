@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { saveBill, updateBill } from '../services/bills';
+import { show } from '../services/names';
 import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
@@ -195,7 +196,7 @@ export default function SplitScreen({
             >
               <View style={styles.cardTop}>
                 <Text style={styles.name}>
-                  {r.name}{nonDrinkers.includes(r.name) ? ' 🥤' : ''}
+                  {show(r.name)}{nonDrinkers.includes(r.name) ? ' 🥤' : ''}
                 </Text>
                 {fullyCovered && r.pay === 0
                   ? <Text style={styles.coveredPay}>Covered 💛</Text>
@@ -265,7 +266,7 @@ export default function SplitScreen({
                   style={[styles.chip, sponsor === p && styles.chipOn]}
                   onPress={() => chooseSponsor(p, coverFor)}
                 >
-                  <Text style={[styles.chipText, sponsor === p && styles.chipTextOn]}>{p}</Text>
+                  <Text style={[styles.chipText, sponsor === p && styles.chipTextOn]}>{show(p)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -318,7 +319,7 @@ export default function SplitScreen({
             <Text style={styles.sheetTitle}>Who's paying the whole bill? 🎉</Text>
             {people.map((p) => (
               <TouchableOpacity key={p} style={styles.wholeRow} onPress={() => wholeBill(p)}>
-                <Text style={styles.wholeName}>{p}</Text>
+                <Text style={styles.wholeName}>{show(p)}</Text>
                 <Text style={styles.wholeAmt}>{inr(billTotal)}</Text>
               </TouchableOpacity>
             ))}
