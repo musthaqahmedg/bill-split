@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import { C } from '../services/theme';
@@ -78,7 +78,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
     );
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
@@ -226,7 +226,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

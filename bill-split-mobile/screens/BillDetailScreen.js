@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid } from '../services/bills';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
@@ -178,7 +178,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   const when = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.topRow}>
         <TouchableOpacity onPress={onBack}>
           <Text style={styles.back}>Back</Text>
@@ -195,7 +195,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
         {when}{bill.bill_no ? `  ·  Bill ${bill.bill_no}` : ''}
       </Text>
 
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {archived && (
           <View style={styles.archivedBox}>
             <Text style={styles.archivedText}>📦 Archived</Text>
@@ -338,7 +338,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
       <ItemInfo item={infoItem} onClose={() => setInfoItem(null)} />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -31,6 +31,12 @@
         {
           "faceIDPermission": "Vibe Out uses Face ID so you can open the app without typing."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Vibe Out uses your location to suggest restaurants, bars and cafés near you."
+        }
       ]
     ],
     "extra": {

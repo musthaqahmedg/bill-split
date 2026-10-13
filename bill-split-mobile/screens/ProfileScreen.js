@@ -85,7 +85,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
 
-      <ScrollView keyboardShouldPersistTaps="handled">
+      <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.title}>Your profile 👤</Text>
         <Text style={styles.phone}>{phone ? `+${phone.replace(/^\+/, '')}` : ''}</Text>
 
