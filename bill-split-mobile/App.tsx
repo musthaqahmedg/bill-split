@@ -92,24 +92,28 @@ export default function App() {
       return out;
     });
 
-  // Face ID (or the phone passcode). If the phone has no Face ID set up, just let them in.
+  // Face ID first; the phone passcode if Face ID fails.
+  // If this phone can't do Face ID / passcode at all (or Expo Go blocks it), just let them in.
   const unlock = async () => {
+    const letIn = () => {
+      setLocked(false);
+      setLoggedIn(true);
+    };
     try {
       const hasHardware = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
-      if (!hasHardware || !enrolled) {
-        setLocked(false);
-        setLoggedIn(true);
-        return;
-      }
-      const result = await LocalAuthentication.authenticateAsync({ promptMessage: 'Unlock Vibe Out' });
-      if (result.success) {
-        setLocked(false);
-        setLoggedIn(true);
-      }
+      if (!hasHardware || !enrolled) return letIn();
+      const result: any = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Unlock Vibe Out',
+        fallbackLabel: 'Use passcode',
+      });
+      if (result.success) return letIn();
+      console.log('Unlock result:', result);
+      // Only stay locked if the person cancelled or the face didn't match
+      const stayLocked = ['user_cancel', 'system_cancel', 'app_cancel', 'authentication_failed', 'lockout'];
+      if (!stayLocked.includes(result.error)) letIn();
     } catch (e) {
-      setLocked(false);
-      setLoggedIn(true);
+      letIn();
     }
   };
 
@@ -149,9 +153,10 @@ export default function App() {
     return (
       <LockScreen
         onUnlock={unlock}
-        onUseAnother={async () => {
+        onUseAnother={() => {
           setLocked(false);
-          await logout();
+          setLoggedIn(false);
+          supabase.auth.signOut().catch(() => {});
         }}
       />
     );
