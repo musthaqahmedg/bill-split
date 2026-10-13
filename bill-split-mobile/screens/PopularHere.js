@@ -79,7 +79,7 @@ export default function PopularHere({ place }) {
         <Text style={styles.name} numberOfLines={2}>{it.name}</Text>
         {it.about ? <Text style={styles.about} numberOfLines={2}>{it.about}</Text> : null}
         <View style={styles.row}>
-          <Text style={styles.price}>{inr(it.price)}</Text>
+          <Text style={styles.price}>{inr(it.price)} <Text style={styles.each}>each</Text></Text>
           <Text style={styles.orders}>Ordered {it.orders}×</Text>
         </View>
       </Animated.View>
@@ -88,7 +88,7 @@ export default function PopularHere({ place }) {
           <View key={k} style={[styles.dot, k === i && styles.dotOn]} />
         ))}
       </View>
-      <Text style={styles.source}>From bills scanned on Vibe Out</Text>
+      <Text style={styles.source}>Price per item on real bills here, before tax · from bills scanned on Vibe Out</Text>
     </View>
   );
 }
@@ -101,11 +101,12 @@ const styles = StyleSheet.create({
   about: { color: C.sub, fontSize: 13, textAlign: 'center', marginTop: 4 },
   row: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   price: { color: C.green, fontSize: 18, fontWeight: '800', marginRight: 12 },
+  each: { color: C.sub, fontSize: 13, fontWeight: '600' },
   orders: { color: C.faint, fontSize: 13 },
   dots: { flexDirection: 'row', marginTop: 14 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border, marginHorizontal: 3 },
   dotOn: { backgroundColor: C.accentSoft, width: 16 },
-  source: { color: C.faint, fontSize: 11, marginTop: 10 },
+  source: { color: C.faint, fontSize: 11, marginTop: 10, textAlign: 'center' },
   empty: { alignItems: 'flex-start' },
   emptyTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
   emptySub: { color: C.sub, fontSize: 13, marginTop: 4 },
