@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import Slider from '@react-native-community/slider';
+import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import PlaceInput from './PlaceInput';
@@ -42,6 +43,38 @@ function budgetNudge(perHead) {
   if (perHead >= 5000) return '💸 Big night! Keep some aside for the ride home 🚕';
   if (perHead >= 2000) return '🧾 Worth a quick look at this month\'s spends before you go';
   return '';
+}
+
+// Budget slider: slides from Rs 500 up to Rs 2,00,000 (on a curve, so small amounts are easy to pick).
+// Need more? Type any amount — there's no upper limit.
+const MIN_B = 500;
+const MAX_B = 200000;
+const toBudget = (pos) => {
+  const raw = MIN_B * Math.pow(MAX_B / MIN_B, pos);
+  const step = raw < 5000 ? 100 : raw < 50000 ? 500 : 5000;
+  return Math.round(raw / step) * step;
+};
+const toPos = (amount) => {
+  const a = Math.min(Math.max(Number(amount) || MIN_B, MIN_B), MAX_B);
+  return Math.log(a / MIN_B) / Math.log(MAX_B / MIN_B);
+};
+const ROLLING = [1500, 3000, 6000, 12000, 25000, 50000];
+
+// The fun line fades and slides in every time it changes
+function FunLine({ text, style }) {
+  const anim = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    anim.setValue(0);
+    Animated.spring(anim, { toValue: 1, useNativeDriver: true, friction: 6 }).start();
+  }, [text]);
+  if (!text) return null;
+  return (
+    <Animated.Text
+      style={[style, { opacity: anim, transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }, { scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }] }]}
+    >
+      {text}
+    </Animated.Text>
+  );
 }
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -174,7 +207,23 @@ export default function NewPartyScreen({ onBack, onCreated }) {
         <TextInput
           inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
           onFocus={() => scrollTo('budget')}
-          placeholder="6000" placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
+          placeholder={`e.g. ${ROLLING[idea % ROLLING.length].toLocaleString('en-IN')}`} placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={1}
+          value={toPos(budget)}
+          onValueChange={(v) => setBudget(String(toBudget(v)))}
+          minimumTrackTintColor={C.accent}
+          maximumTrackTintColor={C.border}
+          thumbTintColor={C.accentSoft}
+        />
+        <View style={styles.scale}>
+          <Text style={styles.scaleText}>{inr(MIN_B)}</Text>
+          <Text style={styles.scaleText}>{inr(10000)}</Text>
+          <Text style={styles.scaleText}>{inr(MAX_B)}+</Text>
+        </View>
+        <Text style={styles.scaleHint}>Slide, tap a pick, or type any amount — no limit ♾️</Text>
         <View style={styles.chips}>
           {BUDGET_PICKS.map((b) => (
             <TouchableOpacity key={b} style={[styles.mode, Number(budget) === b && styles.modeOn]} onPress={() => setBudget(String(b))}>
@@ -259,7 +308,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
                 {uneven ? <Text style={styles.previewNote}>A few pay Rs 1 extra so it adds up exactly</Text> : null}
               </>
             )}
-            <Text style={styles.fun}>{funFact(mode === 'treat' ? budget : perHead, idea)}</Text>
+            <FunLine style={styles.fun} text={funFact(mode === 'treat' ? budget : perHead, idea)} />
             {budgetNudge(mode === 'treat' ? Number(budget) : perHead) ? (
               <Text style={styles.nudge}>{budgetNudge(mode === 'treat' ? Number(budget) : perHead)}</Text>
             ) : null}
@@ -307,6 +356,10 @@ const styles = StyleSheet.create({
   previewText: { color: C.sub, fontSize: 14 },
   previewAmount: { color: C.green, fontSize: 30, fontWeight: '800', marginTop: 4 },
   previewNote: { color: C.faint, fontSize: 12, marginTop: 4 },
+  slider: { width: '100%', height: 36 },
+  scale: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 },
+  scaleText: { color: C.faint, fontSize: 11 },
+  scaleHint: { color: C.faint, fontSize: 12, marginTop: 4, marginBottom: 10 },
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 10, marginBottom: 30 },
