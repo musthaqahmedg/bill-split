@@ -4,6 +4,7 @@ import {
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { deleteAccount, getProfile, isValidUpi, saveProfile } from '../services/profile';
+import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 export default function ProfileScreen({ onBack, onLogout }) {
@@ -91,6 +92,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
 
         <Text style={styles.label}>Your name</Text>
         <TextInput
+          inputAccessoryViewID={DONE_ID}
           style={styles.input}
           value={name}
           onChangeText={setName}
@@ -101,6 +103,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
 
         <Text style={styles.label}>Your UPI ID</Text>
         <TextInput
+          inputAccessoryViewID={DONE_ID}
           style={styles.input}
           value={upi}
           onChangeText={setUpi}
@@ -132,6 +135,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
           <Text style={styles.deleteText}>Delete my account</Text>
         </TouchableOpacity>
       </ScrollView>
+      <KeyboardDone />
     </KeyboardAvoidingView>
   );
 }

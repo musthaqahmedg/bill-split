@@ -5,6 +5,7 @@ import {
   TouchableOpacity, TouchableWithoutFeedback, View,
 } from 'react-native';
 import { supabase } from '../services/supabaseClient';
+import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 // Accepts "8606670896", "918606670896" or "+918606670896" → "+918606670896"
@@ -114,6 +115,7 @@ export default function LoginScreen({ onLoginSuccess }) {
             <>
               <Text style={styles.label}>{lastEmail ? 'Or use another email' : 'Your email'}</Text>
               <TextInput
+          inputAccessoryViewID={DONE_ID}
                 style={styles.input}
                 placeholder="you@gmail.com"
                 placeholderTextColor={C.faint}
@@ -136,6 +138,7 @@ export default function LoginScreen({ onLoginSuccess }) {
                   <Text style={styles.codeText}>🇮🇳 +91</Text>
                 </View>
                 <TextInput
+          inputAccessoryViewID={DONE_ID}
                   style={[styles.input, styles.phoneInput]}
                   placeholder="98765 43210"
                   placeholderTextColor={C.faint}
@@ -168,6 +171,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </Text>
           {method === 'email' && <Text style={styles.hint}>Can't find it? Check your spam folder 📩</Text>}
           <TextInput
+          inputAccessoryViewID={DONE_ID}
             style={[styles.input, styles.otpInput]}
             placeholder="••••••"
             placeholderTextColor={C.faint}
@@ -191,6 +195,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </TouchableOpacity>
         </>
       )}
+      <KeyboardDone />
     </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
   );

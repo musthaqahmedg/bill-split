@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
+import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
@@ -87,6 +88,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
 
       <View style={styles.inputRow}>
         <TextInput
+          inputAccessoryViewID={DONE_ID}
           style={styles.input}
           placeholder="Friend's name"
           placeholderTextColor={C.faint}
@@ -226,6 +228,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
           </View>
         </View>
       </Modal>
+      <KeyboardDone />
     </KeyboardAvoidingView>
   );
 }

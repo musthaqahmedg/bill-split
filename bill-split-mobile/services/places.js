@@ -132,21 +132,47 @@ const toPlace = (tags, lat, lon, me) => ({
   open: isOpenNow(tags.opening_hours),
 });
 
-// Places near you, without typing anything
-export async function nearbyPlaces(me, categoryKey = 'all', radius = 3000) {
+// Places near you, without typing anything.
+// Remembered for 10 minutes, gives up after 12s, and tries a second server if the first is slow.
+const nearbyCache = new Map();
+const SERVERS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+
+async function overpass(query) {
+  let lastError;
+  for (const url of SERVERS) {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12000);
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'data=' + encodeURIComponent(query),
+        signal: ctrl.signal,
+      });
+      if (!res.ok) throw new Error('Server busy');
+      return await res.json();
+    } catch (e) {
+      lastError = e;
+    } finally {
+      clearTimeout(t);
+    }
+  }
+  throw lastError;
+}
+
+export async function nearbyPlaces(me, categoryKey = 'all', radius = 2500) {
+  const key = `${categoryKey}|${me.lat.toFixed(3)}|${me.lon.toFixed(3)}`;
+  const hit = nearbyCache.get(key);
+  if (hit && Date.now() - hit.at < 10 * 60 * 1000) return hit.places;
+
   const cat = CATEGORIES.find((c) => c.key === categoryKey) || CATEGORIES[0];
   const around = `(around:${radius},${me.lat},${me.lon})`;
   const parts = [];
   if (cat.amenity) parts.push(`nwr["amenity"~"^(${cat.amenity})$"]["name"]${around};`);
   if (cat.hotels) parts.push(`nwr["tourism"="hotel"]["name"]${around};`);
-  const query = `[out:json][timeout:20];(${parts.join('')});out center tags 80;`;
-  const res = await fetch('https://overpass-api.de/api/interpreter', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'data=' + encodeURIComponent(query),
-  });
-  const data = await res.json();
-  return (data.elements || [])
+  const query = `[out:json][timeout:10];(${parts.join('')});out center tags 60;`;
+  const data = await overpass(query);
+  const places = (data.elements || [])
     .map((el) => {
       const lat = el.lat ?? el.center?.lat;
       const lon = el.lon ?? el.center?.lon;
@@ -154,6 +180,8 @@ export async function nearbyPlaces(me, categoryKey = 'all', radius = 3000) {
     })
     .filter((p) => p && p.name)
     .sort((a, b) => a.km - b.km);
+  nearbyCache.set(key, { at: Date.now(), places });
+  return places;
 }
 
 // Search while typing, closest results first

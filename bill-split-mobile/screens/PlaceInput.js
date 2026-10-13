@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { CATEGORIES, getMyLocation, nearbyPlaces, searchPlaces, showKm } from '../services/places';
+import { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 // "Where" box: shows places near you straight away, and searches as you type.
-export default function PlaceInput({ value, onChange }) {
+export default function PlaceInput({ value, onChange, onFocus }) {
   const [open, setOpen] = useState(false);
   const [me, setMe] = useState(null); // your location (or Palakkad if location is off)
   const [category, setCategory] = useState('all');
@@ -45,18 +46,23 @@ export default function PlaceInput({ value, onChange }) {
   };
 
   const typing = (value || '').trim().length >= 2;
-  const shown = (openNow ? results.filter((r) => r.open === true) : results).slice(0, 15);
+  // Open now: hide places we know are closed (many places don't list their hours)
+  const shown = (openNow ? results.filter((r) => r.open !== false) : results).slice(0, 15);
 
   return (
     <View>
       <TextInput
+          inputAccessoryViewID={DONE_ID}
         style={styles.input}
         value={value}
         onChangeText={(t) => {
           onChange(t);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setOpen(true);
+          if (onFocus) onFocus();
+        }}
         placeholder="📍 Search or pick a place nearby"
         placeholderTextColor={C.faint}
         keyboardAppearance="dark"
@@ -100,7 +106,7 @@ export default function PlaceInput({ value, onChange }) {
 
           {!loading && !error && me && shown.length === 0 && (
             <Text style={styles.none}>
-              {openNow ? 'No places with "open now" info nearby. Turn off the filter to see all.' : 'Nothing found. You can just type the place name 👍'}
+              {openNow ? 'Everything nearby looks closed right now 😴' : 'Nothing found. You can just type the place name 👍'}
             </Text>
           )}
 

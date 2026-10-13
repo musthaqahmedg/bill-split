@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, S
 import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid } from '../services/bills';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
+import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
@@ -223,6 +224,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
         <View style={styles.noteBox}>
           <Text style={styles.noteTitle}>📝 Note</Text>
           <TextInput
+          inputAccessoryViewID={DONE_ID}
             style={styles.noteInput}
             value={note}
             onChangeText={setNoteText}
@@ -338,6 +340,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
       <ItemInfo item={infoItem} onClose={() => setInfoItem(null)} />
+      <KeyboardDone />
     </KeyboardAvoidingView>
   );
 }

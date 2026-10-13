@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { ActivityIndicator, Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import PlaceInput from './PlaceInput';
 import { createParty, sharesFor } from '../services/parties';
+import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 // Party name ideas that change every few seconds in the empty box
@@ -18,6 +19,30 @@ const IDEAS = [
   'Promotion treat 🥂',
   'Match night ⚽',
 ];
+
+// Quick budget picks, and a fun line about what the money means
+const BUDGET_PICKS = [1000, 2500, 5000, 10000, 25000];
+const FUN = [
+  ['plates of biryani 🍗', 200],
+  ['cups of chai ☕', 15],
+  ['movie tickets 🎬', 200],
+  ['auto rides 🛺', 60],
+  ['months of Netflix 📺', 199],
+  ['litres of petrol ⛽', 105],
+];
+function funFact(amount, tick) {
+  const a = Math.round(Number(amount) || 0);
+  if (a <= 0) return '';
+  const [what, price] = FUN[tick % FUN.length];
+  const n = Math.floor(a / price);
+  if (n < 1) return 'Cheaper than a cup of chai ☕ Easy one!';
+  return `Each share ≈ ${n.toLocaleString('en-IN')} ${what}`;
+}
+function budgetNudge(perHead) {
+  if (perHead >= 5000) return '💸 Big night! Keep some aside for the ride home 🚕';
+  if (perHead >= 2000) return '🧾 Worth a quick look at this month\'s spends before you go';
+  return '';
+}
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -35,6 +60,15 @@ export default function NewPartyScreen({ onBack, onCreated }) {
   const [special, setSpecial] = useState('Me');
 
   const [idea, setIdea] = useState(0);
+
+  // Scroll a box to the top when it's tapped, so the keypad never hides it (or its suggestions)
+  const scrollRef = useRef(null);
+  const fieldY = useRef({});
+  const keep = (name) => (e) => { fieldY.current[name] = e.nativeEvent.layout.y; };
+  const scrollTo = (name) => setTimeout(() => {
+    const y = fieldY.current[name];
+    if (y != null && scrollRef.current) scrollRef.current.scrollTo({ y: Math.max(0, y - 8), animated: true });
+  }, 250);
   useEffect(() => {
     const t = setInterval(() => setIdea((i) => (i + 1) % IDEAS.length), 2500);
     return () => clearInterval(t);
@@ -99,9 +133,10 @@ export default function NewPartyScreen({ onBack, onCreated }) {
       </TouchableOpacity>
       <Text style={styles.title}>Plan a party 🎉</Text>
 
-      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+      <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <Text style={styles.label}>Party name</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle}
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={styles.input} value={title} onChangeText={setTitle}
           placeholder={IDEAS[idea]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
 
         <Text style={styles.label}>When</Text>
@@ -128,12 +163,25 @@ export default function NewPartyScreen({ onBack, onCreated }) {
           </View>
         )}
 
-        <Text style={styles.label}>Where</Text>
-        <PlaceInput value={place} onChange={setPlace} />
+        <View onLayout={keep('where')}>
+          <Text style={styles.label}>Where</Text>
+        </View>
+        <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} />
 
-        <Text style={styles.label}>Total budget (Rs)</Text>
-        <TextInput style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
+        <View onLayout={keep('budget')}>
+          <Text style={styles.label}>Total budget (Rs)</Text>
+        </View>
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
+          onFocus={() => scrollTo('budget')}
           placeholder="6000" placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
+        <View style={styles.chips}>
+          {BUDGET_PICKS.map((b) => (
+            <TouchableOpacity key={b} style={[styles.mode, Number(budget) === b && styles.modeOn]} onPress={() => setBudget(String(b))}>
+              <Text style={[styles.modeText, Number(budget) === b && styles.modeTextOn]}>{inr(b)}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.label}>Who's coming ({people.length})</Text>
         <View style={styles.chips}>
@@ -144,7 +192,8 @@ export default function NewPartyScreen({ onBack, onCreated }) {
           ))}
         </View>
         <View style={styles.row}>
-          <TextInput style={[styles.input, styles.flex]} value={newName} onChangeText={setNewName}
+          <TextInput
+          inputAccessoryViewID={DONE_ID} style={[styles.input, styles.flex]} value={newName} onChangeText={setNewName}
             placeholder="Add a friend" placeholderTextColor={C.faint} keyboardAppearance="dark"
             onSubmitEditing={() => addPerson(newName)} returnKeyType="done" />
           <TouchableOpacity style={styles.addBtn} onPress={() => addPerson(newName)}>
@@ -210,12 +259,17 @@ export default function NewPartyScreen({ onBack, onCreated }) {
                 {uneven ? <Text style={styles.previewNote}>A few pay Rs 1 extra so it adds up exactly</Text> : null}
               </>
             )}
+            <Text style={styles.fun}>{funFact(mode === 'treat' ? budget : perHead, idea)}</Text>
+            {budgetNudge(mode === 'treat' ? Number(budget) : perHead) ? (
+              <Text style={styles.nudge}>{budgetNudge(mode === 'treat' ? Number(budget) : perHead)}</Text>
+            ) : null}
           </View>
         )}
         <TouchableOpacity style={styles.button} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create party</Text>}
         </TouchableOpacity>
       </ScrollView>
+      <KeyboardDone />
     </KeyboardAvoidingView>
   );
 }
@@ -225,6 +279,7 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 12 },
   list: { flex: 1 },
+  scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
   label: { color: C.sub, fontSize: 14, marginBottom: 6 },
   hint: { color: C.faint, fontSize: 13, marginBottom: 8 },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 13, fontSize: 16, color: C.text, marginBottom: 14 },
@@ -252,6 +307,8 @@ const styles = StyleSheet.create({
   previewText: { color: C.sub, fontSize: 14 },
   previewAmount: { color: C.green, fontSize: 30, fontWeight: '800', marginTop: 4 },
   previewNote: { color: C.faint, fontSize: 12, marginTop: 4 },
+  fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
+  nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 10, marginBottom: 30 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
