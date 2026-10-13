@@ -12,6 +12,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [limit, setLimit] = useState(8); // how many places are shown; "Show more" adds 10
   const timer = useRef(null);
 
   // First time the box is used: ask for location
@@ -25,6 +26,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
     clearTimeout(timer.current);
     const q = (value || '').trim();
     timer.current = setTimeout(async () => {
+      setLimit(8);
       setLoading(true);
       setError('');
       try {
@@ -103,7 +105,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
           {loading && <ActivityIndicator color={C.accentSoft} style={styles.loading} />}
           {!!error && <Text style={styles.none}>{error}</Text>}
 
-          {!loading && results.slice(0, 15).map((r) => (
+          {!loading && results.slice(0, limit).map((r) => (
             <TouchableOpacity key={r.id} style={styles.row} onPress={() => pick(r)}>
               <View style={styles.rowTop}>
                 <Text style={styles.name} numberOfLines={1}>{r.emoji} {r.name}</Text>
@@ -112,6 +114,12 @@ export default function PlaceInput({ value, onChange, onFocus }) {
               {r.area ? <Text style={styles.area} numberOfLines={1}>{r.area}</Text> : null}
             </TouchableOpacity>
           ))}
+
+          {!loading && results.length > limit && (
+            <TouchableOpacity style={styles.more} onPress={() => setLimit(limit + 10)}>
+              <Text style={styles.moreText}>Show more ({results.length - limit} more) ⌄</Text>
+            </TouchableOpacity>
+          )}
 
           {!loading && !error && loc && results.length === 0 && (
             <Text style={styles.none}>Nothing found nearby. You can just type the place name 👍</Text>
@@ -145,5 +153,7 @@ const styles = StyleSheet.create({
   km: { color: C.accentSoft, fontSize: 13, fontWeight: '700' },
   area: { color: C.faint, fontSize: 12, marginTop: 2 },
   none: { color: C.faint, fontSize: 13, paddingVertical: 8 },
+  more: { borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 10, alignItems: 'center' },
+  moreText: { color: C.accentSoft, fontSize: 14, fontWeight: '800' },
   close: { color: C.accentSoft, fontSize: 14, fontWeight: '700', textAlign: 'center', paddingTop: 8 },
 });
