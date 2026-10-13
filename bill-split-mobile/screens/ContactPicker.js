@@ -1,0 +1,138 @@
+import * as Contacts from 'expo-contacts';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator, FlatList, Linking, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import { C } from '../services/theme';
+
+// Pick friends from the phone's contacts. Returns [{ name, phone }].
+export default function ContactPicker({ visible, onClose, onPick, already = [] }) {
+  const [status, setStatus] = useState('loading'); // loading | ok | denied
+  const [contacts, setContacts] = useState([]);
+  const [query, setQuery] = useState('');
+  const [picked, setPicked] = useState({}); // id -> { name, phone }
+
+  useEffect(() => {
+    if (!visible) return;
+    setPicked({});
+    setQuery('');
+    (async () => {
+      setStatus('loading');
+      const { status: perm } = await Contacts.requestPermissionsAsync();
+      if (perm !== 'granted') return setStatus('denied');
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers],
+        sort: Contacts.SortTypes.FirstName,
+      });
+      setContacts(
+        (data || [])
+          .filter((c) => c.name && c.phoneNumbers && c.phoneNumbers.length)
+          .map((c) => ({ id: c.id, name: c.name.trim(), phone: c.phoneNumbers[0].number }))
+      );
+      setStatus('ok');
+    })().catch(() => setStatus('denied'));
+  }, [visible]);
+
+  const taken = useMemo(() => new Set(already.map((n) => n.toLowerCase())), [already]);
+  const shown = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return contacts.filter((c) => !taken.has(c.name.toLowerCase()) && (!q || c.name.toLowerCase().includes(q) || c.phone.replace(/\D/g, '').includes(q.replace(/\D/g, '') || '§')));
+  }, [contacts, query, taken]);
+
+  const toggle = (c) =>
+    setPicked((p) => {
+      const next = { ...p };
+      if (next[c.id]) delete next[c.id];
+      else next[c.id] = { name: c.name, phone: c.phone };
+      return next;
+    });
+
+  const count = Object.keys(picked).length;
+
+  return (
+    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
+      <View style={styles.sheet}>
+        <View style={styles.top}>
+          <TouchableOpacity onPress={onClose}>
+            <Text style={styles.cancel}>Cancel</Text>
+          </TouchableOpacity>
+          <Text style={styles.title}>📇 Contacts</Text>
+          <TouchableOpacity onPress={() => onPick(Object.values(picked))} disabled={!count}>
+            <Text style={[styles.add, !count && styles.addOff]}>Add{count ? ` (${count})` : ''}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {status === 'loading' && <ActivityIndicator color={C.accentSoft} style={styles.center} />}
+
+        {status === 'denied' && (
+          <View style={styles.center}>
+            <Text style={styles.deniedTitle}>Contacts access is off</Text>
+            <Text style={styles.deniedSub}>Allow contacts to pick friends quickly. We only read names and numbers you choose.</Text>
+            <TouchableOpacity style={styles.settingsBtn} onPress={() => Linking.openSettings()}>
+              <Text style={styles.settingsText}>Open Settings</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {status === 'ok' && (
+          <>
+            <TextInput
+              style={styles.search}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="🔍 Search name or number"
+              placeholderTextColor={C.faint}
+              keyboardAppearance="dark"
+              autoCorrect={false}
+            />
+            <FlatList
+              data={shown}
+              keyExtractor={(c) => c.id}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              initialNumToRender={20}
+              renderItem={({ item }) => {
+                const on = !!picked[item.id];
+                return (
+                  <TouchableOpacity style={styles.row} onPress={() => toggle(item)}>
+                    <View style={[styles.avatar, on && styles.avatarOn]}>
+                      <Text style={styles.avatarText}>{on ? '✓' : item.name[0].toUpperCase()}</Text>
+                    </View>
+                    <View style={styles.flex}>
+                      <Text style={styles.name}>{item.name}</Text>
+                      <Text style={styles.phone}>{item.phone}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              }}
+              ListEmptyComponent={<Text style={styles.empty}>No contacts match</Text>}
+            />
+          </>
+        )}
+      </View>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  sheet: { flex: 1, backgroundColor: C.bg, paddingTop: 16, paddingHorizontal: 16 },
+  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  cancel: { color: C.sub, fontSize: 16 },
+  title: { color: C.text, fontSize: 17, fontWeight: '800' },
+  add: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  addOff: { color: C.faint },
+  center: { marginTop: 60, alignItems: 'center' },
+  deniedTitle: { color: C.text, fontSize: 17, fontWeight: '800' },
+  deniedSub: { color: C.sub, fontSize: 14, textAlign: 'center', marginTop: 6, paddingHorizontal: 20 },
+  settingsBtn: { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 20, marginTop: 16 },
+  settingsText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  search: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, fontSize: 16, color: C.text, marginBottom: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  avatarOn: { backgroundColor: C.green },
+  avatarText: { color: C.text, fontWeight: '800', fontSize: 16 },
+  flex: { flex: 1 },
+  name: { color: C.text, fontSize: 16, fontWeight: '600' },
+  phone: { color: C.faint, fontSize: 13, marginTop: 2 },
+  empty: { color: C.faint, textAlign: 'center', marginTop: 30 },
+});

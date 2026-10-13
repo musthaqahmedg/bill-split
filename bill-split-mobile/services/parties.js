@@ -46,7 +46,7 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, party_date, place, budget, people, mode = 'equal', special = null }) {
+export async function createParty({ title, party_date, place, budget, people, mode = 'equal', special = null, phones = {} }) {
   const { data: party, error: e1 } = await supabase
     .from('parties')
     .insert({
@@ -64,7 +64,7 @@ export async function createParty({ title, party_date, place, budget, people, mo
   const shares = sharesFor(budget, people, mode, special);
   const { error: e2 } = await supabase
     .from('party_members')
-    .insert(people.map((name, i) => ({ party_id: party.id, name, share: shares[i] })));
+    .insert(people.map((name, i) => ({ party_id: party.id, name, share: shares[i], phone: phones[name] || null })));
   if (e2) throw e2;
 
   return party;

@@ -37,6 +37,12 @@
         {
           "locationWhenInUsePermission": "Vibe Out uses your location to suggest restaurants, bars and cafés near you."
         }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Vibe Out uses your contacts so you can quickly add friends to a party or bill."
+        }
       ]
     ],
     "extra": {

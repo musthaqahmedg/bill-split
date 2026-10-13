@@ -4,6 +4,7 @@ import Slider from '@react-native-community/slider';
 import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
+import ContactPicker from './ContactPicker';
 import PlaceInput from './PlaceInput';
 import PopularHere from './PopularHere';
 import { createParty, sharesFor } from '../services/parties';
@@ -87,6 +88,8 @@ export default function NewPartyScreen({ onBack, onCreated }) {
   const [place, setPlace] = useState('');
   const [budget, setBudget] = useState('');
   const [people, setPeople] = useState(['Me']);
+  const [phones, setPhones] = useState({}); // name -> phone, for friends picked from contacts
+  const [contactsOpen, setContactsOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [friends, setFriends] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -150,7 +153,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
     if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
-      const party = await createParty({ title, party_date: date, place, budget, people, mode, special });
+      const party = await createParty({ title, party_date: date, place, budget, people, mode, special, phones });
       onCreated(party.id);
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -251,6 +254,20 @@ export default function NewPartyScreen({ onBack, onCreated }) {
             <Text style={styles.addText}>Add</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity style={styles.contactsBtn} onPress={() => { Keyboard.dismiss(); setContactsOpen(true); }}>
+          <Text style={styles.contactsText}>📇 Add from contacts</Text>
+        </TouchableOpacity>
+        <ContactPicker
+          visible={contactsOpen}
+          already={people}
+          onClose={() => setContactsOpen(false)}
+          onPick={(list) => {
+            const fresh = list.filter((c) => !people.some((p) => p.toLowerCase() === c.name.toLowerCase()));
+            setPeople([...people, ...fresh.map((c) => c.name)]);
+            setPhones({ ...phones, ...Object.fromEntries(fresh.map((c) => [c.name, c.phone])) });
+            setContactsOpen(false);
+          }}
+        />
 
         {suggestions.length > 0 && (
           <>
@@ -346,6 +363,8 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
   chip: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginRight: 6, marginBottom: 6 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '600' },
+  contactsBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 12, paddingVertical: 11, alignItems: 'center', marginBottom: 14 },
+  contactsText: { color: C.accentSoft, fontSize: 15, fontWeight: '800' },
   addBtn: { backgroundColor: C.cardHi, borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center', marginLeft: 8, marginBottom: 14 },
   addText: { color: C.accentSoft, fontSize: 15, fontWeight: '800' },
   suggest: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, marginRight: 6, marginBottom: 6 },
