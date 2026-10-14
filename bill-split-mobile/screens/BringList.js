@@ -61,6 +61,17 @@ export default function BringList({ party }) {
 
   const act = (item, action) => call('update_party_item', { p_item: item.id, p_action: action });
 
+  // Host: give an item to someone on the guest list
+  const assign = (item) => {
+    const people = (party.party_members || []).filter((m) => m.name !== 'Me');
+    Alert.alert(`Who brings "${item.name}"?`, undefined, [
+      { text: 'Me', onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: me.id }) },
+      ...people.map((m) => ({ text: m.name, onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: m.id }) })),
+      { text: 'Nobody', onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: null }) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const saveRename = async (item) => {
     const n = editText.trim();
     setEditing(null);
@@ -78,6 +89,8 @@ export default function BringList({ party }) {
         <Text style={styles.title}>🛒 Who brings what</Text>
         {items && items.length ? <Text style={styles.count}>{doneCount}/{items.length} ready</Text> : null}
       </View>
+
+      <Text style={styles.hint}>Tap "change ›" to give an item to a friend. Friends can also add and pick items from your invite link.</Text>
 
       {items === null ? (
         <ActivityIndicator color={C.accentSoft} />
@@ -98,8 +111,8 @@ export default function BringList({ party }) {
                     {it.name} <Text style={styles.pencil}>✏️</Text>
                   </Text>
                 )}
-                <Text style={styles.who}>
-                  {it.claimed_name ? `${mine ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}
+                <Text style={styles.who} onPress={() => assign(it)}>
+                  {it.claimed_name ? `${mine ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}  <Text style={styles.assign}>· change ›</Text>
                 </Text>
               </View>
               <TouchableOpacity style={[styles.claim, mine && styles.claimOn]} onPress={() => act(it, 'claim')}>
@@ -138,11 +151,13 @@ const styles = StyleSheet.create({
   box: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginBottom: 14 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   title: { color: C.text, fontSize: 16, fontWeight: '800' },
+  hint: { color: C.faint, fontSize: 12, marginBottom: 4 },
   count: { color: C.green, fontSize: 13, fontWeight: '700' },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border },
   check: { fontSize: 18, marginRight: 10 },
   flex: { flex: 1 },
   name: { color: C.text, fontSize: 15, fontWeight: '600' },
+  assign: { color: C.accentSoft, fontWeight: '700' },
   pencil: { fontSize: 11 },
   editInput: { color: C.text, fontSize: 15, borderBottomWidth: 1, borderBottomColor: C.accent, paddingVertical: 2 },
   doneText: { textDecorationLine: 'line-through', color: C.faint },
