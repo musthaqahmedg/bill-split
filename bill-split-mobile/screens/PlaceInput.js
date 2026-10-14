@@ -5,10 +5,15 @@ import { CATEGORIES, findPlaces, getMyLocation, knownPlaces, openPhoneSettings, 
 import { C } from '../services/theme';
 
 // "Where" box: shows places near you straight away, and searches as you type.
-export default function PlaceInput({ value, onChange, onFocus }) {
+export default function PlaceInput({ value, onChange, onFocus, categories = ['all', 'food', 'bars', 'cafes', 'hotels'] }) {
   const [open, setOpen] = useState(false);
   const [loc, setLoc] = useState(null); // { status, coords }
-  const [category, setCategory] = useState('all');
+  const [category, setCategory] = useState(categories[0]);
+
+  // New plan type → start on its first kind of place
+  useEffect(() => {
+    setCategory(categories[0]);
+  }, [categories.join(',')]);
   const [results, setResults] = useState([]);
   const [known, setKnown] = useState([]); // places with a menu on Vibe Out
   const [loading, setLoading] = useState(false);
@@ -33,7 +38,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
       try {
         const [map, ours] = await Promise.all([
           findPlaces(loc.coords, q.length >= 2 ? q : '', category),
-          category === 'all' || category === 'bars' || category === 'food' ? knownPlaces(q.length >= 2 ? q : '') : Promise.resolve([]),
+          ['all', 'bars', 'food'].includes(category) ? knownPlaces(q.length >= 2 ? q : '') : Promise.resolve([]),
         ]);
         setKnown(ours);
         setResults(map);
@@ -84,7 +89,7 @@ export default function PlaceInput({ value, onChange, onFocus }) {
       {open && (
         <View style={styles.panel}>
           <View style={styles.chips}>
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.filter((c) => categories.includes(c.key)).sort((a, b) => categories.indexOf(a.key) - categories.indexOf(b.key)).map((c) => (
               <TouchableOpacity key={c.key} style={[styles.chip, category === c.key && styles.chipOn]} onPress={() => setCategory(c.key)}>
                 <Text style={[styles.chipText, category === c.key && styles.chipTextOn]}>{c.label}</Text>
               </TouchableOpacity>

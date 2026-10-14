@@ -4,6 +4,7 @@ import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber 
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
+import { kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -136,7 +137,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>{party.title}</Text>
+      <Text style={styles.title}>{kindOf(party.kind).emoji} {party.title}</Text>
       {details ? (
         <TouchableOpacity onPress={() => party.place && setPlaceOpen(true)}>
           <Text style={styles.meta}>📍 {details}{party.place ? '  ›' : ''}</Text>

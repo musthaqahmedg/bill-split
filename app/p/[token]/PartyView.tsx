@@ -8,6 +8,7 @@ type Member = { id: string; name: string; share: number | null; paid: boolean; r
 
 export type SharedParty = {
   title: string;
+  kind?: string;
   party_date: string | null;
   place: string | null;
   budget: number | null;
@@ -18,6 +19,27 @@ export type SharedParty = {
   host_upi: string | null;
   members: Member[];
 };
+
+// Each plan type gets its own emoji, colours and a little floating animation
+const KINDS: Record<string, { emoji: string; label: string; from: string; to: string; extra: string[] }> = {
+  party: { emoji: '🎉', label: 'Party', from: '#8B5CF6', to: '#F472B6', extra: ['✨', '🎊', '🥳'] },
+  birthday: { emoji: '🎂', label: 'Birthday', from: '#F472B6', to: '#FBBF24', extra: ['🎈', '🎁', '🎊'] },
+  house: { emoji: '🏠', label: 'House party', from: '#8B5CF6', to: '#34D399', extra: ['🎶', '🍕', '🎮'] },
+  nightout: { emoji: '🍻', label: 'Night out', from: '#4C1D95', to: '#8B5CF6', extra: ['🌙', '✨', '🪩'] },
+  movie: { emoji: '🎬', label: 'Movie', from: '#1E3A8A', to: '#8B5CF6', extra: ['🍿', '🎟️', '⭐'] },
+  trip: { emoji: '🧳', label: 'Trip', from: '#0EA5E9', to: '#34D399', extra: ['🏔️', '🌴', '📸'] },
+  daytrip: { emoji: '🚗', label: 'Day trip', from: '#F59E0B', to: '#34D399', extra: ['☀️', '🌿', '💦'] },
+  wedding: { emoji: '💍', label: 'Wedding', from: '#F472B6', to: '#C9A8FF', extra: ['💐', '💃', '✨'] },
+  bachelor: { emoji: '🥂', label: 'Bachelor', from: '#111827', to: '#8B5CF6', extra: ['😎', '🪩', '✨'] },
+  match: { emoji: '⚽', label: 'Match night', from: '#065F46', to: '#34D399', extra: ['🏆', '📣', '🍿'] },
+};
+
+const ANIM = `
+@keyframes vo-float { 0%,100% { transform: translateY(0) rotate(-4deg) } 50% { transform: translateY(-12px) rotate(4deg) } }
+@keyframes vo-pop { 0% { transform: scale(.85); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
+@keyframes vo-drift { 0% { transform: translateY(20px); opacity: 0 } 20% { opacity: 1 } 100% { transform: translateY(-120px); opacity: 0 } }
+@keyframes vo-shine { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
+`;
 
 const inr = (n: number) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const upiLink = (upi: string, name: string, amount: number, note: string) =>
@@ -34,6 +56,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   party: SharedParty; token: string; supabaseUrl: string; supabaseKey: string;
 }) {
   const host = party.host_name || 'The host';
+  const k = KINDS[party.kind || 'party'] || KINDS.party;
   const [members, setMembers] = useState(party.members);
   const [me, setMe] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -161,10 +184,17 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   return (
     <main style={s.page}>
       <div style={s.wrap}>
-        <p style={s.kicker}>🌙 VIBE OUT · YOU&apos;RE INVITED</p>
-        <h1 style={s.title}>{party.title}</h1>
-        {details && <p style={s.sub}>📍 {details}</p>}
-        <p style={s.sub}>Hosted by <b style={{ color: '#fff' }}>{host}</b> · {going} going</p>
+        <style>{ANIM}</style>
+        <div style={{ ...s.invite, background: `linear-gradient(120deg, ${k.from}, ${k.to}, ${k.from})`, backgroundSize: '200% 200%' }}>
+          {k.extra.map((e, i) => (
+            <span key={i} style={{ ...s.drift, left: `${18 + i * 30}%`, animationDelay: `${i * 1.3}s` }}>{e}</span>
+          ))}
+          <div style={s.bigEmoji}>{k.emoji}</div>
+          <p style={s.inviteKicker}>YOU&apos;RE INVITED · {k.label.toUpperCase()}</p>
+          <h1 style={s.inviteTitle}>{party.title}</h1>
+          {details && <p style={s.inviteSub}>📍 {details}</p>}
+          <p style={s.inviteSub}>Hosted by <b>{host}</b> · {going} going</p>
+        </div>
 
         <div style={s.card}>
           <p style={s.label}>Who are you?</p>
@@ -358,5 +388,11 @@ const s: Record<string, React.CSSProperties> = {
   pollForm: { background: '#1C0D33', border: '1px solid #3E2470', borderRadius: 14, padding: 10, marginTop: 8 },
   smallBtn: { border: 'none', background: '#341A5C', color: '#fff', borderRadius: 12, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' },
   reqBtn: { background: 'transparent', color: '#C9A8FF', border: '1px solid #8B5CF6', borderRadius: 12, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', marginTop: 10 },
+  invite: { position: 'relative', overflow: 'hidden', borderRadius: 24, padding: '28px 20px 24px', textAlign: 'center', animation: 'vo-pop .6s ease-out, vo-shine 8s linear infinite', boxShadow: '0 12px 40px rgba(139,92,246,.35)' },
+  bigEmoji: { fontSize: 64, display: 'inline-block', animation: 'vo-float 3s ease-in-out infinite' },
+  drift: { position: 'absolute', bottom: 0, fontSize: 22, animation: 'vo-drift 4s ease-in infinite', pointerEvents: 'none' },
+  inviteKicker: { color: 'rgba(255,255,255,.85)', fontWeight: 800, fontSize: 12, letterSpacing: 2, margin: '8px 0 0' },
+  inviteTitle: { fontSize: 30, fontWeight: 800, margin: '6px 0 8px', color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,.25)' },
+  inviteSub: { color: 'rgba(255,255,255,.92)', fontSize: 15, margin: '2px 0' },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 28 },
 };

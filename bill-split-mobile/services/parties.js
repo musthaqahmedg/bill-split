@@ -12,7 +12,7 @@ export function splitEqually(budget, count) {
 export async function listParties() {
   const { data, error } = await supabase
     .from('parties')
-    .select('id, title, party_date, place, budget, split_mode, special_person, created_at, party_members(name, share, paid_at, rsvp)')
+    .select('id, title, kind, party_date, place, budget, split_mode, special_person, created_at, party_members(name, share, paid_at, rsvp)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -46,11 +46,12 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {} }) {
+export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {} }) {
   const { data: party, error: e1 } = await supabase
     .from('parties')
     .insert({
       title: title.trim(),
+      kind,
       party_date: party_date.trim() || null,
       place: place.trim() || null,
       budget: Math.round(Number(budget) || 0),

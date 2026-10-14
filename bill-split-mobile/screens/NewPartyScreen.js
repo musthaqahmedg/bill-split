@@ -8,6 +8,7 @@ import ContactPicker from './ContactPicker';
 import PlaceInput from './PlaceInput';
 import PopularHere from './PopularHere';
 import { createParty, sharesFor } from '../services/parties';
+import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
@@ -83,6 +84,7 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function NewPartyScreen({ onBack, onCreated }) {
   const [title, setTitle] = useState('');
+  const [kind, setKind] = useState('party'); // birthday, trip, movie…
   const [dateObj, setDateObj] = useState(null); // picked from the calendar
   const [showCal, setShowCal] = useState(false);
   const [place, setPlace] = useState('');
@@ -160,7 +162,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
     if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
-      const party = await createParty({ title, party_date: date, place, budget, people, mode, special, phones, emails });
+      const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails });
       onCreated(party.id);
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -175,13 +177,23 @@ export default function NewPartyScreen({ onBack, onCreated }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Plan a party 🎉</Text>
+      <Text style={styles.title}>Plan something {kindOf(kind).emoji}</Text>
 
       <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-        <Text style={styles.label}>Party name</Text>
+        <Text style={styles.label}>What's the plan?</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.kinds} keyboardShouldPersistTaps="handled">
+          {KINDS.map((k) => (
+            <TouchableOpacity key={k.key} style={[styles.kind, kind === k.key && styles.kindOn]} onPress={() => setKind(k.key)}>
+              <Text style={styles.kindEmoji}>{k.emoji}</Text>
+              <Text style={[styles.kindText, kind === k.key && styles.kindTextOn]}>{k.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+
+        <Text style={styles.label}>Name</Text>
         <TextInput
           inputAccessoryViewID={DONE_ID} style={styles.input} value={title} onChangeText={setTitle}
-          placeholder={IDEAS[idea]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
+          placeholder={kindOf(kind).ideas[idea % kindOf(kind).ideas.length]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
 
         <Text style={styles.label}>When</Text>
         <TouchableOpacity style={styles.input} onPress={() => { Keyboard.dismiss(); setShowCal(!showCal); }}>
@@ -210,7 +222,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
         <View onLayout={keep('where')}>
           <Text style={styles.label}>Where</Text>
         </View>
-        <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} />
+        <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} categories={kindOf(kind).places} />
         {place.trim().length >= 3 ? <PopularHere place={place} /> : null}
 
         <View onLayout={keep('budget')}>
@@ -360,6 +372,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 12 },
   list: { flex: 1 },
   scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
+  kinds: { marginBottom: 14, flexGrow: 0 },
+  kind: { alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginRight: 8, minWidth: 78 },
+  kindOn: { backgroundColor: C.accent, borderColor: C.accent },
+  kindEmoji: { fontSize: 26 },
+  kindText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 4 },
+  kindTextOn: { color: '#fff' },
   label: { color: C.sub, fontSize: 14, marginBottom: 6 },
   hint: { color: C.faint, fontSize: 13, marginBottom: 8 },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 13, fontSize: 16, color: C.text, marginBottom: 14 },

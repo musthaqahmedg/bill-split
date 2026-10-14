@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listParties } from '../services/parties';
+import { kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -29,7 +30,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
     return (
       <TouchableOpacity style={styles.card} onPress={() => onOpenParty(item.id)}>
         <View style={styles.cardTop}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
+          <Text style={styles.cardTitle}>{kindOf(item.kind).emoji} {item.title}</Text>
           <Text style={styles.cardTotal}>{inr(item.budget)}</Text>
         </View>
         <Text style={styles.cardMeta}>
@@ -47,8 +48,8 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Parties 🎉</Text>
-      <Text style={styles.sub}>Plan the budget and collect everyone's share before the party</Text>
+      <Text style={styles.title}>Plans 🎉</Text>
+      <Text style={styles.sub}>Parties, trips, movies, weddings: plan it all with friends</Text>
 
       <FlatList
         data={parties}
@@ -67,7 +68,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
       />
 
       <TouchableOpacity style={styles.button} onPress={onNewParty}>
-        <Text style={styles.buttonText}>+ Plan a party</Text>
+        <Text style={styles.buttonText}>+ Plan something</Text>
       </TouchableOpacity>
     </View>
   );

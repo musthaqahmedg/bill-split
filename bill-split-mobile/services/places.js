@@ -13,11 +13,16 @@ export const CATEGORIES = [
   { key: 'bars', label: '🍻 Bars' },
   { key: 'cafes', label: '☕ Cafés' },
   { key: 'hotels', label: '🏨 Hotels' },
+  { key: 'cinema', label: '🎬 Cinemas' },
+  { key: 'stays', label: '🛏️ Stays' },
+  { key: 'spots', label: '🏞️ Spots' },
 ];
 
 export const EMOJI = {
   restaurant: '🍽️', fast_food: '🍔', food_court: '🍽️', bar: '🍻', pub: '🍺',
-  nightclub: '🪩', cafe: '☕', hotel: '🏨',
+  nightclub: '🪩', cafe: '☕', hotel: '🏨', cinema: '🎬', guest_house: '🏡', resort: '🏝️', hostel: '🛏️',
+  chalet: '🏡', apartment: '🏢', motel: '🛏️', attraction: '📸', viewpoint: '🌄', museum: '🏛️', waterfall: '💦',
+  beach: '🏖️', peak: '⛰️', park: '🌳', nature_reserve: '🌿', fort: '🏰', castle: '🏰', dam: '🌊', place_of_worship: '🛕',
 };
 
 // Where are you?
