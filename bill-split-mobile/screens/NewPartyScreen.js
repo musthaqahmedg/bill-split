@@ -6,6 +6,7 @@ import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import ContactPicker from './ContactPicker';
 import PlaceInput from './PlaceInput';
+import AboutPlace from './AboutPlace';
 import PopularHere from './PopularHere';
 import { createParty, sharesFor } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
@@ -223,7 +224,8 @@ export default function NewPartyScreen({ onBack, onCreated }) {
           <Text style={styles.label}>Where</Text>
         </View>
         <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} categories={kindOf(kind).places} />
-        {place.trim().length >= 3 ? <PopularHere place={place} /> : null}
+        {place.trim().length >= 3 ? <AboutPlace place={place} /> : null}
+        {place.trim().length >= 3 ? <PopularHere place={place} quietIfEmpty={['trip', 'daytrip', 'wedding', 'house'].includes(kind)} /> : null}
 
         <View onLayout={keep('budget')}>
           <Text style={styles.label}>Total budget (Rs)</Text>

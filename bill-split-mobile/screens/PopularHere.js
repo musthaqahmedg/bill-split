@@ -8,7 +8,7 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 // "🔥 Popular here": the most ordered items at a place, from bills our users scanned there.
 // One item at a time, sliding and fading in like a showcase.
-export default function PopularHere({ place }) {
+export default function PopularHere({ place, quietIfEmpty = false }) {
   const [items, setItems] = useState(null); // null = loading
   const [i, setI] = useState(0);
   const anim = useRef(new Animated.Value(0)).current;
@@ -54,6 +54,7 @@ export default function PopularHere({ place }) {
   }
 
   if (items.length === 0) {
+    if (quietIfEmpty) return null;
     return (
       <View style={[styles.box, styles.empty]}>
         <Text style={styles.emptyTitle}>🔓 No menu here yet</Text>

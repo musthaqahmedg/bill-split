@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Modal, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
+import AboutPlace from './AboutPlace';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
@@ -151,7 +152,10 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
             <Text style={styles.placeTitle}>📍 {party.place}</Text>
             {party.party_date ? <Text style={styles.placeSub}>📅 {party.party_date}</Text> : null}
             <View style={styles.placeGap} />
-            <PopularHere place={party.place || ''} />
+            <ScrollView style={styles.sheetScroll}>
+              <AboutPlace place={party.place || ''} />
+              <PopularHere place={party.place || ''} quietIfEmpty={['trip', 'daytrip', 'wedding', 'house'].includes(party.kind)} />
+            </ScrollView>
             <TouchableOpacity style={styles.mapsBtn} onPress={() => Linking.openURL(mapsUrl(party.place))}>
               <Text style={styles.mapsText}>🗺️ Open in Google Maps</Text>
             </TouchableOpacity>
@@ -304,6 +308,7 @@ const styles = StyleSheet.create({
   placeTitle: { color: C.text, fontSize: 22, fontWeight: '800' },
   placeSub: { color: C.sub, fontSize: 14, marginTop: 4 },
   placeGap: { height: 14 },
+  sheetScroll: { maxHeight: 460 },
   mapsBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center' },
   mapsText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
