@@ -6,7 +6,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
+export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups }) {
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,7 +48,12 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Plans 🎉</Text>
+      <View style={styles.topRow}>
+        <Text style={styles.title}>Plans 🎉</Text>
+        <TouchableOpacity style={styles.groupsBtn} onPress={onGroups}>
+          <Text style={styles.groupsText}>👥 Groups</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.sub}>Parties, trips, movies, weddings: plan it all with friends</Text>
 
       <FlatList
@@ -77,6 +82,9 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  groupsBtn: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14 },
+  groupsText: { color: C.accentSoft, fontSize: 14, fontWeight: '800' },
   title: { fontSize: 30, fontWeight: '800', color: C.text },
   sub: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 15 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },

@@ -46,12 +46,13 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {} }) {
+export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null }) {
   const { data: party, error: e1 } = await supabase
     .from('parties')
     .insert({
       title: title.trim(),
       kind,
+      group_id: groupId,
       party_date: party_date.trim() || null,
       place: place.trim() || null,
       budget: Math.round(Number(budget) || 0),

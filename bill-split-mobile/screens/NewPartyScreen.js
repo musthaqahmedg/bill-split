@@ -83,19 +83,21 @@ function FunLine({ text, style }) {
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function NewPartyScreen({ onBack, onCreated }) {
+export default function NewPartyScreen({ onBack, onCreated, group = null }) {
   const [title, setTitle] = useState('');
   const [kind, setKind] = useState('party'); // birthday, trip, movie…
   const [dateObj, setDateObj] = useState(null); // picked from the calendar
   const [showCal, setShowCal] = useState(false);
   const [place, setPlace] = useState('');
   const [budget, setBudget] = useState('');
-  const [people, setPeople] = useState(['Me']);
-  const [phones, setPhones] = useState({}); // name -> phone, for friends picked from contacts
+  // Planning for a group? Everyone in it is added straight away
+  const groupMembers = (group && group.group_members) || [];
+  const [people, setPeople] = useState(['Me', ...groupMembers.map((m) => m.name)]);
+  const [phones, setPhones] = useState(Object.fromEntries(groupMembers.filter((m) => m.phone).map((m) => [m.name, m.phone]))); // name -> phone
   const [contactsOpen, setContactsOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newContact, setNewContact] = useState(''); // optional number or email for the friend being typed
-  const [emails, setEmails] = useState({}); // name -> email
+  const [emails, setEmails] = useState(Object.fromEntries(groupMembers.filter((m) => m.email).map((m) => [m.name, m.email]))); // name -> email
   const [friends, setFriends] = useState([]);
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState('equal'); // 'equal' | 'treat' | 'free'
@@ -163,7 +165,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
     if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
-      const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails });
+      const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null });
       onCreated(party.id);
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -181,6 +183,7 @@ export default function NewPartyScreen({ onBack, onCreated }) {
       <Text style={styles.title}>Plan something {kindOf(kind).emoji}</Text>
 
       <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
         <Text style={styles.label}>What's the plan?</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.kinds} keyboardShouldPersistTaps="handled">
           {KINDS.map((k) => (
@@ -374,6 +377,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 12 },
   list: { flex: 1 },
   scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
+  groupTag: { alignSelf: 'flex-start', color: C.accentSoft, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, fontSize: 13, fontWeight: '700', marginBottom: 10, overflow: 'hidden' },
   kinds: { marginBottom: 14, flexGrow: 0 },
   kind: { alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginRight: 8, minWidth: 78 },
   kindOn: { backgroundColor: C.accent, borderColor: C.accent },

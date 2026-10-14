@@ -3,6 +3,8 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
+import GroupScreen from './screens/GroupScreen';
+import GroupsScreen from './screens/GroupsScreen';
 import HomeScreen from './screens/HomeScreen';
 import ItemsScreen from './screens/ItemsScreen';
 import LockScreen from './screens/LockScreen';
@@ -46,6 +48,8 @@ export default function App() {
   const [editingBillId, setEditingBillId] = useState<any>(null);
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
   const [openPartyId, setOpenPartyId] = useState<any>(null);
+  const [openGroupId, setOpenGroupId] = useState<any>(null);
+  const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
 
   const startNewBill = () => {
     setItems([]);
@@ -294,8 +298,42 @@ export default function App() {
     return (
       <PartiesScreen
         onBack={() => setScreen('home')}
-        onNewParty={() => setScreen('newParty')}
+        onNewParty={() => {
+          setPlanGroup(null);
+          setScreen('newParty');
+        }}
+        onGroups={() => setScreen('groups')}
         onOpenParty={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'groups') {
+    return (
+      <GroupsScreen
+        onBack={() => setScreen('parties')}
+        onOpenGroup={(id: any) => {
+          setOpenGroupId(id);
+          setScreen('group');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'group') {
+    return (
+      <GroupScreen
+        groupId={openGroupId}
+        onBack={() => setScreen('groups')}
+        onDeleted={() => setScreen('groups')}
+        onPlan={(g: any) => {
+          setPlanGroup(g);
+          setScreen('newParty');
+        }}
+        onOpenPlan={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
         }}
@@ -306,7 +344,8 @@ export default function App() {
   if (screen === 'newParty') {
     return (
       <NewPartyScreen
-        onBack={() => setScreen('parties')}
+        group={planGroup}
+        onBack={() => setScreen(planGroup ? 'group' : 'parties')}
         onCreated={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
