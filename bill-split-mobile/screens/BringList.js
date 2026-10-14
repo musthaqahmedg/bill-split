@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
 
@@ -22,10 +22,28 @@ export default function BringList({ party }) {
   const token = party.share_token;
   const [items, setItems] = useState(null);
   const [text, setText] = useState('');
+  const [editing, setEditing] = useState(null); // item id being renamed
+  const [editText, setEditText] = useState('');
 
   const load = async () => {
-    const { data } = await supabase.rpc('get_party_list', { p_token: token });
-    setItems(data || []);
+    const { data, error } = await supabase.rpc('get_party_list', { p_token: token });
+    if (!error) setItems(data || []);
+    else setItems((old) => old || []);
+  };
+
+  // Every change goes through here, so problems show up instead of silently doing nothing
+  const call = async (fn, args) => {
+    if (!token || !me) {
+      Alert.alert('Not ready', 'This plan is missing your spot on the guest list. Pull down to refresh and try again.');
+      return false;
+    }
+    const { error } = await supabase.rpc(fn, { p_token: token, p_member: me.id, ...args });
+    if (error) {
+      Alert.alert("Couldn't update the list", error.message);
+      return false;
+    }
+    load();
+    return true;
   };
 
   useEffect(() => {
@@ -36,16 +54,17 @@ export default function BringList({ party }) {
 
   const add = async (name) => {
     const n = (name || '').trim();
-    if (!n || !me) return;
+    if (!n) return;
     setText('');
-    await supabase.rpc('add_party_item', { p_token: token, p_member: me.id, p_name: n });
-    load();
+    await call('add_party_item', { p_name: n });
   };
 
-  const act = async (item, action) => {
-    if (!me) return;
-    await supabase.rpc('update_party_item', { p_token: token, p_member: me.id, p_item: item.id, p_action: action });
-    load();
+  const act = (item, action) => call('update_party_item', { p_item: item.id, p_action: action });
+
+  const saveRename = async (item) => {
+    const n = editText.trim();
+    setEditing(null);
+    if (n && n !== item.name) await call('rename_party_item', { p_item: item.id, p_name: n });
   };
 
   const ideas = (IDEAS[party.kind] || DEFAULT).filter(
@@ -71,7 +90,14 @@ export default function BringList({ party }) {
                 <Text style={styles.check}>{it.done ? '✅' : '⬜'}</Text>
               </TouchableOpacity>
               <View style={styles.flex}>
-                <Text style={[styles.name, it.done && styles.doneText]}>{it.name}</Text>
+                {editing === it.id ? (
+                  <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} autoFocus maxLength={80}
+                    keyboardAppearance="dark" onSubmitEditing={() => saveRename(it)} onBlur={() => saveRename(it)} returnKeyType="done" />
+                ) : (
+                  <Text style={[styles.name, it.done && styles.doneText]} onPress={() => { setEditing(it.id); setEditText(it.name); }}>
+                    {it.name} <Text style={styles.pencil}>✏️</Text>
+                  </Text>
+                )}
                 <Text style={styles.who}>
                   {it.claimed_name ? `${mine ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}
                 </Text>
@@ -117,6 +143,8 @@ const styles = StyleSheet.create({
   check: { fontSize: 18, marginRight: 10 },
   flex: { flex: 1 },
   name: { color: C.text, fontSize: 15, fontWeight: '600' },
+  pencil: { fontSize: 11 },
+  editInput: { color: C.text, fontSize: 15, borderBottomWidth: 1, borderBottomColor: C.accent, paddingVertical: 2 },
   doneText: { textDecorationLine: 'line-through', color: C.faint },
   who: { color: C.faint, fontSize: 12, marginTop: 1 },
   claim: { borderWidth: 1, borderColor: C.accent, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 6 },

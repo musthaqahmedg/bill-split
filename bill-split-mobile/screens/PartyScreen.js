@@ -12,7 +12,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
+export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit }) {
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
@@ -137,9 +137,14 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
-      </TouchableOpacity>
+      <View style={styles.topRow}>
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.back}>Back</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onEdit(party)}>
+          <Text style={styles.edit}>✏️ Edit</Text>
+        </TouchableOpacity>
+      </View>
       <Text style={styles.title}>{kindOf(party.kind).emoji} {party.title}</Text>
       {details ? (
         <TouchableOpacity onPress={() => party.place && setPlaceOpen(true)}>
@@ -284,6 +289,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  edit: { color: C.accentSoft, fontSize: 16, fontWeight: '800', marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', color: C.text },
   meta: { color: C.faint, fontSize: 14, marginTop: 4 },
   list: { flex: 1, marginTop: 15 },

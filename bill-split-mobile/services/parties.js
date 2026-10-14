@@ -107,3 +107,48 @@ export async function setHideBill(party, hide, hostName) {
     });
   }
 }
+
+// Edit a plan: update details, add/remove people, and work out everyone's share again.
+// People who stay keep their answers (I'm in), paid ticks and chat.
+export async function updateParty(party, { title, kind, party_date, place, budget, people, mode, special, phones = {}, emails = {} }) {
+  const { error: e1 } = await supabase
+    .from('parties')
+    .update({
+      title: title.trim(),
+      kind,
+      party_date: (party_date || '').trim() || null,
+      place: (place || '').trim() || null,
+      budget: Math.round(Number(budget) || 0),
+      split_mode: mode,
+      special_person: mode === 'equal' ? null : special,
+    })
+    .eq('id', party.id);
+  if (e1) throw e1;
+
+  const old = party.party_members || [];
+  const shares = sharesFor(budget, people, mode, special);
+  const byName = Object.fromEntries(old.map((m) => [m.name, m]));
+
+  // Removed people (never the host)
+  const gone = old.filter((m) => m.name !== 'Me' && !people.includes(m.name)).map((m) => m.id);
+  if (gone.length) {
+    const { error } = await supabase.from('party_members').delete().in('id', gone);
+    if (error) throw error;
+  }
+  // New people
+  const fresh = people.map((name, i) => ({ name, i })).filter((p) => !byName[p.name]);
+  if (fresh.length) {
+    const { error } = await supabase.from('party_members').insert(
+      fresh.map((p) => ({ party_id: party.id, name: p.name, share: shares[p.i], phone: phones[p.name] || null, email: emails[p.name] || null }))
+    );
+    if (error) throw error;
+  }
+  // New shares for people who stayed
+  for (let i = 0; i < people.length; i++) {
+    const m = byName[people[i]];
+    if (m && Number(m.share) !== shares[i]) {
+      const { error } = await supabase.from('party_members').update({ share: shares[i] }).eq('id', m.id);
+      if (error) throw error;
+    }
+  }
+}

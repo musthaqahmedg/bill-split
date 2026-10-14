@@ -50,6 +50,7 @@ export default function App() {
   const [openPartyId, setOpenPartyId] = useState<any>(null);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
+  const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
 
   const startNewBill = () => {
     setItems([]);
@@ -300,6 +301,7 @@ export default function App() {
         onBack={() => setScreen('home')}
         onNewParty={() => {
           setPlanGroup(null);
+          setEditPlan(null);
           setScreen('newParty');
         }}
         onGroups={() => setScreen('groups')}
@@ -330,6 +332,7 @@ export default function App() {
         onBack={() => setScreen('groups')}
         onDeleted={() => setScreen('groups')}
         onPlan={(g: any) => {
+          setEditPlan(null);
           setPlanGroup(g);
           setScreen('newParty');
         }}
@@ -344,8 +347,10 @@ export default function App() {
   if (screen === 'newParty') {
     return (
       <NewPartyScreen
-        group={planGroup}
-        onBack={() => setScreen(planGroup ? 'group' : 'parties')}
+        key={editPlan ? `edit-${editPlan.id}` : 'new'}
+        group={editPlan ? null : planGroup}
+        editing={editPlan}
+        onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : 'parties')}
         onCreated={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
@@ -361,6 +366,10 @@ export default function App() {
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
+        onEdit={(p: any) => {
+          setEditPlan(p);
+          setScreen('newParty');
+        }}
       />
     );
   }

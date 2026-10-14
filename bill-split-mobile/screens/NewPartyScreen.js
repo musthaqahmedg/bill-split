@@ -8,7 +8,7 @@ import ContactPicker from './ContactPicker';
 import PlaceInput from './PlaceInput';
 import AboutPlace from './AboutPlace';
 import PopularHere from './PopularHere';
-import { createParty, sharesFor } from '../services/parties';
+import { createParty, sharesFor, updateParty } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
@@ -83,16 +83,20 @@ function FunLine({ text, style }) {
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function NewPartyScreen({ onBack, onCreated, group = null }) {
-  const [title, setTitle] = useState('');
-  const [kind, setKind] = useState('party'); // birthday, trip, movie…
+export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null }) {
+  // editing = an existing plan: the form starts filled in and saves changes instead of creating
+  const ex = editing;
+  const exMembers = (ex && ex.party_members) || [];
+  const [title, setTitle] = useState(ex ? ex.title : '');
+  const [kind, setKind] = useState(ex ? ex.kind || 'party' : 'party'); // birthday, trip, movie…
   const [dateObj, setDateObj] = useState(null); // picked from the calendar
   const [showCal, setShowCal] = useState(false);
-  const [place, setPlace] = useState('');
-  const [budget, setBudget] = useState('');
+  const [place, setPlace] = useState(ex ? ex.place || '' : '');
+  const [budget, setBudget] = useState(ex ? String(Math.round(ex.budget || 0)) : '');
+  const [dateText] = useState(ex ? ex.party_date || '' : ''); // keep the old date unless a new one is picked
   // Planning for a group? Everyone in it is added straight away
   const groupMembers = (group && group.group_members) || [];
-  const [people, setPeople] = useState(['Me', ...groupMembers.map((m) => m.name)]);
+  const [people, setPeople] = useState(ex ? ['Me', ...exMembers.filter((m) => m.name !== 'Me').map((m) => m.name)] : ['Me', ...groupMembers.map((m) => m.name)]);
   const [phones, setPhones] = useState(Object.fromEntries(groupMembers.filter((m) => m.phone).map((m) => [m.name, m.phone]))); // name -> phone
   const [contactsOpen, setContactsOpen] = useState(false);
   const [newName, setNewName] = useState('');
@@ -100,8 +104,8 @@ export default function NewPartyScreen({ onBack, onCreated, group = null }) {
   const [emails, setEmails] = useState(Object.fromEntries(groupMembers.filter((m) => m.email).map((m) => [m.name, m.email]))); // name -> email
   const [friends, setFriends] = useState([]);
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState('equal'); // 'equal' | 'treat' | 'free'
-  const [special, setSpecial] = useState('Me');
+  const [mode, setMode] = useState(ex ? ex.split_mode || 'equal' : 'equal'); // 'equal' | 'treat' | 'free'
+  const [special, setSpecial] = useState(ex && ex.special_person ? ex.special_person : 'Me');
 
   const [idea, setIdea] = useState(0);
 
@@ -121,7 +125,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null }) {
   // e.g. "Sat, 18 Oct"
   const date = dateObj
     ? dateObj.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })
-    : '';
+    : dateText;
 
   const onPickDate = (event, picked) => {
     if (Platform.OS === 'android') setShowCal(false); // Android closes its pop-up itself
@@ -165,8 +169,13 @@ export default function NewPartyScreen({ onBack, onCreated, group = null }) {
     if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
-      const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null });
-      onCreated(party.id);
+      if (ex) {
+        await updateParty(ex, { title, kind, party_date: date, place, budget, people, mode, special, phones, emails });
+        onCreated(ex.id);
+      } else {
+        const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null });
+        onCreated(party.id);
+      }
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
       setSaving(false);
@@ -180,7 +189,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Plan something {kindOf(kind).emoji}</Text>
+      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan something'} {kindOf(kind).emoji}</Text>
 
       <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
@@ -363,7 +372,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null }) {
           </View>
         )}
         <TouchableOpacity style={styles.button} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Create party</Text>}
+          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : 'Create plan'}</Text>}
         </TouchableOpacity>
       </ScrollView>
       <KeyboardDone />
