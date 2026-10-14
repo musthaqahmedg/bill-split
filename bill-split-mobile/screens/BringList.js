@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator, Alert, Linking, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
+import { waNumber } from '../services/parties';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
 
@@ -15,15 +18,18 @@ const IDEAS = {
 };
 const DEFAULT = ['Snacks 🍿', 'Soft drinks 🥤', 'Ice 🧊', 'Cake 🎂'];
 
-// "Who brings what": add items, tap "I'll bring it", tick it off when bought.
-// Uses the same functions as the invite page; the host acts as the 'Me' guest.
+// "Who brings what"
+// Each item clearly shows one of: 🙋 someone is bringing it · 🔔 someone was asked · ❓ needs someone.
+// Buttons: I'll bring it · Ask someone · Got it ✓
 export default function BringList({ party }) {
   const me = (party.party_members || []).find((m) => m.name === 'Me');
+  const friends = (party.party_members || []).filter((m) => m.name !== 'Me');
   const token = party.share_token;
   const [items, setItems] = useState(null);
   const [text, setText] = useState('');
-  const [editing, setEditing] = useState(null); // item id being renamed
+  const [editing, setEditing] = useState(null);
   const [editText, setEditText] = useState('');
+  const [asking, setAsking] = useState(null); // item we're asking someone to bring
 
   const load = async () => {
     const { data, error } = await supabase.rpc('get_party_list', { p_token: token });
@@ -31,10 +37,15 @@ export default function BringList({ party }) {
     else setItems((old) => old || []);
   };
 
-  // Every change goes through here, so problems show up instead of silently doing nothing
+  useEffect(() => {
+    load();
+    const t = setInterval(load, 8000); // friends update it from the invite link
+    return () => clearInterval(t);
+  }, [token]);
+
   const call = async (fn, args) => {
     if (!token || !me) {
-      Alert.alert('Not ready', 'This plan is missing your spot on the guest list. Pull down to refresh and try again.');
+      Alert.alert('Not ready', 'Pull down to refresh this plan and try again.');
       return false;
     }
     const { error } = await supabase.rpc(fn, { p_token: token, p_member: me.id, ...args });
@@ -46,30 +57,11 @@ export default function BringList({ party }) {
     return true;
   };
 
-  useEffect(() => {
-    load();
-    const t = setInterval(load, 8000); // friends add things from the invite link
-    return () => clearInterval(t);
-  }, [token]);
-
   const add = async (name) => {
     const n = (name || '').trim();
     if (!n) return;
     setText('');
     await call('add_party_item', { p_name: n });
-  };
-
-  const act = (item, action) => call('update_party_item', { p_item: item.id, p_action: action });
-
-  // Host: give an item to someone on the guest list
-  const assign = (item) => {
-    const people = (party.party_members || []).filter((m) => m.name !== 'Me');
-    Alert.alert(`Who brings "${item.name}"?`, undefined, [
-      { text: 'Me', onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: me.id }) },
-      ...people.map((m) => ({ text: m.name, onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: m.id }) })),
-      { text: 'Nobody', onPress: () => call('assign_party_item', { p_item: item.id, p_assignee: null }) },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
   };
 
   const saveRename = async (item) => {
@@ -78,49 +70,98 @@ export default function BringList({ party }) {
     if (n && n !== item.name) await call('rename_party_item', { p_item: item.id, p_name: n });
   };
 
+  const askPerson = async (person) => {
+    const item = asking;
+    setAsking(null);
+    const ok = await call('ask_party_item', { p_item: item.id, p_target: person.id });
+    if (ok && person.phone) {
+      Alert.alert(`Asked ${person.name} 🙏`, 'It is in the party chat. Send them a WhatsApp nudge too?', [
+        { text: 'No thanks', style: 'cancel' },
+        {
+          text: 'WhatsApp',
+          onPress: () => {
+            const msg = `Hey ${person.name}! Can you bring ${item.name} for ${party.title}? 🙏\nhttps://bill-split-flax.vercel.app/p/${token}`;
+            Linking.openURL(`whatsapp://send?phone=${waNumber(person.phone)}&text=${encodeURIComponent(msg)}`).catch(() => {});
+          },
+        },
+      ]);
+    }
+  };
+
+  const remove = (item) =>
+    Alert.alert(`Remove "${item.name}"?`, undefined, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => call('update_party_item', { p_item: item.id, p_action: 'remove' }) },
+    ]);
+
   const ideas = (IDEAS[party.kind] || DEFAULT).filter(
     (i) => !(items || []).some((x) => x.name.toLowerCase() === i.toLowerCase())
   );
-  const doneCount = (items || []).filter((i) => i.done).length;
+  const ready = (items || []).filter((i) => i.done).length;
+  const covered = (items || []).filter((i) => i.claimed_by).length;
+
+  // What to show for each item
+  const status = (it) => {
+    const mine = me && it.claimed_by === me.id;
+    if (it.done) return { icon: '✅', text: `Got it${it.claimed_name ? ` · ${mine ? 'you' : it.claimed_name}` : ''}`, style: styles.sDone };
+    if (it.claimed_by) return { icon: '🙋', text: mine ? "You're bringing it" : `${it.claimed_name} is bringing it`, style: styles.sYes };
+    if (it.asked_to) return { icon: '🔔', text: `Asked ${me && it.asked_to === me.id ? 'you' : it.asked_name}, waiting…`, style: styles.sAsked };
+    return { icon: '❓', text: 'Needs someone', style: styles.sNeed };
+  };
 
   return (
     <View style={styles.box}>
       <View style={styles.top}>
         <Text style={styles.title}>🛒 Who brings what</Text>
-        {items && items.length ? <Text style={styles.count}>{doneCount}/{items.length} ready</Text> : null}
+        {items && items.length ? <Text style={styles.count}>{covered}/{items.length} covered · {ready} ready</Text> : null}
       </View>
-
-      <Text style={styles.hint}>Tap "change ›" to give an item to a friend. Friends can also add and pick items from your invite link.</Text>
 
       {items === null ? (
         <ActivityIndicator color={C.accentSoft} />
+      ) : items.length === 0 ? (
+        <Text style={styles.empty}>Nothing yet. Add what the party needs 👇</Text>
       ) : (
         items.map((it) => {
+          const st = status(it);
           const mine = me && it.claimed_by === me.id;
           return (
-            <View key={it.id} style={styles.row}>
-              <TouchableOpacity onPress={() => act(it, 'done')} hitSlop={8}>
-                <Text style={styles.check}>{it.done ? '✅' : '⬜'}</Text>
-              </TouchableOpacity>
-              <View style={styles.flex}>
+            <View key={it.id} style={[styles.item, it.done && styles.itemDone]}>
+              <View style={styles.itemTop}>
                 {editing === it.id ? (
                   <TextInput style={styles.editInput} value={editText} onChangeText={setEditText} autoFocus maxLength={80}
                     keyboardAppearance="dark" onSubmitEditing={() => saveRename(it)} onBlur={() => saveRename(it)} returnKeyType="done" />
                 ) : (
-                  <Text style={[styles.name, it.done && styles.doneText]} onPress={() => { setEditing(it.id); setEditText(it.name); }}>
-                    {it.name} <Text style={styles.pencil}>✏️</Text>
-                  </Text>
+                  <TouchableOpacity style={styles.flex} onPress={() => { setEditing(it.id); setEditText(it.name); }}>
+                    <Text style={[styles.name, it.done && styles.strike]}>{it.name}</Text>
+                  </TouchableOpacity>
                 )}
-                <Text style={styles.who} onPress={() => assign(it)}>
-                  {it.claimed_name ? `${mine ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}  <Text style={styles.assign}>· change ›</Text>
-                </Text>
+                <TouchableOpacity onPress={() => remove(it)} hitSlop={10}>
+                  <Text style={styles.x}>✕</Text>
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={[styles.claim, mine && styles.claimOn]} onPress={() => act(it, 'claim')}>
-                <Text style={[styles.claimText, mine && styles.claimTextOn]}>{mine ? "I'm on it ✓" : "I'll bring"}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => act(it, 'remove')} hitSlop={8}>
-                <Text style={styles.remove}>✕</Text>
-              </TouchableOpacity>
+
+              <Text style={[styles.status, st.style]}>{st.icon} {st.text}</Text>
+
+              {!it.done && (
+                <View style={styles.actions}>
+                  <TouchableOpacity style={[styles.btn, mine && styles.btnOn]} onPress={() => call('update_party_item', { p_item: it.id, p_action: 'claim' })}>
+                    <Text style={[styles.btnText, mine && styles.btnTextOn]}>{mine ? '✋ Drop it' : "🙋 I'll bring it"}</Text>
+                  </TouchableOpacity>
+                  {!it.claimed_by && friends.length > 0 && (
+                    <TouchableOpacity style={styles.btn} onPress={() => setAsking(it)}>
+                      <Text style={styles.btnText}>👉 Ask someone</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={styles.btn} onPress={() => call('update_party_item', { p_item: it.id, p_action: 'done' })}>
+                    <Text style={styles.btnText}>✓ Got it</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              {it.done && (
+                <TouchableOpacity onPress={() => call('update_party_item', { p_item: it.id, p_action: 'done' })}>
+                  <Text style={styles.undo}>Undo</Text>
+                </TouchableOpacity>
+              )}
             </View>
           );
         })
@@ -128,7 +169,7 @@ export default function BringList({ party }) {
 
       <View style={styles.addRow}>
         <TextInput style={styles.input} value={text} onChangeText={setText} maxLength={80}
-          placeholder="Add something to bring…" placeholderTextColor={C.faint} keyboardAppearance="dark"
+          placeholder="Add something the party needs…" placeholderTextColor={C.faint} keyboardAppearance="dark"
           onSubmitEditing={() => add(text)} returnKeyType="done" />
         <TouchableOpacity style={styles.addBtn} onPress={() => add(text)}>
           <Text style={styles.addText}>Add</Text>
@@ -143,35 +184,74 @@ export default function BringList({ party }) {
           ))}
         </View>
       )}
+      <Text style={styles.hint}>Friends see this list on your invite link and can pick items or ask others too.</Text>
+
+      {/* Ask someone */}
+      <Modal visible={!!asking} transparent animationType="slide" onRequestClose={() => setAsking(null)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setAsking(null)}>
+          <TouchableOpacity activeOpacity={1} style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>Who should bring {asking ? asking.name : ''}?</Text>
+            <Text style={styles.sheetSub}>We'll ask them in the party chat 🙏</Text>
+            {friends.map((f) => (
+              <TouchableOpacity key={f.id} style={styles.person} onPress={() => askPerson(f)}>
+                <View style={styles.avatar}><Text style={styles.avatarText}>{f.name[0].toUpperCase()}</Text></View>
+                <Text style={styles.personName}>{f.name}</Text>
+                {f.phone ? <Text style={styles.wa}>💬</Text> : null}
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity onPress={() => setAsking(null)}>
+              <Text style={styles.cancel}>Cancel</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   box: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginBottom: 14 },
-  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { color: C.text, fontSize: 16, fontWeight: '800' },
-  hint: { color: C.faint, fontSize: 12, marginBottom: 4 },
-  count: { color: C.green, fontSize: 13, fontWeight: '700' },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.border },
-  check: { fontSize: 18, marginRight: 10 },
+  count: { color: C.green, fontSize: 12, fontWeight: '700' },
+  empty: { color: C.faint, fontSize: 14, marginBottom: 6 },
+  item: { backgroundColor: C.bg, borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  itemDone: { opacity: 0.7 },
+  itemTop: { flexDirection: 'row', alignItems: 'center' },
   flex: { flex: 1 },
-  name: { color: C.text, fontSize: 15, fontWeight: '600' },
-  assign: { color: C.accentSoft, fontWeight: '700' },
-  pencil: { fontSize: 11 },
-  editInput: { color: C.text, fontSize: 15, borderBottomWidth: 1, borderBottomColor: C.accent, paddingVertical: 2 },
-  doneText: { textDecorationLine: 'line-through', color: C.faint },
-  who: { color: C.faint, fontSize: 12, marginTop: 1 },
-  claim: { borderWidth: 1, borderColor: C.accent, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, marginLeft: 6 },
-  claimOn: { backgroundColor: C.accent },
-  claimText: { color: C.accentSoft, fontSize: 12, fontWeight: '800' },
-  claimTextOn: { color: '#fff' },
-  remove: { color: C.red, fontSize: 14, marginLeft: 10 },
-  addRow: { flexDirection: 'row', marginTop: 10 },
+  name: { color: C.text, fontSize: 16, fontWeight: '800' },
+  strike: { textDecorationLine: 'line-through' },
+  x: { color: C.faint, fontSize: 14, paddingLeft: 10 },
+  editInput: { flex: 1, color: C.text, fontSize: 16, borderBottomWidth: 1, borderBottomColor: C.accent, paddingVertical: 2 },
+  status: { fontSize: 13, fontWeight: '700', marginTop: 4 },
+  sYes: { color: C.green },
+  sAsked: { color: C.amber },
+  sNeed: { color: C.pink },
+  sDone: { color: C.faint },
+  actions: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
+  btn: { borderWidth: 1, borderColor: C.border, backgroundColor: C.card, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 10, marginRight: 6, marginBottom: 4 },
+  btnOn: { backgroundColor: C.accent, borderColor: C.accent },
+  btnText: { color: C.text, fontSize: 13, fontWeight: '700' },
+  btnTextOn: { color: '#fff' },
+  undo: { color: C.accentSoft, fontSize: 13, fontWeight: '700', marginTop: 6 },
+  addRow: { flexDirection: 'row', marginTop: 6 },
   input: { flex: 1, backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 10, fontSize: 15, color: C.text },
   addBtn: { backgroundColor: C.cardHi, borderRadius: 12, paddingHorizontal: 16, justifyContent: 'center', marginLeft: 8 },
   addText: { color: C.accentSoft, fontSize: 15, fontWeight: '800' },
   ideas: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   idea: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, marginRight: 6, marginBottom: 6 },
   ideaText: { color: C.sub, fontSize: 13 },
+  hint: { color: C.faint, fontSize: 11, marginTop: 4 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 36 },
+  handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 14 },
+  sheetTitle: { color: C.text, fontSize: 19, fontWeight: '800' },
+  sheetSub: { color: C.faint, fontSize: 13, marginTop: 2, marginBottom: 10 },
+  person: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
+  avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  avatarText: { color: C.text, fontWeight: '800' },
+  personName: { color: C.text, fontSize: 16, fontWeight: '600', flex: 1 },
+  wa: { fontSize: 16 },
+  cancel: { color: C.sub, fontSize: 15, textAlign: 'center', marginTop: 14 },
 });

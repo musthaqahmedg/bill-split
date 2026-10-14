@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string };
-type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null };
+type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null; asked_to?: string | null; asked_name?: string | null };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
 type Member = { id: string; name: string; share: number | null; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
 
@@ -124,6 +124,13 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const itemAction = async (id: string, action: 'claim' | 'done') => {
     if (!me) return setSendError('Tap your name above first');
     await rpc('update_party_item', { p_token: token, p_member: me, p_item: id, p_action: action });
+    refreshList();
+  };
+
+  const askItem = async (id: string, target: string) => {
+    if (!me) return setSendError('Tap your name above first');
+    if (!target) return;
+    await rpc('ask_party_item', { p_token: token, p_member: me, p_item: id, p_target: target });
     refreshList();
   };
 
@@ -276,16 +283,36 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           {items.length === 0 && <p style={s.chatEmpty}>Nothing on the list yet</p>}
           {items.map((it) => {
             const mineItem = me && it.claimed_by === me;
+            const askedMe = me && it.asked_to === me && !it.claimed_by;
+            const status = it.done
+              ? `✅ Got it${it.claimed_name ? ' · ' + (mineItem ? 'you' : it.claimed_name) : ''}`
+              : it.claimed_by
+              ? `🙋 ${mineItem ? "You're" : it.claimed_name + ' is'} bringing it`
+              : it.asked_to
+              ? `🔔 Asked ${askedMe ? 'you' : it.asked_name}, waiting…`
+              : '❓ Needs someone';
+            const color = it.done ? '#8C7AAE' : it.claimed_by ? '#34D399' : it.asked_to ? '#FBBF24' : '#F472B6';
             return (
-              <div key={it.id} style={s.itemRow}>
-                <button style={s.check} onClick={() => itemAction(it.id, 'done')}>{it.done ? '✅' : '⬜'}</button>
-                <div style={{ flex: 1 }}>
-                  <div style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8C7AAE' : '#fff' }}>{it.name}</div>
-                  <div style={s.itemWho}>{it.claimed_name ? `${mineItem ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}</div>
+              <div key={it.id} style={{ ...s.itemRow, flexDirection: 'column', alignItems: 'stretch', opacity: it.done ? 0.7 : 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 16, textDecoration: it.done ? 'line-through' : 'none' }}>{it.name}</div>
+                <div style={{ ...s.itemWho, color, fontWeight: 700 }}>{status}</div>
+                {askedMe && <div style={{ ...s.itemWho, color: '#FBBF24' }}>Someone asked you to bring this 🙏</div>}
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+                  {!it.done && (
+                    <button style={{ ...s.claimBtn, ...(mineItem ? s.claimOn : {}) }} onClick={() => itemAction(it.id, 'claim')}>
+                      {mineItem ? '✋ Drop it' : askedMe ? '👍 Yes, I’ll bring it' : '🙋 I’ll bring it'}
+                    </button>
+                  )}
+                  {!it.done && !it.claimed_by && (
+                    <select style={{ ...s.claimBtn, cursor: 'pointer' }} value="" onChange={(e) => askItem(it.id, e.target.value)}>
+                      <option value="">👉 Ask someone…</option>
+                      {members.filter((m) => m.id !== me).map((m) => (
+                        <option key={m.id} value={m.id}>{m.name === 'Me' ? 'The host' : m.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <button style={s.claimBtn} onClick={() => itemAction(it.id, 'done')}>{it.done ? 'Undo' : '✓ Got it'}</button>
                 </div>
-                <button style={{ ...s.claimBtn, ...(mineItem ? s.claimOn : {}) }} onClick={() => itemAction(it.id, 'claim')}>
-                  {mineItem ? "I'm on it ✓" : "I'll bring"}
-                </button>
               </div>
             );
           })}
