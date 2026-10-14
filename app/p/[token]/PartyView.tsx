@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string };
+type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
 type Member = { id: string; name: string; share: number | null; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
 
@@ -66,6 +67,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [sendError, setSendError] = useState('');
   const [polls, setPolls] = useState<Record<string, Poll>>({});
   const [pollOpen, setPollOpen] = useState(false);
+  const [items, setItems] = useState<Item[]>([]);
+  const [itemText, setItemText] = useState('');
   const [pollQ, setPollQ] = useState('');
   const [pollOpts, setPollOpts] = useState(['', '']);
   const bottom = useRef<HTMLDivElement>(null);
@@ -82,10 +85,12 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     let alive = true;
     const load = async () => {
       try {
-        const [res, pr] = await Promise.all([
+        const [res, pr, li] = await Promise.all([
           rpc('get_party_chat', { p_token: token }),
           rpc('get_party_polls', { p_token: token }),
+          rpc('get_party_list', { p_token: token }),
         ]);
+        if (li.ok && alive) setItems(await li.json());
         if (res.ok && alive) setMessages(await res.json());
         if (pr.ok && alive) {
           const list: Poll[] = await pr.json();
@@ -105,6 +110,22 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages.length]);
+
+  const refreshList = async () => {
+    const li = await rpc('get_party_list', { p_token: token });
+    if (li.ok) setItems(await li.json());
+  };
+  const addItem = async (name: string) => {
+    if (!me || !name.trim()) return setSendError('Tap your name above first');
+    setItemText('');
+    await rpc('add_party_item', { p_token: token, p_member: me, p_name: name.trim() });
+    refreshList();
+  };
+  const itemAction = async (id: string, action: 'claim' | 'done') => {
+    if (!me) return setSendError('Tap your name above first');
+    await rpc('update_party_item', { p_token: token, p_member: me, p_item: id, p_action: action });
+    refreshList();
+  };
 
   const refreshPolls = async () => {
     const pr = await rpc('get_party_polls', { p_token: token });
@@ -247,6 +268,32 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
                 </div>
               )}
             </>
+          )}
+        </div>
+
+        <p style={s.label}>🛒 Who brings what</p>
+        <div style={s.listBox}>
+          {items.length === 0 && <p style={s.chatEmpty}>Nothing on the list yet</p>}
+          {items.map((it) => {
+            const mineItem = me && it.claimed_by === me;
+            return (
+              <div key={it.id} style={s.itemRow}>
+                <button style={s.check} onClick={() => itemAction(it.id, 'done')}>{it.done ? '✅' : '⬜'}</button>
+                <div style={{ flex: 1 }}>
+                  <div style={{ textDecoration: it.done ? 'line-through' : 'none', color: it.done ? '#8C7AAE' : '#fff' }}>{it.name}</div>
+                  <div style={s.itemWho}>{it.claimed_name ? `${mineItem ? 'You' : it.claimed_name} will bring it` : 'Nobody yet'}</div>
+                </div>
+                <button style={{ ...s.claimBtn, ...(mineItem ? s.claimOn : {}) }} onClick={() => itemAction(it.id, 'claim')}>
+                  {mineItem ? "I'm on it ✓" : "I'll bring"}
+                </button>
+              </div>
+            );
+          })}
+          {mine && (
+            <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={(e) => { e.preventDefault(); addItem(itemText); }}>
+              <input style={s.chatInput} value={itemText} maxLength={80} onChange={(e) => setItemText(e.target.value)} placeholder="Add something to bring…" />
+              <button style={s.smallBtn} type="submit">Add</button>
+            </form>
           )}
         </div>
 
@@ -394,5 +441,11 @@ const s: Record<string, React.CSSProperties> = {
   inviteKicker: { color: 'rgba(255,255,255,.85)', fontWeight: 800, fontSize: 12, letterSpacing: 2, margin: '8px 0 0' },
   inviteTitle: { fontSize: 30, fontWeight: 800, margin: '6px 0 8px', color: '#fff', textShadow: '0 2px 12px rgba(0,0,0,.25)' },
   inviteSub: { color: 'rgba(255,255,255,.92)', fontSize: 15, margin: '2px 0' },
+  listBox: { background: '#1C0D33', border: '1px solid #3E2470', borderRadius: 16, padding: 12, marginBottom: 22 },
+  itemRow: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid #3E2470' },
+  check: { background: 'transparent', border: 'none', fontSize: 18, cursor: 'pointer', padding: 0 },
+  itemWho: { color: '#8C7AAE', fontSize: 12 },
+  claimBtn: { background: 'transparent', color: '#C9A8FF', border: '1px solid #8B5CF6', borderRadius: 12, padding: '6px 10px', fontSize: 13, fontWeight: 700, cursor: 'pointer' },
+  claimOn: { background: '#8B5CF6', color: '#fff' },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 28 },
 };

@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Modal, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
+import BringList from './BringList';
+import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
@@ -134,7 +136,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
     ]);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
@@ -163,7 +165,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
         </TouchableOpacity>
       </Modal>
 
-      <ScrollView style={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.accentSoft} />}>
+      <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.accentSoft} />}>
         <View style={styles.summary}>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Budget</Text>
@@ -219,6 +221,8 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
           <Text style={styles.chatHint}>Plan everything here with your friends</Text>
         </TouchableOpacity>
 
+        <BringList party={party} />
+
         <TouchableOpacity style={styles.shareBtn} onPress={shareAll}>
           <Text style={styles.shareText}>📨 Invite friends</Text>
           <Text style={styles.shareHint}>One link for WhatsApp groups or anyone. Friends answer and chat from it.</Text>
@@ -271,7 +275,8 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
           <Text style={styles.deleteText}>Delete this party</Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
+      <KeyboardDone />
+    </KeyboardAvoidingView>
   );
 }
 
