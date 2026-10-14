@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; created_at: string };
+type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string };
+type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
 type Member = { id: string; name: string; share: number; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null };
 
 export type SharedParty = {
@@ -39,6 +40,10 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [sendError, setSendError] = useState('');
+  const [polls, setPolls] = useState<Record<string, Poll>>({});
+  const [pollOpen, setPollOpen] = useState(false);
+  const [pollQ, setPollQ] = useState('');
+  const [pollOpts, setPollOpts] = useState(['', '']);
   const bottom = useRef<HTMLDivElement>(null);
 
   const rpc = (fn: string, body: object) =>
@@ -53,8 +58,15 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     let alive = true;
     const load = async () => {
       try {
-        const res = await rpc('get_party_messages', { p_token: token });
+        const [res, pr] = await Promise.all([
+          rpc('get_party_chat', { p_token: token }),
+          rpc('get_party_polls', { p_token: token }),
+        ]);
         if (res.ok && alive) setMessages(await res.json());
+        if (pr.ok && alive) {
+          const list: Poll[] = await pr.json();
+          setPolls(Object.fromEntries(list.map((x) => [x.id, x])));
+        }
       } catch {}
     };
     load();
@@ -70,6 +82,33 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages.length]);
 
+  const refreshPolls = async () => {
+    const pr = await rpc('get_party_polls', { p_token: token });
+    if (pr.ok) {
+      const list: Poll[] = await pr.json();
+      setPolls(Object.fromEntries(list.map((x) => [x.id, x])));
+    }
+  };
+
+  const vote = async (pollId: string, option: number) => {
+    if (!me) return setSendError('Tap your name above to vote');
+    await rpc('vote_party_poll', { p_token: token, p_member: me, p_poll: pollId, p_option: option });
+    refreshPolls();
+  };
+
+  const postPoll = async () => {
+    const opts = pollOpts.map((o) => o.trim()).filter(Boolean);
+    if (!me || !pollQ.trim() || opts.length < 2) return setSendError('Add a question and at least 2 options');
+    const res = await rpc('create_party_poll', { p_token: token, p_member: me, p_question: pollQ.trim(), p_options: opts });
+    if (!res.ok) return setSendError("Couldn't post the poll");
+    setPollOpen(false);
+    setPollQ('');
+    setPollOpts(['', '']);
+    const again = await rpc('get_party_chat', { p_token: token });
+    if (again.ok) setMessages(await again.json());
+    refreshPolls();
+  };
+
   const send = async () => {
     const body = text.trim();
     if (!body || !me) return;
@@ -78,7 +117,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     try {
       const res = await rpc('send_party_message', { p_token: token, p_member: me, p_body: body });
       if (!res.ok) throw new Error();
-      const again = await rpc('get_party_messages', { p_token: token });
+      const again = await rpc('get_party_chat', { p_token: token });
       if (again.ok) setMessages(await again.json());
     } catch {
       setText(body);
@@ -170,6 +209,34 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           {messages.length === 0 && <p style={s.chatEmpty}>No messages yet. Say hi 👋</p>}
           {messages.map((m) => {
             if (m.kind === 'system') return <p key={m.id} style={s.system}>{m.body}</p>;
+            if (m.poll_id) {
+              const p = polls[m.poll_id];
+              if (!p) return null;
+              const total = Object.keys(p.votes || {}).length;
+              const myVote = me ? (p.votes || {})[me] : undefined;
+              return (
+                <div key={m.id} style={s.poll}>
+                  <div style={s.pollKicker}>📊 POLL · {m.sender_name}</div>
+                  <div style={s.pollQ}>{p.question}</div>
+                  {p.options.map((opt, i) => {
+                    const n = Object.values(p.votes || {}).filter((v) => v === i).length;
+                    const pct = total ? Math.round((n / total) * 100) : 0;
+                    const names = (p.voters || []).filter((v) => v.option === i).map((v) => v.name).join(', ');
+                    return (
+                      <button key={i} onClick={() => vote(p.id, i)} style={{ ...s.pollOpt, ...(myVote === i ? s.pollOptOn : {}) }}>
+                        <span style={{ ...s.pollFill, width: `${pct}%` }} />
+                        <span style={s.pollRow}>
+                          <span>{myVote === i ? '✓ ' : ''}{opt}</span>
+                          <span style={{ color: '#B8A6D9' }}>{n ? `${n} · ${pct}%` : ''}</span>
+                        </span>
+                        {names && <span style={s.pollNames}>{names}</span>}
+                      </button>
+                    );
+                  })}
+                  <div style={s.pollTotal}>{total} {total === 1 ? 'vote' : 'votes'}</div>
+                </div>
+              );
+            }
             const mine = me && m.member_id === me;
             return (
               <div key={m.id} style={{ ...s.bubble, ...(mine ? s.mine : s.theirs) }}>
@@ -190,10 +257,24 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
             }}
           >
             <input style={s.chatInput} value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} placeholder={`Message as ${mine.name}…`} />
+            <button style={s.pollBtn} type="button" onClick={() => setPollOpen(!pollOpen)}>📊</button>
             <button style={s.sendBtn} type="submit" disabled={!text.trim()}>➤</button>
           </form>
         ) : (
           <p style={s.chatHint}>Tap your name above to join the chat</p>
+        )}
+        {mine && pollOpen && (
+          <div style={s.pollForm}>
+            <input style={s.chatInput} value={pollQ} maxLength={200} onChange={(e) => setPollQ(e.target.value)} placeholder="Ask the group… e.g. Where should we go?" />
+            {pollOpts.map((o, i) => (
+              <input key={i} style={{ ...s.chatInput, marginTop: 6 }} value={o} maxLength={80}
+                onChange={(e) => setPollOpts(pollOpts.map((x, k) => (k === i ? e.target.value : x)))} placeholder={`Option ${i + 1}`} />
+            ))}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              {pollOpts.length < 6 && <button style={s.smallBtn} onClick={() => setPollOpts([...pollOpts, ''])}>+ Option</button>}
+              <button style={{ ...s.smallBtn, background: '#8B5CF6' }} onClick={postPoll}>Post poll</button>
+            </div>
+          </div>
         )}
         {sendError && <p style={s.error}>{sendError}</p>}
 
@@ -248,5 +329,17 @@ const s: Record<string, React.CSSProperties> = {
   chatInput: { flex: 1, background: '#24103F', color: '#fff', border: '1px solid #3E2470', borderRadius: 20, padding: '11px 14px', fontSize: 16, outline: 'none' },
   sendBtn: { width: 46, borderRadius: 23, border: 'none', background: '#8B5CF6', color: '#fff', fontSize: 18, fontWeight: 800, cursor: 'pointer' },
   chatHint: { color: '#8C7AAE', fontSize: 14, marginTop: 10, textAlign: 'center' },
+  poll: { alignSelf: 'stretch', background: '#24103F', border: '1px solid #8B5CF6', borderRadius: 14, padding: 12, marginBottom: 8 },
+  pollKicker: { color: '#C9A8FF', fontSize: 11, fontWeight: 800, letterSpacing: 1 },
+  pollQ: { fontSize: 16, fontWeight: 800, margin: '4px 0 8px' },
+  pollOpt: { position: 'relative', display: 'block', width: '100%', textAlign: 'left', background: 'transparent', color: '#fff', border: '1px solid #3E2470', borderRadius: 10, padding: '9px 12px', marginBottom: 6, fontSize: 15, cursor: 'pointer', overflow: 'hidden' },
+  pollOptOn: { borderColor: '#C9A8FF' },
+  pollFill: { position: 'absolute', left: 0, top: 0, bottom: 0, background: '#341A5C', zIndex: 0 },
+  pollRow: { position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'space-between', gap: 8 },
+  pollNames: { position: 'relative', zIndex: 1, display: 'block', color: '#8C7AAE', fontSize: 11, marginTop: 2 },
+  pollTotal: { color: '#8C7AAE', fontSize: 12 },
+  pollBtn: { width: 46, borderRadius: 23, border: 'none', background: '#341A5C', fontSize: 18, cursor: 'pointer' },
+  pollForm: { background: '#1C0D33', border: '1px solid #3E2470', borderRadius: 14, padding: 10, marginTop: 8 },
+  smallBtn: { border: 'none', background: '#341A5C', color: '#fff', borderRadius: 12, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 28 },
 };

@@ -5,7 +5,7 @@ import { supabase } from './supabaseClient';
 export async function listMessages(partyId) {
   const { data, error } = await supabase
     .from('party_messages')
-    .select('id, member_id, sender_name, body, kind, created_at')
+    .select('id, member_id, sender_name, body, kind, poll_id, created_at')
     .eq('party_id', partyId)
     .order('created_at', { ascending: true })
     .limit(300);
@@ -34,4 +34,25 @@ export function onNewMessage(partyId, callback) {
       (payload) => callback(payload.new))
     .subscribe();
   return () => supabase.removeChannel(channel);
+}
+
+// ---- Polls (everyone votes; the same functions are used by the invite page) ----
+export async function getPolls(token) {
+  const { data, error } = await supabase.rpc('get_party_polls', { p_token: token });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function createPoll({ token, memberId, question, options }) {
+  const { error } = await supabase.rpc('create_party_poll', {
+    p_token: token, p_member: memberId, p_question: question, p_options: options,
+  });
+  if (error) throw error;
+}
+
+export async function votePoll({ token, memberId, pollId, option }) {
+  const { error } = await supabase.rpc('vote_party_poll', {
+    p_token: token, p_member: memberId, p_poll: pollId, p_option: option,
+  });
+  if (error) throw error;
 }

@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { listMessages, onNewMessage, sendMessage } from '../services/chat';
+import { createPoll, getPolls, listMessages, onNewMessage, sendMessage, votePoll } from '../services/chat';
+import NewPollSheet from './NewPollSheet';
+import PollCard from './PollCard';
 import { getParty } from '../services/parties';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
@@ -19,6 +21,8 @@ export default function PartyChatScreen({ partyId, onBack }) {
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
   const [myName, setMyName] = useState('');
+  const [polls, setPolls] = useState({}); // poll id -> poll
+  const [pollOpen, setPollOpen] = useState(false);
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -32,6 +36,31 @@ export default function PartyChatScreen({ partyId, onBack }) {
   }, [partyId]);
 
   const me = party && (party.party_members || []).find((m) => m.name === 'Me');
+  const token = party && party.share_token;
+
+  const loadPolls = async () => {
+    if (!token) return;
+    try {
+      const list = await getPolls(token);
+      setPolls(Object.fromEntries(list.map((p) => [p.id, p])));
+    } catch (e) {}
+  };
+
+  // Keep vote counts fresh while the chat is open
+  useEffect(() => {
+    if (!token) return;
+    loadPolls();
+    const t = setInterval(loadPolls, 5000);
+    return () => clearInterval(t);
+  }, [token, messages && messages.length]);
+
+  const vote = async (pollId, option) => {
+    if (!me) return;
+    try {
+      await votePoll({ token, memberId: me.id, pollId, option });
+      loadPolls();
+    } catch (e) {}
+  };
 
   const send = async () => {
     const body = text.trim();
@@ -53,6 +82,9 @@ export default function PartyChatScreen({ partyId, onBack }) {
   const renderItem = ({ item }) => {
     if (item.kind === 'system') {
       return <Text style={styles.system}>{item.body}</Text>;
+    }
+    if (item.poll_id) {
+      return <PollCard poll={polls[item.poll_id]} myId={me && me.id} sender={isMine(item) ? 'You' : item.sender_name} onVote={vote} />;
     }
     const mine = isMine(item);
     return (
@@ -95,7 +127,16 @@ export default function PartyChatScreen({ partyId, onBack }) {
         />
       )}
 
+      <NewPollSheet
+        visible={pollOpen}
+        onClose={() => setPollOpen(false)}
+        onCreate={(question, options) => createPoll({ token, memberId: me && me.id, question, options })}
+      />
+
       <View style={styles.inputRow}>
+        <TouchableOpacity style={styles.pollBtn} onPress={() => setPollOpen(true)} disabled={!token}>
+          <Text style={styles.pollText}>📊</Text>
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={text}
@@ -135,6 +176,8 @@ const styles = StyleSheet.create({
   emptySub: { color: C.faint, fontSize: 14, marginTop: 4 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 10, paddingBottom: 28, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg },
   input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 16, color: C.text, maxHeight: 120 },
+  pollBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
+  pollText: { fontSize: 20 },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   sendOff: { opacity: 0.4 },
   sendText: { color: '#fff', fontSize: 18, fontWeight: '800' },
