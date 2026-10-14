@@ -4,13 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
-type Member = { id: string; name: string; share: number; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null };
+type Member = { id: string; name: string; share: number | null; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
 
 export type SharedParty = {
   title: string;
   party_date: string | null;
   place: string | null;
-  budget: number;
+  budget: number | null;
+  hide_bill?: boolean;
   split_mode: 'equal' | 'treat' | 'free';
   special_person: string | null;
   host_name: string | null;
@@ -109,6 +110,12 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     refreshPolls();
   };
 
+  const requestBill = async () => {
+    if (!mine) return;
+    const res = await rpc('request_party_bill', { p_token: token, p_member: mine.id });
+    if (res.ok) setMembers((list) => list.map((m) => (m.id === mine.id ? { ...m, bill_requested: true } : m)));
+  };
+
   const send = async () => {
     const body = text.trim();
     if (!body || !me) return;
@@ -183,14 +190,23 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
               {error && <p style={s.error}>{error}</p>}
               {mine.rsvp === 'in' && (
                 <div style={s.share}>
-                  {Number(mine.share) > 0 ? (
+                  {party.hide_bill ? (
+                    <>
+                      <p style={s.free}>🎁 {host} has hidden the bill. It&apos;s a treat!</p>
+                      {mine.bill_requested ? (
+                        <p style={s.note}>🧾 You asked to see the bill. {host} will see your request.</p>
+                      ) : (
+                        <button style={s.reqBtn} onClick={requestBill}>🧾 Request to see the bill</button>
+                      )}
+                    </>
+                  ) : Number(mine.share) > 0 ? (
                     <>
                       <p style={s.shareLabel}>Your share</p>
-                      <p style={s.shareAmount}>{inr(mine.share)}</p>
+                      <p style={s.shareAmount}>{inr(mine.share || 0)}</p>
                       {mine.paid ? (
                         <p style={s.paid}>✅ Paid. Thank you!</p>
                       ) : party.host_upi ? (
-                        <a style={s.payBtn} href={upiLink(party.host_upi, host, mine.share, party.title)}>Pay {host} with UPI</a>
+                        <a style={s.payBtn} href={upiLink(party.host_upi, host, mine.share || 0, party.title)}>Pay {host} with UPI</a>
                       ) : (
                         <p style={s.note}>Pay {host} when you meet 🙏</p>
                       )}
@@ -341,5 +357,6 @@ const s: Record<string, React.CSSProperties> = {
   pollBtn: { width: 46, borderRadius: 23, border: 'none', background: '#341A5C', fontSize: 18, cursor: 'pointer' },
   pollForm: { background: '#1C0D33', border: '1px solid #3E2470', borderRadius: 14, padding: 10, marginTop: 8 },
   smallBtn: { border: 'none', background: '#341A5C', color: '#fff', borderRadius: 12, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' },
+  reqBtn: { background: 'transparent', color: '#C9A8FF', border: '1px solid #8B5CF6', borderRadius: 12, padding: '10px 14px', fontWeight: 700, cursor: 'pointer', marginTop: 10 },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 28 },
 };

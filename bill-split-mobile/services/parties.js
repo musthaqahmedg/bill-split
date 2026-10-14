@@ -21,7 +21,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -92,3 +92,16 @@ export const waNumber = (phone) => {
   if (d.length === 11 && d.startsWith('0')) return '91' + d.slice(1);
   return d;
 };
+
+// Treats: hide the amounts from friends on the invite link (they can ask to see it)
+export async function setHideBill(party, hide, hostName) {
+  const { error } = await supabase.from('parties').update({ hide_bill: hide }).eq('id', party.id);
+  if (error) throw error;
+  if (!hide) {
+    const me = (party.party_members || []).find((m) => m.name === 'Me');
+    await supabase.from('party_messages').insert({
+      party_id: party.id, member_id: me ? me.id : null, sender_name: hostName || 'Host',
+      body: `${hostName || 'The host'} shared the bill 🧾`, kind: 'system',
+    });
+  }
+}

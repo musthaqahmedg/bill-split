@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { deleteParty, getParty, partyLink, setMemberPaid, waNumber } from '../services/parties';
+import { ActivityIndicator, Alert, Linking, Modal, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
+import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
@@ -10,6 +11,7 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
   const [myUpi, setMyUpi] = useState('');
   const [myName, setMyName] = useState(''); // your name from Profile, shown to friends
 
@@ -99,6 +101,19 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
   const answered = members.filter((m) => m.rsvp && m.name !== 'Me').length;
   const BADGE = { in: '🙌 In', out: '😢 Out', maybe: '🤔 Maybe' };
 
+  const requests = members.filter((m) => m.bill_requested_at && m.name !== 'Me');
+  const toggleHide = async (hide) => {
+    setParty((p) => ({ ...p, hide_bill: hide }));
+    try {
+      await setHideBill(party, hide, myName);
+    } catch (e) {
+      setParty((p) => ({ ...p, hide_bill: !hide }));
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
+
+  const mapsUrl = (q) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`;
+
   const confirmDelete = () =>
     Alert.alert('Delete this party?', "This can't be undone.", [
       { text: 'Cancel', style: 'cancel' },
@@ -122,7 +137,26 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>{party.title}</Text>
-      {details ? <Text style={styles.meta}>📍 {details}</Text> : null}
+      {details ? (
+        <TouchableOpacity onPress={() => party.place && setPlaceOpen(true)}>
+          <Text style={styles.meta}>📍 {details}{party.place ? '  ›' : ''}</Text>
+        </TouchableOpacity>
+      ) : null}
+
+      <Modal visible={placeOpen} transparent animationType="slide" onRequestClose={() => setPlaceOpen(false)}>
+        <TouchableOpacity style={styles.backdrop} activeOpacity={1} onPress={() => setPlaceOpen(false)}>
+          <TouchableOpacity activeOpacity={1} style={styles.placeSheet}>
+            <View style={styles.handle} />
+            <Text style={styles.placeTitle}>📍 {party.place}</Text>
+            {party.party_date ? <Text style={styles.placeSub}>📅 {party.party_date}</Text> : null}
+            <View style={styles.placeGap} />
+            <PopularHere place={party.place || ''} />
+            <TouchableOpacity style={styles.mapsBtn} onPress={() => Linking.openURL(mapsUrl(party.place))}>
+              <Text style={styles.mapsText}>🗺️ Open in Google Maps</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
 
       <ScrollView style={styles.list} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.accentSoft} />}>
         <View style={styles.summary}>
@@ -154,6 +188,26 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
             </Text>
           </View>
         )}
+
+        <View style={styles.hideBox}>
+          <View style={styles.hideRow}>
+            <View style={styles.flex}>
+              <Text style={styles.hideTitle}>🙈 Hide amounts from friends</Text>
+              <Text style={styles.hideSub}>{party.hide_bill ? 'Friends see "It\'s a treat" without prices' : 'Friends can see the budget and their share'}</Text>
+            </View>
+            <Switch value={!!party.hide_bill} onValueChange={toggleHide} trackColor={{ true: C.accent, false: C.border }} />
+          </View>
+          {requests.length > 0 && (
+            <View style={styles.reqBox}>
+              <Text style={styles.reqText}>🧾 {requests.map((r) => r.name).join(', ')} asked to see the bill</Text>
+              {party.hide_bill && (
+                <TouchableOpacity onPress={() => toggleHide(false)}>
+                  <Text style={styles.reqBtn}>Show bill to everyone</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        </View>
 
         <TouchableOpacity style={styles.chatBtn} onPress={onChat}>
           <Text style={styles.chatText}>💬 Open party chat</Text>
@@ -235,6 +289,22 @@ const styles = StyleSheet.create({
   barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
   settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },
   shareBtn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
+  flex: { flex: 1 },
+  hideBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, marginBottom: 12 },
+  hideRow: { flexDirection: 'row', alignItems: 'center' },
+  hideTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  hideSub: { color: C.faint, fontSize: 12, marginTop: 2, marginRight: 8 },
+  reqBox: { backgroundColor: C.amberBg, borderRadius: 10, padding: 10, marginTop: 10 },
+  reqText: { color: C.amber, fontSize: 13, fontWeight: '700' },
+  reqBtn: { color: C.accentSoft, fontSize: 14, fontWeight: '800', marginTop: 6 },
+  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
+  placeSheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 36 },
+  handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 14 },
+  placeTitle: { color: C.text, fontSize: 22, fontWeight: '800' },
+  placeSub: { color: C.sub, fontSize: 14, marginTop: 4 },
+  placeGap: { height: 14 },
+  mapsBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center' },
+  mapsText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
   chatText: { color: '#2A0A1F', fontSize: 16, fontWeight: '800' },
   chatHint: { color: '#4A1035', fontSize: 12, marginTop: 3 },
