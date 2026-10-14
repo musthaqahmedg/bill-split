@@ -9,6 +9,7 @@ import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
+import PartyChatScreen from './screens/PartyChatScreen';
 import PartyScreen from './screens/PartyScreen';
 import PeopleScreen from './screens/PeopleScreen';
 import ProfileScreen from './screens/ProfileScreen';
@@ -320,8 +321,13 @@ export default function App() {
         partyId={openPartyId}
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
+        onChat={() => setScreen('partyChat')}
       />
     );
+  }
+
+  if (screen === 'partyChat') {
+    return <PartyChatScreen partyId={openPartyId} onBack={() => setScreen('party')} />;
   }
 
   if (screen === 'detail') {

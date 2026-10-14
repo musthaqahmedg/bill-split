@@ -7,7 +7,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted }) {
+export default function PartyScreen({ partyId, onBack, onDeleted, onChat }) {
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [myUpi, setMyUpi] = useState('');
@@ -155,9 +155,14 @@ export default function PartyScreen({ partyId, onBack, onDeleted }) {
           </View>
         )}
 
+        <TouchableOpacity style={styles.chatBtn} onPress={onChat}>
+          <Text style={styles.chatText}>💬 Open party chat</Text>
+          <Text style={styles.chatHint}>Plan everything here with your friends</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.shareBtn} onPress={shareAll}>
           <Text style={styles.shareText}>📨 Invite friends</Text>
-          <Text style={styles.shareHint}>Send one link to WhatsApp groups or anyone. Pull down to see answers.</Text>
+          <Text style={styles.shareHint}>One link for WhatsApp groups or anyone. Friends answer and chat from it.</Text>
         </TouchableOpacity>
 
         {members.map((m) => (
@@ -230,6 +235,9 @@ const styles = StyleSheet.create({
   barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
   settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },
   shareBtn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 15 },
+  chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
+  chatText: { color: '#2A0A1F', fontSize: 16, fontWeight: '800' },
+  chatHint: { color: '#4A1035', fontSize: 12, marginTop: 3 },
   shareHint: { color: '#E9DDFF', fontSize: 12, marginTop: 4, textAlign: 'center' },
   going: { color: C.green, fontSize: 14, fontWeight: '700' },
   rsvpRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
