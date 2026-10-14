@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; created_at: string };
 type Member = { id: string; name: string; share: number; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null };
 
 export type SharedParty = {
@@ -35,6 +36,55 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [me, setMe] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState('');
+  const [sendError, setSendError] = useState('');
+  const bottom = useRef<HTMLDivElement>(null);
+
+  const rpc = (fn: string, body: object) =>
+    fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: supabaseKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+  // Load the chat, then check for new messages every 4 seconds
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await rpc('get_party_messages', { p_token: token });
+        if (res.ok && alive) setMessages(await res.json());
+      } catch {}
+    };
+    load();
+    const t = setInterval(load, 4000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [messages.length]);
+
+  const send = async () => {
+    const body = text.trim();
+    if (!body || !me) return;
+    setSendError('');
+    setText('');
+    try {
+      const res = await rpc('send_party_message', { p_token: token, p_member: me, p_body: body });
+      if (!res.ok) throw new Error();
+      const again = await rpc('get_party_messages', { p_token: token });
+      if (again.ok) setMessages(await again.json());
+    } catch {
+      setText(body);
+      setSendError("Couldn't send. Try again.");
+    }
+  };
 
   const show = (name: string) => (name === 'Me' ? host : name);
   const mine = members.find((m) => m.id === me) || null;
@@ -115,7 +165,39 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           )}
         </div>
 
-        <p style={s.label}>Guest list</p>
+        <p style={s.label}>💬 Party chat</p>
+        <div style={s.chat}>
+          {messages.length === 0 && <p style={s.chatEmpty}>No messages yet. Say hi 👋</p>}
+          {messages.map((m) => {
+            if (m.kind === 'system') return <p key={m.id} style={s.system}>{m.body}</p>;
+            const mine = me && m.member_id === me;
+            return (
+              <div key={m.id} style={{ ...s.bubble, ...(mine ? s.mine : s.theirs) }}>
+                {!mine && <div style={s.sender}>{m.sender_name}</div>}
+                <div>{m.body}</div>
+                <div style={s.time}>{new Date(m.created_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}</div>
+              </div>
+            );
+          })}
+          <div ref={bottom} />
+        </div>
+        {mine ? (
+          <form
+            style={s.chatForm}
+            onSubmit={(e) => {
+              e.preventDefault();
+              send();
+            }}
+          >
+            <input style={s.chatInput} value={text} maxLength={1000} onChange={(e) => setText(e.target.value)} placeholder={`Message as ${mine.name}…`} />
+            <button style={s.sendBtn} type="submit" disabled={!text.trim()}>➤</button>
+          </form>
+        ) : (
+          <p style={s.chatHint}>Tap your name above to join the chat</p>
+        )}
+        {sendError && <p style={s.error}>{sendError}</p>}
+
+        <p style={{ ...s.label, marginTop: 22 }}>Guest list</p>
         {members.map((m) => (
           <div key={m.id} style={s.row}>
             <span>{show(m.name)}{m.name === 'Me' ? ' (host)' : ''}</span>
@@ -154,5 +236,17 @@ const s: Record<string, React.CSSProperties> = {
   note: { color: '#B8A6D9', margin: 0 },
   free: { color: '#F472B6', fontWeight: 700, margin: 0, fontSize: 16 },
   row: { display: 'flex', justifyContent: 'space-between', padding: '12px 4px', borderBottom: '1px solid #3E2470', fontSize: 16 },
+  chat: { background: '#1C0D33', border: '1px solid #3E2470', borderRadius: 16, padding: 12, maxHeight: 360, overflowY: 'auto', display: 'flex', flexDirection: 'column' },
+  chatEmpty: { color: '#8C7AAE', textAlign: 'center', margin: '20px 0' },
+  bubble: { maxWidth: '80%', borderRadius: 14, padding: '8px 12px', marginBottom: 8, fontSize: 15, lineHeight: 1.35, wordBreak: 'break-word' },
+  mine: { alignSelf: 'flex-end', background: '#8B5CF6' },
+  theirs: { alignSelf: 'flex-start', background: '#24103F', border: '1px solid #3E2470' },
+  sender: { fontSize: 12, fontWeight: 800, color: '#F472B6', marginBottom: 2 },
+  time: { fontSize: 10, color: 'rgba(255,255,255,0.55)', textAlign: 'right', marginTop: 3 },
+  system: { alignSelf: 'center', color: '#B8A6D9', background: '#341A5C', borderRadius: 12, padding: '4px 12px', fontSize: 13, margin: '6px 0' },
+  chatForm: { display: 'flex', gap: 8, marginTop: 10 },
+  chatInput: { flex: 1, background: '#24103F', color: '#fff', border: '1px solid #3E2470', borderRadius: 20, padding: '11px 14px', fontSize: 16, outline: 'none' },
+  sendBtn: { width: 46, borderRadius: 23, border: 'none', background: '#8B5CF6', color: '#fff', fontSize: 18, fontWeight: 800, cursor: 'pointer' },
+  chatHint: { color: '#8C7AAE', fontSize: 14, marginTop: 10, textAlign: 'center' },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 28 },
 };
