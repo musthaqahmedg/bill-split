@@ -371,6 +371,11 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
             ) : null}
           </View>
         )}
+        {!ex && (
+          <Text style={styles.after}>
+            After you create it: 🛒 Who brings what · 💬 Chat · 📊 Polls · 📨 Invite link
+          </Text>
+        )}
         <TouchableOpacity style={styles.button} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
           {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : 'Create plan'}</Text>}
         </TouchableOpacity>
@@ -429,6 +434,7 @@ const styles = StyleSheet.create({
   scaleHint: { color: C.faint, fontSize: 12, marginTop: 4, marginBottom: 10 },
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
+  after: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 6 },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 10, marginBottom: 30 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

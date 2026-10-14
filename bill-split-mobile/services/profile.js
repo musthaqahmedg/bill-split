@@ -6,7 +6,7 @@ export async function getProfile() {
   if (!user) return null;
   const { data, error } = await supabase
     .from('profiles')
-    .select('id, name, phone, upi_id')
+    .select('id, name, phone, upi_id, home_address')
     .eq('id', user.id)
     .maybeSingle();
   if (error) throw error;
@@ -31,4 +31,11 @@ export async function deleteAccount() {
   if (error) throw error;
   if (data && data.error) throw new Error(data.error);
   await supabase.auth.signOut();
+}
+// Your home (for house parties): saved once, picked in one tap
+export async function saveHome(address) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not logged in');
+  const { error } = await supabase.from('profiles').upsert({ id: user.id, home_address: (address || '').trim() || null });
+  if (error) throw error;
 }

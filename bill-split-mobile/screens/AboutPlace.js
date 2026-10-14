@@ -3,6 +3,9 @@ import { ActivityIndicator, Dimensions, Image, Linking, ScrollView, StyleSheet, 
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
 
+// Home / current location: nothing to look up
+const isPersonal = (p) => /^my place|current location/i.test((p || '').trim());
+
 const W = Dimensions.get('window').width - 40;
 
 // "About this place": photos + a short story about the place (from Wikipedia, free and credited).
@@ -15,6 +18,7 @@ export default function AboutPlace({ place }) {
   useEffect(() => {
     let alive = true;
     setInfo(undefined);
+    if (isPersonal(place)) return;
     setPage(0);
     setMore(false);
     // Wait until typing stops
@@ -32,7 +36,7 @@ export default function AboutPlace({ place }) {
     };
   }, [place]);
 
-  if (!place || info === null) return null;
+  if (!place || info === null || isPersonal(place)) return null;
   if (info === undefined) {
     return (
       <View style={styles.box}>

@@ -77,3 +77,19 @@ export async function knownPlaces(q = '') {
   if (error) return [];
   return data || [];
 }
+
+// Your current spot as a readable address, e.g. "12 Nehru Road, Kalmandapam, Palakkad"
+export async function currentAddress() {
+  const loc = await getMyLocation({ ask: true });
+  if (loc.status !== 'granted') return { status: loc.status, address: '' };
+  try {
+    const [a] = await Location.reverseGeocodeAsync({ latitude: loc.coords.lat, longitude: loc.coords.lon });
+    if (!a) return { status: 'granted', address: '' };
+    const parts = [a.name && a.name !== a.street ? a.name : null, a.street, a.district || a.subregion, a.city]
+      .filter(Boolean)
+      .filter((x, i, arr) => arr.indexOf(x) === i);
+    return { status: 'granted', address: parts.join(', ') };
+  } catch (e) {
+    return { status: 'granted', address: '' };
+  }
+}

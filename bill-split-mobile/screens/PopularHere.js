@@ -43,7 +43,7 @@ export default function PopularHere({ place, quietIfEmpty = false }) {
     Animated.timing(anim, { toValue: 1, duration: 600, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, [i, items]);
 
-  if (!place) return null;
+  if (!place || /^my place|current location/i.test(place.trim())) return null;
 
   if (items === null) {
     return (

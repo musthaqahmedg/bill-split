@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { DONE_ID } from './KeyboardDone';
-import { CATEGORIES, findPlaces, getMyLocation, knownPlaces, openPhoneSettings, showKm } from '../services/places';
+import { CATEGORIES, currentAddress, findPlaces, getMyLocation, knownPlaces, openPhoneSettings, showKm } from '../services/places';
+import { getProfile, saveHome } from '../services/profile';
+import { Alert } from 'react-native';
 import { C } from '../services/theme';
 
 // "Where" box: shows places near you straight away, and searches as you type.
@@ -20,6 +22,59 @@ export default function PlaceInput({ value, onChange, onFocus, categories = ['al
   const [error, setError] = useState('');
   const [limit, setLimit] = useState(8); // how many places are shown; "Show more" adds 10
   const timer = useRef(null);
+  const [home, setHome] = useState(''); // your saved home address
+  const [locating, setLocating] = useState(false);
+
+  useEffect(() => {
+    getProfile().then((p) => setHome((p && p.home_address) || '')).catch(() => {});
+  }, []);
+
+  // 📍 Where I am now
+  const useHere = async () => {
+    setLocating(true);
+    const r = await currentAddress();
+    setLocating(false);
+    if (r.status !== 'granted') {
+      return Alert.alert('Location is off', 'Allow location to use where you are now.', [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Open Settings', onPress: openPhoneSettings },
+      ]);
+    }
+    onChange(r.address || 'Current location');
+    setOpen(false);
+  };
+
+  // 🏠 My home: use the saved one, or save where you are now as home
+  const useHome = async () => {
+    if (home) {
+      onChange(`My place 🏠 · ${home}`);
+      return setOpen(false);
+    }
+    setLocating(true);
+    const r = await currentAddress();
+    setLocating(false);
+    const addr = r.address || '';
+    Alert.alert(
+      'Save your home?',
+      addr ? `Use this as your home?\n\n${addr}` : 'We could not read your address. You can set it in Profile later.',
+      addr
+        ? [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Save as home',
+              onPress: async () => {
+                try {
+                  await saveHome(addr);
+                  setHome(addr);
+                } catch (e) {}
+                onChange(`My place 🏠 · ${addr}`);
+                setOpen(false);
+              },
+            },
+          ]
+        : [{ text: 'OK' }]
+    );
+  };
 
   // First time the box is used: ask for location
   useEffect(() => {
@@ -96,6 +151,15 @@ export default function PlaceInput({ value, onChange, onFocus, categories = ['al
             ))}
           </View>
 
+          <View style={styles.quickRow}>
+            <TouchableOpacity style={styles.quick} onPress={useHome} disabled={locating}>
+              <Text style={styles.quickText}>🏠 My home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.quick} onPress={useHere} disabled={locating}>
+              <Text style={styles.quickText}>{locating ? 'Finding you…' : '📍 Where I am now'}</Text>
+            </TouchableOpacity>
+          </View>
+
           {!loc ? (
             <Text style={styles.where}>Finding your location…</Text>
           ) : usingRealLocation ? (
@@ -168,6 +232,9 @@ const styles = StyleSheet.create({
   chipOn: { backgroundColor: C.accent, borderColor: C.accent },
   chipText: { color: C.sub, fontSize: 13, fontWeight: '600' },
   chipTextOn: { color: '#fff' },
+  quickRow: { flexDirection: 'row', marginBottom: 8 },
+  quick: { flex: 1, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginRight: 6 },
+  quickText: { color: C.text, fontSize: 14, fontWeight: '700' },
   where: { color: C.faint, fontSize: 12, marginBottom: 6 },
   locBox: { backgroundColor: C.amberBg, borderRadius: 10, padding: 10, marginBottom: 8 },
   locTitle: { color: C.amber, fontSize: 14, fontWeight: '800' },
