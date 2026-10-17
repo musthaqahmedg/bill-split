@@ -13,7 +13,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit }) {
+export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop }) {
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
@@ -228,6 +228,12 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
         </TouchableOpacity>
 
         <BringList party={party} />
+        {['house', 'party', 'birthday', 'bachelor', 'match', 'trip', 'daytrip'].includes(party.kind) && onShop ? (
+          <TouchableOpacity style={styles.shopBtn} onPress={onShop}>
+            <Text style={styles.shopText}>🛒 Shop for this party</Text>
+            <Text style={styles.shopHint}>Supermarkets and shops near you</Text>
+          </TouchableOpacity>
+        ) : null}
         <NightCheck party={party} onChanged={reload} />
 
         <TouchableOpacity style={styles.shareBtn} onPress={shareAll}>
@@ -325,6 +331,9 @@ const styles = StyleSheet.create({
   sheetScroll: { maxHeight: 460 },
   mapsBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center' },
   mapsText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  shopBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
+  shopHint: { color: C.faint, fontSize: 12, marginTop: 3 },
+  shopText: { color: C.text, fontSize: 16, fontWeight: '800' },
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
   chatText: { color: '#2A0A1F', fontSize: 16, fontWeight: '800' },
   chatHint: { color: '#4A1035', fontSize: 12, marginTop: 3 },

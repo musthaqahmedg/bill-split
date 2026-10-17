@@ -16,6 +16,7 @@ import PartyScreen from './screens/PartyScreen';
 import PeopleScreen from './screens/PeopleScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import RecheckScreen from './screens/RecheckScreen';
+import NearbyScreen from './screens/NearbyScreen';
 import SplitScreen from './screens/SplitScreen';
 import UploadScreen from './screens/UploadScreen';
 import { kindOf } from './services/kinds';
@@ -51,6 +52,7 @@ export default function App() {
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
+  const [nearby, setNearby] = useState<any>({ from: 'parties', category: 'restobars', title: null }); // 📍 Nearby screen
 
   const startNewBill = () => {
     setItems([]);
@@ -305,6 +307,10 @@ export default function App() {
           setScreen('newParty');
         }}
         onGroups={() => setScreen('groups')}
+        onNearby={() => {
+          setNearby({ from: 'parties', category: 'restobars', title: null });
+          setScreen('nearby');
+        }}
         onOpenParty={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
@@ -366,10 +372,24 @@ export default function App() {
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
+        onShop={() => {
+          setNearby({ from: 'party', category: 'supermarkets', title: '🛒 Shop for this party' });
+          setScreen('nearby');
+        }}
         onEdit={(p: any) => {
           setEditPlan(p);
           setScreen('newParty');
         }}
+      />
+    );
+  }
+
+  if (screen === 'nearby') {
+    return (
+      <NearbyScreen
+        initialCategory={nearby.category}
+        title={nearby.title}
+        onBack={() => setScreen(nearby.from)}
       />
     );
   }

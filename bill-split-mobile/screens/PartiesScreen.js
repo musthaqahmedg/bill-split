@@ -7,7 +7,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups }) {
+export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups, onNearby }) {
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -53,9 +53,14 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
       </TouchableOpacity>
       <View style={styles.topRow}>
         <Text style={styles.title}>Plans 🎉</Text>
-        <TouchableOpacity style={styles.groupsBtn} onPress={onGroups}>
-          <Text style={styles.groupsText}>👥 Groups</Text>
-        </TouchableOpacity>
+        <View style={styles.topBtns}>
+          <TouchableOpacity style={styles.groupsBtn} onPress={onNearby}>
+            <Text style={styles.groupsText}>📍 Nearby</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.groupsBtn, styles.gap]} onPress={onGroups}>
+            <Text style={styles.groupsText}>👥 Groups</Text>
+          </TouchableOpacity>
+        </View>
       </View>
       <Text style={styles.sub}>Parties, trips, movies, weddings: plan it all with friends</Text>
 
@@ -87,6 +92,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  topBtns: { flexDirection: 'row' },
+  gap: { marginLeft: 8 },
   groupsBtn: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14 },
   groupsText: { color: C.accentSoft, fontSize: 14, fontWeight: '800' },
   title: { fontSize: 30, fontWeight: '800', color: C.text },

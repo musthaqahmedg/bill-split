@@ -93,3 +93,125 @@ export async function currentAddress() {
     return { status: 'granted', address: '' };
   }
 }
+
+// ---------- Nearby screen ----------
+
+export const NEARBY = [
+  { key: 'restobars', label: '🍻 Restobars', adult: true },
+  { key: 'pubs', label: '🍺 Pubs', adult: true },
+  { key: 'cafes', label: '☕ Cafés' },
+  { key: 'food', label: '🍽️ Restaurants' },
+  { key: 'supermarkets', label: '🛒 Supermarkets' },
+  { key: 'beverages', label: '🍾 Beverage shops', adult: true },
+  { key: 'pan', label: '🌿 Pan shops' },
+];
+Object.assign(EMOJI, {
+  supermarket: '🛒', convenience: '🏪', department_store: '🏬', general: '🏪', grocery: '🛒',
+  alcohol: '🍾', beverages: '🍾', wine: '🍷', tobacco: '🌿', kiosk: '🌿', brewery: '🍺', biergarten: '🍺', 'e-cigarette': '🌿',
+});
+
+// Phone + opening hours (only some places have them on the map)
+const detailCache = new Map();
+export async function placeDetails(ids) {
+  const need = ids.filter((id) => !detailCache.has(id));
+  if (need.length) {
+    const { data } = await supabase.functions.invoke('places', { body: { details: need } });
+    for (const id of need) detailCache.set(id, (data && data.details && data.details[id]) || {});
+  }
+  return Object.fromEntries(ids.map((id) => [id, detailCache.get(id) || {}]));
+}
+
+// "Mo-Sa 09:00-22:00; Su 10:00-14:00" → { open, label } (null if we can't read it)
+const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const toMin = (t) => {
+  const [h, m] = t.split(':').map(Number);
+  return h * 60 + (m || 0);
+};
+const showTime = (min) => {
+  const h = Math.floor((min % 1440) / 60);
+  const m = min % 60;
+  const ap = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return m ? `${h12}:${String(m).padStart(2, '0')} ${ap}` : `${h12} ${ap}`;
+};
+function dayMatches(spec, day) {
+  if (!spec) return true;
+  return spec.split(',').some((part) => {
+    const [a, b] = part.split('-');
+    const i = DAYS.indexOf(a);
+    if (i < 0) return false;
+    if (!b) return i === day;
+    const j = DAYS.indexOf(b);
+    if (j < 0) return false;
+    return i <= j ? day >= i && day <= j : day >= i || day <= j;
+  });
+}
+export function openStatus(hours, now = new Date()) {
+  if (!hours) return null;
+  const h = hours.trim();
+  if (h === '24/7') return { open: true, label: 'Open 24 hours', late: true };
+  const day = now.getDay();
+  const min = now.getHours() * 60 + now.getMinutes();
+  let ranges = null;
+  let lateClose = 0;
+  for (const rule of h.split(';').map((r) => r.trim()).filter(Boolean)) {
+    const m = rule.match(/^((?:Mo|Tu|We|Th|Fr|Sa|Su)(?:[-,](?:Mo|Tu|We|Th|Fr|Sa|Su))*)?\s*(.*)$/);
+    if (!m) return null;
+    const times = m[2].trim();
+    if (/^(PH|SH)/.test(rule)) continue;
+    // Yesterday's late-night hours (e.g. Fri 18:00-02:00 still open at 1 AM Saturday)
+    const yesterday = (day + 6) % 7;
+    if (times !== 'off' && dayMatches(m[1], yesterday)) {
+      for (const r of times.split(',')) {
+        const [a, b] = r.split('-');
+        if (!a || !b) continue;
+        if (toMin(b) <= toMin(a) && min < toMin(b)) lateClose = toMin(b);
+      }
+    }
+    if (!dayMatches(m[1], day)) continue;
+    if (times === 'off' || times === 'closed') {
+      ranges = [];
+      continue;
+    }
+    const list = [];
+    for (const r of times.split(',')) {
+      const [a, b] = r.split('-');
+      if (!/^\d{1,2}:\d{2}$/.test(a || '') || !/^\d{1,2}:\d{2}\+?$/.test(b || '')) return null;
+      let s = toMin(a);
+      let e = toMin(b.replace('+', ''));
+      if (e <= s) e += 1440; // closes after midnight
+      list.push([s, e]);
+    }
+    ranges = list; // later rules override earlier ones
+  }
+  if (lateClose) return { open: true, label: `Open till ${showTime(lateClose)}`, late: true };
+  if (ranges === null) return null;
+  const now1 = ranges.find(([s, e]) => min >= s && min < e);
+  if (now1) {
+    const closesSoon = now1[1] - min <= 60;
+    return { open: true, label: closesSoon ? `Closing soon · ${showTime(now1[1])}` : `Open till ${showTime(now1[1])}`, late: now1[1] >= 23 * 60, soon: closesSoon };
+  }
+  const next = ranges.find(([s]) => s > min);
+  return { open: false, label: next ? `Closed · opens ${showTime(next[0])}` : 'Closed now', late: ranges.some(([, e]) => e >= 23 * 60) };
+}
+
+export const directionsUrl = (p) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`;
+
+// ⭐ Saved places
+export async function listSaved() {
+  const { data, error } = await supabase.from('saved_places').select('*').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((p) => ({ ...p, id: p.place_id, emoji: EMOJI[p.kind] || '📍' }));
+}
+export async function savePlace(p, category) {
+  const { error } = await supabase.from('saved_places').upsert(
+    { place_id: p.id, name: p.name, kind: p.kind, area: p.area, lat: p.lat, lon: p.lon, category },
+    { onConflict: 'user_id,place_id' }
+  );
+  if (error) throw error;
+}
+export async function unsavePlace(id) {
+  const { error } = await supabase.from('saved_places').delete().eq('place_id', id);
+  if (error) throw error;
+}
