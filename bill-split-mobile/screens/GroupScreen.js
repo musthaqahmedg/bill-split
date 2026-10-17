@@ -6,6 +6,8 @@ import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../se
 import { kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 import ActiveTag from './ActiveTag';
+import FriendButton from './FriendButton';
+import { appUsers, lookupKeys } from '../services/friends';
 import { useFriendsActive } from '../services/active';
 
 export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpenPlan }) {
@@ -15,6 +17,10 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
   const [name, setName] = useState('');
   const [contact, setContact] = useState('');
   const [contactsOpen, setContactsOpen] = useState(false);
+  const [onApp, setOnApp] = useState({}); // members who are on Vibe Out
+  useEffect(() => {
+    if (group) appUsers(group.group_members || []).then(setOnApp).catch(() => {});
+  }, [group]);
 
   const load = async () => {
     try {
@@ -108,6 +114,10 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
                 {m.phone || m.email ? <Text style={styles.memberSub}>{m.phone || m.email}</Text> : null}
                 <ActiveTag status={activeOf(m)} />
               </View>
+              {(() => {
+                const u = lookupKeys(m).map((k) => onApp[k]).find(Boolean);
+                return u ? <FriendButton key={u.user_id + (u.status || '')} user={u} /> : null;
+              })()}
               <TouchableOpacity onPress={() => toggleAdmin(m)}>
                 <Text style={m.is_admin ? styles.adminTag : styles.makeAdmin}>{m.is_admin ? '⭐ Admin' : 'Make admin'}</Text>
               </TouchableOpacity>

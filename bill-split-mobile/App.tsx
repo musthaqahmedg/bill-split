@@ -5,6 +5,7 @@ import { ActivityIndicator, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
+import FriendsScreen from './screens/FriendsScreen';
 import HomeScreen from './screens/HomeScreen';
 import { track } from './services/track';
 import { startPresence } from './services/active';
@@ -410,6 +411,10 @@ export default function App() {
     );
   }
 
+  if (screen === 'friends') {
+    return <FriendsScreen onBack={() => setScreen('home')} />;
+  }
+
   if (screen === 'partyChat') {
     return <PartyChatScreen partyId={openPartyId} onBack={() => setScreen('party')} />;
   }
@@ -439,6 +444,7 @@ export default function App() {
       onLogout={logout}
       onProfile={() => setScreen('profile')}
       onParties={() => setScreen('parties')}
+      onFriends={() => setScreen('friends')}
       onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');

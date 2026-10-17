@@ -3,10 +3,11 @@ import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } fr
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { C } from '../services/theme';
+import FriendsRow from './FriendsRow';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties }) {
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onFriends }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -62,6 +63,8 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
           </TouchableOpacity>
         </View>
       </View>
+
+      {!showArchived && onFriends ? <FriendsRow onOpen={onFriends} /> : null}
 
       {(archived.length > 0 || showArchived) && (
         <TouchableOpacity style={styles.switch} onPress={() => setShowArchived(!showArchived)}>
