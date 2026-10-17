@@ -3,15 +3,10 @@ import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } fr
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { C } from '../services/theme';
-import { isAdmin } from '../services/track';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onActivity }) {
-  const [admin, setAdmin] = useState(false);
-  useEffect(() => {
-    isAdmin().then(setAdmin).catch(() => {});
-  }, []);
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties }) {
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -59,11 +54,6 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
       <View style={styles.header}>
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
         <View style={styles.headerBtns}>
-          {admin && onActivity ? (
-            <TouchableOpacity style={[styles.profileBtn, styles.partyBtn]} onPress={onActivity}>
-              <Text style={styles.profileIcon}>📊</Text>
-            </TouchableOpacity>
-          ) : null}
           <TouchableOpacity style={styles.plansBtn} onPress={onParties} activeOpacity={0.85}>
             <Text style={styles.plansText}>🎉 Plans</Text>
           </TouchableOpacity>
