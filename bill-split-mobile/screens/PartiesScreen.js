@@ -63,7 +63,7 @@ function PlanCard({ item, index, onPress }) {
           <View style={styles.rowBottom}>
             <View style={styles.avatars}>
               {members.slice(0, 4).map((m, i) => (
-                <View key={m.id} style={[styles.avatar, { marginLeft: i ? -6 : 0 }]}>
+                <View key={m.id || i} style={[styles.avatar, { marginLeft: i ? -6 : 0 }]}>
                   <Text style={styles.avatarText}>{(show(m.name) || '?')[0].toUpperCase()}</Text>
                 </View>
               ))}
