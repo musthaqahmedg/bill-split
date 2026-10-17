@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
+import ActiveTag from './ActiveTag';
 import BookingCard from './BookingCard';
+import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
 import NightCheck from './NightCheck';
 import KeyboardDone from './KeyboardDone';
@@ -15,6 +17,7 @@ import { C } from '../services/theme';
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut }) {
+  const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
@@ -248,7 +251,10 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
         {members.map((m) => (
           <View key={m.id} style={styles.card}>
             <View style={styles.cardTop}>
-              <Text style={styles.name}>{show(m.name)}</Text>
+              <View>
+                <Text style={styles.name}>{show(m.name)}</Text>
+                {m.name !== 'Me' ? <ActiveTag status={activeOf(m)} /> : null}
+              </View>
               <Text style={styles.pay}>{inr(m.share)}</Text>
             </View>
             {m.name !== 'Me' && (

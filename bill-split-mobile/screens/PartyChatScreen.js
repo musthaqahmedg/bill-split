@@ -8,6 +8,7 @@ import PollCard from './PollCard';
 import { getParty } from '../services/parties';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
+import { useFriendsActive } from '../services/active';
 
 const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
@@ -16,6 +17,7 @@ const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#C9A8FF', '#FB
 const colorFor = (name) => NAME_COLORS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % NAME_COLORS.length];
 
 export default function PartyChatScreen({ partyId, onBack }) {
+  const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [messages, setMessages] = useState(null);
   const [text, setText] = useState('');
@@ -103,7 +105,14 @@ export default function PartyChatScreen({ partyId, onBack }) {
           <Text style={styles.back}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>💬 {party ? party.title : 'Party chat'}</Text>
-        <Text style={styles.sub}>Friends join from your invite link. No app needed.</Text>
+        {(() => {
+          const on = party ? (party.party_members || []).filter((m) => m.name !== 'Me' && (activeOf(m) || {}).now) : [];
+          return on.length ? (
+            <Text style={[styles.sub, { color: C.green }]}>🟢 {on.map((m) => m.name).join(', ')} {on.length === 1 ? 'is' : 'are'} active now</Text>
+          ) : (
+            <Text style={styles.sub}>Friends join from your invite link. No app needed.</Text>
+          );
+        })()}
       </View>
 
       {messages === null ? (

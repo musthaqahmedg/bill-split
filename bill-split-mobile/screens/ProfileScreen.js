@@ -1,13 +1,27 @@
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { deleteAccount, getProfile, isValidUpi, saveProfile } from '../services/profile';
+import { getShowActive, setShowActive } from '../services/active';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 export default function ProfileScreen({ onBack, onLogout }) {
+  const [showActive, setShowActiveState] = useState(true);
+  useEffect(() => {
+    getShowActive().then(setShowActiveState).catch(() => {});
+  }, []);
+  const toggleActive = async (on) => {
+    setShowActiveState(on);
+    try {
+      await setShowActive(on);
+    } catch (e) {
+      setShowActiveState(!on);
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [phone, setPhone] = useState('');
@@ -101,6 +115,14 @@ export default function ProfileScreen({ onBack, onLogout }) {
           keyboardAppearance="dark"
         />
 
+        <View style={styles.activeRow}>
+          <View style={styles.activeText}>
+            <Text style={styles.activeTitle}>🟢 Show activity status</Text>
+            <Text style={styles.activeSub}>Friends in your plans and groups see when you're active. Turn off to hide it (you won't see theirs either).</Text>
+          </View>
+          <Switch value={showActive} onValueChange={toggleActive} trackColor={{ true: C.green }} />
+        </View>
+
         <Text style={styles.label}>Your UPI ID</Text>
         <TextInput
           inputAccessoryViewID={DONE_ID}
@@ -141,6 +163,10 @@ export default function ProfileScreen({ onBack, onLogout }) {
 }
 
 const styles = StyleSheet.create({
+  activeRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 12, marginTop: 14 },
+  activeText: { flex: 1, marginRight: 10 },
+  activeTitle: { color: C.text, fontSize: 15, fontWeight: '600' },
+  activeSub: { color: C.faint, fontSize: 12, marginTop: 2 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },

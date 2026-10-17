@@ -5,8 +5,11 @@ import KeyboardDone from './KeyboardDone';
 import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../services/groups';
 import { kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
+import ActiveTag from './ActiveTag';
+import { useFriendsActive } from '../services/active';
 
 export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpenPlan }) {
+  const activeOf = useFriendsActive();
   const [group, setGroup] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [name, setName] = useState('');
@@ -103,6 +106,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
               <View style={styles.flex}>
                 <Text style={styles.memberName}>{m.name}</Text>
                 {m.phone || m.email ? <Text style={styles.memberSub}>{m.phone || m.email}</Text> : null}
+                <ActiveTag status={activeOf(m)} />
               </View>
               <TouchableOpacity onPress={() => toggleAdmin(m)}>
                 <Text style={m.is_admin ? styles.adminTag : styles.makeAdmin}>{m.is_admin ? '⭐ Admin' : 'Make admin'}</Text>

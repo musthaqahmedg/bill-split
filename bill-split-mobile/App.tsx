@@ -7,6 +7,7 @@ import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import HomeScreen from './screens/HomeScreen';
 import { track } from './services/track';
+import { startPresence } from './services/active';
 import ItemsScreen from './screens/ItemsScreen';
 import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -39,7 +40,11 @@ export default function App() {
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
-  // 📊 log each screen people open (shown live in Activity)
+  // 🟢 tell friends you're active while the app is open
+  useEffect(() => {
+    if (loggedIn && !locked) return startPresence();
+  }, [loggedIn, locked]);
+  // 📊 log each screen people open
   useEffect(() => {
     if (loggedIn && !locked) track(screen);
   }, [screen, loggedIn, locked]);
