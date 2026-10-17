@@ -4,10 +4,12 @@ import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 import FriendsRow from './FriendsRow';
+import { useUnread } from '../services/notifications';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onFriends }) {
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onFriends, onNotifications }) {
+  const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
@@ -55,6 +57,16 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
       <View style={styles.header}>
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
         <View style={styles.headerBtns}>
+          {onNotifications ? (
+            <TouchableOpacity style={[styles.profileBtn, styles.partyBtn]} onPress={onNotifications}>
+              <Text style={styles.profileIcon}>🔔</Text>
+              {unread ? (
+                <View style={styles.bellBadge}>
+                  <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+                </View>
+              ) : null}
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity style={styles.plansBtn} onPress={onParties} activeOpacity={0.85}>
             <Text style={styles.plansText}>🎉 Plans</Text>
           </TouchableOpacity>
@@ -107,6 +119,8 @@ const styles = StyleSheet.create({
   profileIcon: { fontSize: 20 },
   headerBtns: { flexDirection: 'row' },
   partyBtn: { marginRight: 10 },
+  bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
+  bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
   plansBtn: { height: 34, borderRadius: 17, paddingHorizontal: 14, marginRight: 10, justifyContent: 'center', backgroundColor: C.accent },
   plansText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   switch: { alignSelf: 'flex-start', backgroundColor: C.card, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },

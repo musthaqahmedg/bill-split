@@ -6,6 +6,9 @@ import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import FriendsScreen from './screens/FriendsScreen';
+import NotificationBanner from './screens/NotificationBanner';
+import NotificationsScreen from './screens/NotificationsScreen';
+import { setNotificationNavigator } from './services/notifications';
 import HomeScreen from './screens/HomeScreen';
 import { track } from './services/track';
 import { startPresence } from './services/active';
@@ -36,12 +39,25 @@ function matchItems(oldItems: any[], newItems: any[]) {
   });
 }
 
-export default function App() {
+function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
   const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
+  // 🔔 tapping a notification opens the right screen
+  useEffect(() => {
+    setNotificationNavigator((n: any) => {
+      const d = (n && n.data) || {};
+      if (d.friends) {
+        setFriendsAdd(false);
+        setScreen('friends');
+      } else if (d.party_id) {
+        setOpenPartyId(d.party_id);
+        setScreen(d.chat ? 'partyChat' : 'party');
+      } else setScreen('notifications');
+    });
+  }, []);
   // 🟢 tell friends you're active while the app is open
   useEffect(() => {
     if (loggedIn && !locked) return startPresence();
@@ -412,6 +428,10 @@ export default function App() {
     );
   }
 
+  if (screen === 'notifications') {
+    return <NotificationsScreen onBack={() => setScreen('home')} />;
+  }
+
   if (screen === 'friends') {
     return <FriendsScreen startAdding={friendsAdd} onBack={() => setScreen('home')} />;
   }
@@ -445,6 +465,7 @@ export default function App() {
       onLogout={logout}
       onProfile={() => setScreen('profile')}
       onParties={() => setScreen('parties')}
+      onNotifications={() => setScreen('notifications')}
       onFriends={(add: boolean) => {
         setFriendsAdd(!!add);
         setScreen('friends');
@@ -457,4 +478,21 @@ export default function App() {
   );
 }
 
-registerRootComponent(App);
+// Whole app + the notification banner that slides over any screen
+function Root() {
+  const [uid, setUid] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setUid(data.session ? data.session.user.id : null));
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => setUid(session ? session.user.id : null));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  return (
+    <View style={{ flex: 1 }}>
+      <App />
+      <NotificationBanner key={uid || 'none'} enabled={!!uid} />
+    </View>
+  );
+}
+
+export default Root;
+registerRootComponent(Root);
