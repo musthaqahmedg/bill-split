@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
+import BookTable from './BookTable';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import {
   EMOJI, NEARBY, directionsUrl, findPlaces, getMyLocation, listSaved, openPhoneSettings, openStatus, placeDetails,
@@ -13,7 +14,7 @@ import { C } from '../services/theme';
 const AGE_KEY = 'vibeout.ageOk';
 
 // 📍 Nearby: restobars, pubs, cafés, restaurants, supermarkets, beverage shops, pan shops
-export default function NearbyScreen({ onBack, initialCategory = 'restobars', title }) {
+export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked }) {
   const [category, setCategory] = useState(initialCategory);
   const [q, setQ] = useState('');
   const [loc, setLoc] = useState(null);
@@ -25,6 +26,8 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
   const [filter, setFilter] = useState(null); // null | 'open' | 'late'
   const [ageOk, setAgeOk] = useState(false);
   const timer = useRef(null);
+  const [booking, setBooking] = useState(null); // place we're booking a table at
+  const going = bookFor ? (bookFor.party_members || []).filter((m) => m.rsvp !== 'out').length : 2;
 
   useEffect(() => {
     getMyLocation().then(setLoc);
@@ -139,6 +142,11 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
               <Text style={styles.btnText}>📞 Call</Text>
             </TouchableOpacity>
           ) : null}
+          {['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category) ? (
+            <TouchableOpacity style={[styles.btn, styles.bookBtn]} onPress={() => setBooking({ ...p, phone: d.phone || null })}>
+              <Text style={[styles.btnText, styles.bookText]}>🍽️ Book</Text>
+            </TouchableOpacity>
+          ) : null}
           <TouchableOpacity style={[styles.btn, isSaved && styles.btnOn]} onPress={() => toggleSave(p)}>
             <Text style={[styles.btnText, isSaved && styles.btnTextOn]}>{isSaved ? '⭐ Saved' : '☆ Save'}</Text>
           </TouchableOpacity>
@@ -223,6 +231,14 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
         contentContainerStyle={styles.listPad}
       />
       <KeyboardDone />
+      <BookTable
+        visible={!!booking}
+        onClose={() => setBooking(null)}
+        place={booking}
+        party={bookFor}
+        guestsDefault={going}
+        onBooked={() => onBooked && onBooked()}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -265,6 +281,8 @@ const styles = StyleSheet.create({
   closed: { color: C.pink },
   actions: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
   btn: { borderWidth: 1, borderColor: C.border, backgroundColor: C.bg, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 11, marginRight: 6, marginBottom: 4 },
+  bookBtn: { backgroundColor: C.accent, borderColor: C.accent },
+  bookText: { color: '#fff' },
   btnOn: { backgroundColor: C.amberBg, borderColor: C.amber },
   btnText: { color: C.text, fontSize: 13, fontWeight: '700' },
   btnTextOn: { color: C.amber },

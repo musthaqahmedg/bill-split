@@ -372,6 +372,10 @@ export default function App() {
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
+        onTakeOut={(p: any) => {
+          setNearby({ from: 'party', category: 'food', title: '🍽️ Take the group out', bookFor: p });
+          setScreen('nearby');
+        }}
         onShop={() => {
           setNearby({ from: 'party', category: 'supermarkets', title: '🛒 Shop for this party' });
           setScreen('nearby');
@@ -389,6 +393,8 @@ export default function App() {
       <NearbyScreen
         initialCategory={nearby.category}
         title={nearby.title}
+        bookFor={nearby.bookFor}
+        onBooked={() => nearby.bookFor && setScreen('party')}
         onBack={() => setScreen(nearby.from)}
       />
     );

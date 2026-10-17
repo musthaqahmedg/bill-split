@@ -68,6 +68,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [polls, setPolls] = useState<Record<string, Poll>>({});
   const [pollOpen, setPollOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
+  const [booking, setBooking] = useState<{ place_name: string; booking_date: string; booking_time: string; guests: number; notes: string | null; status: string } | null>(null);
   const [safety, setSafety] = useState<{ id: string; name: string; home_at: string | null; is_driver: boolean }[]>([]);
   const [itemText, setItemText] = useState('');
   const [pollQ, setPollQ] = useState('');
@@ -91,6 +92,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           rpc('get_party_polls', { p_token: token }),
           rpc('get_party_list', { p_token: token }),
         ]);
+        const bk = await rpc('get_party_booking', { p_token: token });
+        if (bk.ok && alive) setBooking((await bk.json())[0] || null);
         const sf = await rpc('get_party_safety', { p_token: token });
         if (sf.ok && alive) setSafety(await sf.json());
         if (li.ok && alive) setItems(await li.json());
@@ -295,6 +298,26 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
             </>
           )}
         </div>
+
+        {booking && (
+          <>
+            <p style={s.label}>🍽️ Table</p>
+            <div style={{ ...s.listBox, borderColor: booking.status === 'confirmed' ? '#34D399' : undefined }}>
+              <div style={{ fontWeight: 800, fontSize: 16 }}>{booking.place_name}</div>
+              <div style={s.itemWho}>{booking.booking_date} · {booking.booking_time} · {booking.guests} people</div>
+              {booking.notes && <div style={s.itemWho}>📝 {booking.notes}</div>}
+              <div style={{ ...s.itemWho, fontWeight: 700, color: booking.status === 'confirmed' ? '#34D399' : booking.status === 'declined' ? '#F87171' : '#FBBF24' }}>
+                {booking.status === 'confirmed' ? '✅ Confirmed' : booking.status === 'declined' ? '❌ They said no' : '⏳ Waiting for the restaurant'}
+              </div>
+              {booking.status === 'confirmed' && (
+                <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+                  <a style={{ ...s.claimBtn, textDecoration: 'none' }} href={`https://m.uber.com/ul/?action=setPickup&pickup=my_location&dropoff[formatted_address]=${encodeURIComponent(booking.place_name)}`}>🚕 Book a cab</a>
+                  <a style={{ ...s.claimBtn, textDecoration: 'none' }} href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.place_name)}`}>🧭 Directions</a>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         <p style={s.label}>🛒 Who brings what</p>
         <div style={s.listBox}>

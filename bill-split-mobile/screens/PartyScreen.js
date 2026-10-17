@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
+import BookingCard from './BookingCard';
 import BringList from './BringList';
 import NightCheck from './NightCheck';
 import KeyboardDone from './KeyboardDone';
@@ -13,7 +14,7 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop }) {
+export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut }) {
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
@@ -227,6 +228,9 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
           <Text style={styles.chatHint}>Plan everything here with your friends</Text>
         </TouchableOpacity>
 
+        {!['trip', 'daytrip', 'wedding'].includes(party.kind) && onTakeOut ? (
+          <BookingCard party={party} onTakeOut={() => onTakeOut(party)} />
+        ) : null}
         <BringList party={party} />
         {['house', 'party', 'birthday', 'bachelor', 'match', 'trip', 'daytrip'].includes(party.kind) && onShop ? (
           <TouchableOpacity style={styles.shopBtn} onPress={onShop}>
