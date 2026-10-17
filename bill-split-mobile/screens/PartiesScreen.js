@@ -27,7 +27,7 @@ function PlanCard({ item, index, onPress }) {
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(anim, { toValue: 1, duration: 450, delay: Math.min(index, 8) * 70, easing: Easing.out(Easing.back(1.4)), useNativeDriver: true }).start();
+    Animated.timing(anim, { toValue: 1, duration: 320, delay: Math.min(index, 8) * 45, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
   }, []);
 
   const status =
@@ -45,43 +45,37 @@ function PlanCard({ item, index, onPress }) {
     <Animated.View
       style={{
         opacity: anim,
-        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [30, 0] }) }, { scale: anim.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1] }) }],
+        transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
       }}
     >
-      <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.card, { borderColor: color + '88', shadowColor: color, backgroundColor: color + '1F' }]}>
-        <View style={[styles.stripe, { backgroundColor: color }]} />
-        <View style={styles.cardBody}>
-          <View style={styles.cardTop}>
-            <View style={[styles.emojiBubble, { backgroundColor: color + '33', borderColor: color }]}>
-              <Text style={styles.emoji}>{k.emoji}</Text>
-            </View>
-            <View style={styles.flex}>
-              <Text style={[styles.kind, { color }]}>{k.label.toUpperCase()}</Text>
-              <Text style={styles.cardTitle} numberOfLines={2}>{item.title}</Text>
-            </View>
-            {Number(item.budget) > 0 ? <Text style={[styles.money, { color }]}>{inr(item.budget)}</Text> : null}
+      <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.card}>
+        <View style={[styles.icon, { backgroundColor: color + '26' }]}>
+          <Text style={styles.emoji}>{k.emoji}</Text>
+        </View>
+        <View style={styles.flex}>
+          <View style={styles.rowTop}>
+            <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
+            {Number(item.budget) > 0 ? <Text style={styles.money}>{inr(item.budget)}</Text> : null}
           </View>
-
-          <View style={styles.metaRow}>
-            <Text style={styles.meta} numberOfLines={1}>📅 {item.party_date || 'No date yet'}</Text>
-            {item.place ? <Text style={[styles.meta, styles.flex]} numberOfLines={1}>   📍 {item.place.replace(/^My place 🏠 · /, '🏠 ')}</Text> : null}
-          </View>
-
-          <View style={styles.bottomRow}>
+          <Text style={styles.meta} numberOfLines={1}>
+            {[item.party_date || 'No date', item.place ? item.place.replace(/^My place 🏠 · .*/, 'My place') : null].filter(Boolean).join('  ·  ')}
+          </Text>
+          <View style={styles.rowBottom}>
             <View style={styles.avatars}>
-              {members.slice(0, 5).map((m, i) => (
-                <View key={m.id} style={[styles.avatar, { marginLeft: i ? -8 : 0, backgroundColor: i % 2 ? color : C.cardHi, borderColor: C.bg }]}>
+              {members.slice(0, 4).map((m, i) => (
+                <View key={m.id} style={[styles.avatar, { marginLeft: i ? -6 : 0 }]}>
                   <Text style={styles.avatarText}>{(show(m.name) || '?')[0].toUpperCase()}</Text>
                 </View>
               ))}
-              {members.length > 5 ? <Text style={styles.more}>+{members.length - 5}</Text> : null}
               <Text style={styles.going}>{going} going</Text>
             </View>
-            <View style={[styles.pill, { backgroundColor: color }]}>
-              <Text style={styles.pillText}>{status}</Text>
+            <View style={styles.status}>
+              <View style={[styles.dot, { backgroundColor: color }]} />
+              <Text style={styles.statusText}>{status}</Text>
             </View>
           </View>
         </View>
+        <Text style={styles.chev}>›</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -92,9 +86,6 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const [line, setLine] = useState(0);
-  const wobble = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
-
   const load = useCallback(async () => {
     setLoading(true);
     setTick((t) => t + 1);
@@ -109,22 +100,9 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
 
   useEffect(() => { load(); }, [load]);
 
-  // 🎉 wiggles, fun line changes, button glows
   useEffect(() => {
-    const a = Animated.loop(Animated.sequence([
-      Animated.timing(wobble, { toValue: 1, duration: 300, useNativeDriver: true }),
-      Animated.timing(wobble, { toValue: -1, duration: 300, useNativeDriver: true }),
-      Animated.timing(wobble, { toValue: 0, duration: 300, useNativeDriver: true }),
-      Animated.delay(1800),
-    ]));
-    const b = Animated.loop(Animated.sequence([
-      Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: true }),
-    ]));
-    a.start();
-    b.start();
-    const t = setInterval(() => setLine((x) => (x + 1) % LINES.length), 3500);
-    return () => { a.stop(); b.stop(); clearInterval(t); };
+    const t = setInterval(() => setLine((x) => (x + 1) % LINES.length), 4000);
+    return () => clearInterval(t);
   }, []);
 
   return (
@@ -145,7 +123,9 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
 
       <View style={styles.titleRow}>
         <Text style={styles.title}>Plans</Text>
-        <Animated.Text style={[styles.titleEmoji, { transform: [{ rotate: wobble.interpolate({ inputRange: [-1, 1], outputRange: ['-18deg', '18deg'] }) }] }]}>🎉</Animated.Text>
+        <TouchableOpacity style={styles.newBtn} onPress={onNewParty} activeOpacity={0.8}>
+          <Text style={styles.newText}>＋ New</Text>
+        </TouchableOpacity>
       </View>
       <Text style={styles.sub}>{LINES[line]}</Text>
 
@@ -160,62 +140,58 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>🪩</Text>
               <Text style={styles.emptyText}>No plans yet</Text>
-              <Text style={styles.emptySub}>Parties, trips, movies, weddings. Start one and invite the gang 👇</Text>
+              <Text style={styles.emptySub}>Parties, trips, movies, weddings. Start one and invite the gang.</Text>
+              <TouchableOpacity style={[styles.newBtn, styles.emptyBtn]} onPress={onNewParty}>
+                <Text style={styles.newText}>＋ Plan something</Text>
+              </TouchableOpacity>
             </View>
           )
         }
         contentContainerStyle={styles.listPad}
       />
 
-      <Animated.View pointerEvents="none" style={[styles.buttonGlow, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.35, 0.8] }) }]} />
-      <TouchableOpacity style={styles.button} onPress={onNewParty} activeOpacity={0.85}>
-        <Text style={styles.buttonText}>✨ Plan something</Text>
-      </TouchableOpacity>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 16 },
   headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
+  back: { color: C.accentSoft, fontSize: 17, fontWeight: '400' },
   topBtns: { flexDirection: 'row' },
-  topBtn: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 12, borderWidth: 1, borderColor: C.border },
-  topBtnText: { color: C.text, fontSize: 13, fontWeight: '800' },
+  topBtn: { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 11 },
+  topBtnText: { color: C.text, fontSize: 13, fontWeight: '600' },
   gap: { marginLeft: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', marginTop: 14 },
-  title: { fontSize: 40, fontWeight: '900', color: C.text, letterSpacing: -1 },
-  titleEmoji: { fontSize: 34, marginLeft: 8 },
-  sub: { color: C.pink, fontSize: 14, fontWeight: '700', marginTop: 2, marginBottom: 14 },
-  listPad: { paddingBottom: 110 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 },
+  title: { fontSize: 34, fontWeight: '700', color: C.text, letterSpacing: 0.4 },
+  newBtn: { backgroundColor: C.accent, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
+  newText: { color: '#fff', fontSize: 15, fontWeight: '600' },
+  sub: { color: C.faint, fontSize: 13, marginTop: 2, marginBottom: 14 },
+  listPad: { paddingBottom: 40 },
   card: {
-    flexDirection: 'row', borderWidth: 1.5, borderRadius: 22, marginBottom: 14, overflow: 'hidden',
-    shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)',
+    borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12, marginBottom: 8,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)',
   },
-  stripe: { width: 6 },
-  cardBody: { flex: 1, padding: 14 },
-  cardTop: { flexDirection: 'row', alignItems: 'center' },
-  emojiBubble: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', borderWidth: 2, marginRight: 12 },
-  emoji: { fontSize: 26 },
+  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  emoji: { fontSize: 22 },
   flex: { flex: 1 },
-  kind: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
-  cardTitle: { fontSize: 19, fontWeight: '900', color: C.text, marginTop: 1 },
-  money: { fontSize: 17, fontWeight: '900', marginLeft: 8 },
-  metaRow: { flexDirection: 'row', marginTop: 12 },
-  meta: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  bottomRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 12 },
+  rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
+  cardTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: C.text, marginRight: 8 },
+  money: { fontSize: 15, fontWeight: '600', color: C.text },
+  meta: { color: C.faint, fontSize: 13, marginTop: 2 },
+  rowBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
   avatars: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
-  avatarText: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  more: { color: C.sub, fontSize: 12, fontWeight: '800', marginLeft: 6 },
-  going: { color: C.sub, fontSize: 12, fontWeight: '700', marginLeft: 8 },
-  pill: { borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10 },
-  pillText: { color: '#160A2B', fontSize: 12, fontWeight: '900' },
+  avatar: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.cardHi, borderWidth: 1.5, borderColor: C.bg },
+  avatarText: { color: C.text, fontSize: 9, fontWeight: '700' },
+  going: { color: C.faint, fontSize: 12, marginLeft: 6 },
+  status: { flexDirection: 'row', alignItems: 'center' },
+  dot: { width: 7, height: 7, borderRadius: 4, marginRight: 5 },
+  statusText: { color: C.sub, fontSize: 12, fontWeight: '500' },
+  chev: { color: 'rgba(255,255,255,0.3)', fontSize: 22, marginLeft: 8 },
   empty: { alignItems: 'center', marginTop: 40 },
-  emptyEmoji: { fontSize: 64 },
-  emptyText: { fontSize: 22, fontWeight: '900', color: C.text, marginTop: 8 },
-  emptySub: { fontSize: 14, color: C.sub, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 },
-  buttonGlow: { position: 'absolute', left: 30, right: 30, bottom: 30, height: 56, borderRadius: 20, backgroundColor: C.pink, shadowColor: C.pink, shadowOpacity: 1, shadowRadius: 20, elevation: 10 },
-  button: { position: 'absolute', left: 18, right: 18, bottom: 30, backgroundColor: C.accent, padding: 18, borderRadius: 20, alignItems: 'center', borderWidth: 2, borderColor: C.pink },
-  buttonText: { color: '#fff', fontSize: 18, fontWeight: '900', letterSpacing: 0.5 },
+  emptyEmoji: { fontSize: 48 },
+  emptyText: { fontSize: 20, fontWeight: '600', color: C.text, marginTop: 8 },
+  emptySub: { fontSize: 14, color: C.faint, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 },
+  emptyBtn: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10 },
 });
