@@ -54,8 +54,8 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
       <View style={styles.header}>
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
         <View style={styles.headerBtns}>
-          <TouchableOpacity style={[styles.profileBtn, styles.partyBtn]} onPress={onParties}>
-            <Text style={styles.profileIcon}>🎉</Text>
+          <TouchableOpacity style={styles.plansBtn} onPress={onParties} activeOpacity={0.85}>
+            <Text style={styles.plansText}>🎉 Plans</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.profileBtn} onPress={onProfile}>
             <Text style={styles.profileIcon}>👤</Text>
@@ -104,6 +104,12 @@ const styles = StyleSheet.create({
   profileIcon: { fontSize: 20 },
   headerBtns: { flexDirection: 'row' },
   partyBtn: { marginRight: 10 },
+  plansBtn: {
+    height: 42, borderRadius: 21, paddingHorizontal: 16, marginRight: 10, justifyContent: 'center',
+    backgroundColor: C.accent, borderWidth: 2, borderColor: C.pink,
+    shadowColor: C.pink, shadowOpacity: 0.9, shadowRadius: 10, shadowOffset: { width: 0, height: 0 }, elevation: 8,
+  },
+  plansText: { color: '#fff', fontSize: 15, fontWeight: '900' },
   switch: { alignSelf: 'flex-start', backgroundColor: C.card, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 12 },
   switchText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },
