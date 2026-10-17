@@ -55,7 +55,7 @@ export default function ActivityScreen({ onBack }) {
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Activity</Text>
-      <Text style={styles.sub}>Live · only you and Gautham can see this</Text>
+      <Text style={styles.sub}>Live · only you can see this</Text>
 
       <View style={styles.onlineBox}>
         <Text style={styles.onlineTitle}>🟢 Online now ({onlineList.length})</Text>
