@@ -20,7 +20,7 @@ export function onNotification(onNew) {
   supabase.auth.getUser().then(({ data: { user } }) => {
     if (!alive || !user) return;
     ch = supabase
-      .channel('notif-' + user.id)
+      .channel('notif-' + user.id + '-' + Math.random().toString(36).slice(2))
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, (p) => onNew(p.new))
       .subscribe();
   });
