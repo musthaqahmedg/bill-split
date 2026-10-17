@@ -68,6 +68,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [polls, setPolls] = useState<Record<string, Poll>>({});
   const [pollOpen, setPollOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
+  const [safety, setSafety] = useState<{ id: string; name: string; home_at: string | null; is_driver: boolean }[]>([]);
   const [itemText, setItemText] = useState('');
   const [pollQ, setPollQ] = useState('');
   const [pollOpts, setPollOpts] = useState(['', '']);
@@ -90,6 +91,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           rpc('get_party_polls', { p_token: token }),
           rpc('get_party_list', { p_token: token }),
         ]);
+        const sf = await rpc('get_party_safety', { p_token: token });
+        if (sf.ok && alive) setSafety(await sf.json());
         if (li.ok && alive) setItems(await li.json());
         if (res.ok && alive) setMessages(await res.json());
         if (pr.ok && alive) {
@@ -132,6 +135,21 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     if (!target) return;
     await rpc('ask_party_item', { p_token: token, p_member: me, p_item: id, p_target: target });
     refreshList();
+  };
+
+  const refreshSafety = async () => {
+    const sf = await rpc('get_party_safety', { p_token: token });
+    if (sf.ok) setSafety(await sf.json());
+  };
+  const imHome = async (home: boolean) => {
+    if (!me) return setSendError('Tap your name above first');
+    await rpc('party_home', { p_token: token, p_member: me, p_home: home });
+    refreshSafety();
+  };
+  const imDriver = async (on: boolean) => {
+    if (!me) return setSendError('Tap your name above first');
+    await rpc('party_driver', { p_token: token, p_member: me, p_on: on });
+    refreshSafety();
   };
 
   const refreshPolls = async () => {
@@ -322,6 +340,32 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
               <button style={s.smallBtn} type="submit">Add</button>
             </form>
           )}
+        </div>
+
+        <p style={s.label}>🌙 Night check-in</p>
+        <div style={s.listBox}>
+          <div style={{ fontWeight: 800 }}>🏠 {safety.filter((x) => x.home_at).length} of {safety.length} home safe</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '8px 0' }}>
+            {safety.map((x) => (
+              <span key={x.id} style={{ fontSize: 12, fontWeight: 700, padding: '4px 9px', borderRadius: 12, border: '1px solid #3A2A5C', background: x.home_at ? '#34D399' : 'transparent', color: x.home_at ? '#06281C' : '#B9A8D9' }}>
+                {x.home_at ? '✓ ' : '⏳ '}{x.name === 'Me' ? host : x.name}{x.is_driver ? ' 🛡️' : ''}
+              </span>
+            ))}
+          </div>
+          {(() => {
+            const mineS = safety.find((x) => x.id === me);
+            return (
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <button style={{ ...s.claimBtn, ...(mineS?.home_at ? s.claimOn : {}) }} onClick={() => imHome(!mineS?.home_at)}>
+                  {mineS?.home_at ? '✅ Home safe' : "🏠 I'm home safe"}
+                </button>
+                <button style={{ ...s.claimBtn, ...(mineS?.is_driver ? s.claimOn : {}) }} onClick={() => imDriver(!mineS?.is_driver)}>
+                  {mineS?.is_driver ? "🛡️ I'm driving" : "🛡️ I'll drive tonight"}
+                </button>
+              </div>
+            );
+          })()}
+          <div style={{ ...s.itemWho, marginTop: 8 }}>Get the Vibe Out app to build your 🔥 safe-night streak.</div>
         </div>
 
         <p style={s.label}>💬 Party chat</p>

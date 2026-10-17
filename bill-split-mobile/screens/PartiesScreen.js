@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listParties } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
+import StreakCard from './StreakCard';
 import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -9,9 +10,11 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups }) {
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [tick, setTick] = useState(0);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setTick((t) => t + 1);
     try {
       setParties(await listParties());
     } catch (e) {
@@ -60,6 +63,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
         data={parties}
         keyExtractor={(item) => item.id}
         renderItem={renderParty}
+        ListHeaderComponent={<StreakCard refreshKey={tick} />}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
           !loading && (

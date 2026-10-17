@@ -21,7 +21,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver)')
     .eq('id', id)
     .single();
   if (error) throw error;

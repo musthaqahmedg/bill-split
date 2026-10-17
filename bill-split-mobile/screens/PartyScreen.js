@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platfor
 import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
 import BringList from './BringList';
+import NightCheck from './NightCheck';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -227,6 +228,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
         </TouchableOpacity>
 
         <BringList party={party} />
+        <NightCheck party={party} onChanged={reload} />
 
         <TouchableOpacity style={styles.shareBtn} onPress={shareAll}>
           <Text style={styles.shareText}>📨 Invite friends</Text>
