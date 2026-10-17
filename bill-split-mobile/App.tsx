@@ -41,6 +41,7 @@ export default function App() {
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
+  const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
   // 🟢 tell friends you're active while the app is open
   useEffect(() => {
     if (loggedIn && !locked) return startPresence();
@@ -412,7 +413,7 @@ export default function App() {
   }
 
   if (screen === 'friends') {
-    return <FriendsScreen onBack={() => setScreen('home')} />;
+    return <FriendsScreen startAdding={friendsAdd} onBack={() => setScreen('home')} />;
   }
 
   if (screen === 'partyChat') {
@@ -444,7 +445,10 @@ export default function App() {
       onLogout={logout}
       onProfile={() => setScreen('profile')}
       onParties={() => setScreen('parties')}
-      onFriends={() => setScreen('friends')}
+      onFriends={(add: boolean) => {
+        setFriendsAdd(!!add);
+        setScreen('friends');
+      }}
       onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');

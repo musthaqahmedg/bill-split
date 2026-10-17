@@ -64,7 +64,7 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
         </View>
       </View>
 
-      {!showArchived && onFriends ? <FriendsRow onOpen={onFriends} /> : null}
+      {!showArchived && onFriends ? <FriendsRow onOpen={() => onFriends(false)} onAdd={() => onFriends(true)} /> : null}
 
       {(archived.length > 0 || showArchived) && (
         <TouchableOpacity style={styles.switch} onPress={() => setShowArchived(!showArchived)}>
