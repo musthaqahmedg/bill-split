@@ -18,12 +18,15 @@ export default function Privacy() {
           <li><b>Your email or phone number</b>, to log you in.</li>
           <li><b>Your name and UPI ID</b>, if you add them, so friends know who to pay.</li>
           <li><b>Your bills</b>: restaurant, items, prices, and the names of friends you add.</li>
+          <li><b>Plans and parties</b> you create: place, date, budget, friends, the bring list, chat, polls, bookings and safe-night check-ins.</li>
+          <li><b>App usage</b>: which screens you open and actions like creating a plan, so we can fix problems and improve the app.</li>
+          <li><b>Your location</b>, only when you allow it, to show places near you. We don&apos;t store it.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
         </ul>
 
         <h2 style={s.h2}>How we use it</h2>
         <ul style={s.ul}>
-          <li>Only to split bills, show who owes what, and help friends pay you.</li>
+          <li>Only to run the app: split bills, plan with friends, show who owes what, and help friends pay you.</li>
           <li>We <b>never sell</b> your data, and we show no ads based on it.</li>
         </ul>
 

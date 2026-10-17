@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // Split the budget equally in whole rupees, so the shares add up exactly to the budget
 export function splitEqually(budget, count) {
@@ -47,6 +48,7 @@ export function sharesFor(budget, people, mode, special) {
 
 // people: list of names
 export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null }) {
+  track('newParty', 'created a plan', kind + ': ' + title);
   const { data: party, error: e1 } = await supabase
     .from('parties')
     .insert({

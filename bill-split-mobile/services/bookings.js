@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // 🍽️ Table bookings (stage 1: we send the restaurant a WhatsApp / call, you mark it confirmed)
 
@@ -24,6 +25,7 @@ export async function partyBooking(partyId) {
 }
 
 export async function createBooking(b) {
+  track('party', 'booked a table', b.place_name);
   const { data, error } = await supabase.from('table_bookings').insert(b).select().single();
   if (error) throw error;
   return data;

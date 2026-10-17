@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // Party chat room. The host uses the app; friends chat from the invite link (website).
 
@@ -15,6 +16,7 @@ export async function listMessages(partyId) {
 
 // The host's own message (shown to friends with the host's real name)
 export async function sendMessage({ partyId, memberId, senderName, body }) {
+  track('partyChat', 'sent a message');
   const text = body.trim();
   if (!text) return null;
   const { data, error } = await supabase

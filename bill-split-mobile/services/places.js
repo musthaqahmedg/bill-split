@@ -1,6 +1,7 @@
 import * as Location from 'expo-location';
 import { Linking } from 'react-native';
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // Place suggestions come through our own server function ("places"),
 // which searches free OpenStreetMap data around you.
@@ -205,6 +206,7 @@ export async function listSaved() {
   return (data || []).map((p) => ({ ...p, id: p.place_id, emoji: EMOJI[p.kind] || '📍' }));
 }
 export async function savePlace(p, category) {
+  track('nearby', 'saved a place', p.name);
   const { error } = await supabase.from('saved_places').upsert(
     { place_id: p.id, name: p.name, kind: p.kind, area: p.area, lat: p.lat, lon: p.lon, category },
     { onConflict: 'user_id,place_id' }

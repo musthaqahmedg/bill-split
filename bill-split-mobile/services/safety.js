@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // Safe-night streaks 🔥
 // Rules: never reward drinking more, never count drinks. Only safe habits count.
@@ -65,6 +66,7 @@ export function stats(nights) {
 
 // Save tonight's check-in, then tell the group you're home
 export async function saveNight(party, meMember, answers) {
+  track('party', "checked in: I'm home");
   const row = { party_id: party.id, ...answers }; // night_date = today (set by the database)
   const { error } = await supabase.from('safe_nights').upsert(row, { onConflict: 'user_id,party_id' });
   if (error) throw error;

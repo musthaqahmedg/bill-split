@@ -1,5 +1,6 @@
 import { kindOf } from './kinds';
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // A bill's "fingerprint": restaurant + bill number + date + total.
 // Same fingerprint twice = probably the same bill scanned again.
@@ -23,6 +24,7 @@ export async function findDuplicate(bill) {
 // payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
 // nonDrinkers: names of people marked "Not drinking"
 export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt }) {
+  track('upload', 'saved a bill');
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
     .from('bills')

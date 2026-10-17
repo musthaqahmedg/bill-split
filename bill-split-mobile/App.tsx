@@ -5,7 +5,9 @@ import { ActivityIndicator, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
+import ActivityScreen from './screens/ActivityScreen';
 import HomeScreen from './screens/HomeScreen';
+import { track } from './services/track';
 import ItemsScreen from './screens/ItemsScreen';
 import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -38,6 +40,10 @@ export default function App() {
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
+  // 📊 log each screen people open (shown live in Activity)
+  useEffect(() => {
+    if (loggedIn && !locked) track(screen);
+  }, [screen, loggedIn, locked]);
   const [items, setItems] = useState<any[]>([]);
   const [bill, setBill] = useState<any>(null);
   const [people, setPeople] = useState<any[]>([]);
@@ -400,6 +406,10 @@ export default function App() {
     );
   }
 
+  if (screen === 'activity') {
+    return <ActivityScreen onBack={() => setScreen('home')} />;
+  }
+
   if (screen === 'partyChat') {
     return <PartyChatScreen partyId={openPartyId} onBack={() => setScreen('party')} />;
   }
@@ -429,6 +439,7 @@ export default function App() {
       onLogout={logout}
       onProfile={() => setScreen('profile')}
       onParties={() => setScreen('parties')}
+      onActivity={() => setScreen('activity')}
       onOpenBill={(id: any) => {
         setOpenBillId(id);
         setScreen('detail');
