@@ -3,6 +3,7 @@ import {
   ActivityIndicator, Alert, Linking, Modal, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { waNumber } from '../services/parties';
+import { baseName, canPlan, planFor } from '../services/planner';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
 
@@ -30,6 +31,9 @@ export default function BringList({ party }) {
   const [editing, setEditing] = useState(null);
   const [editText, setEditText] = useState('');
   const [asking, setAsking] = useState(null); // item we're asking someone to bring
+  const coming = (party.party_members || []).filter((m) => m.rsvp !== 'out').length;
+  const [guests, setGuests] = useState(Math.max(1, coming));
+  const [filling, setFilling] = useState(false);
 
   const load = async () => {
     const { data, error } = await supabase.rpc('get_party_list', { p_token: token });
@@ -88,6 +92,32 @@ export default function BringList({ party }) {
     }
   };
 
+  // ✨ Auto-plan: add the amounts, or update them if the item is already on the list
+  const fillPlan = async () => {
+    if (!token || !me) return Alert.alert('Not ready', 'Pull down to refresh this plan and try again.');
+    setFilling(true);
+    let added = 0;
+    let updated = 0;
+    for (const p of planFor(party.kind, guests)) {
+      const old = (items || []).find((x) => baseName(x.name) === baseName(p.label));
+      if (old && old.name === p.name) continue;
+      const { error } = old
+        ? await supabase.rpc('rename_party_item', { p_token: token, p_member: me.id, p_item: old.id, p_name: p.name })
+        : await supabase.rpc('add_party_item', { p_token: token, p_member: me.id, p_name: p.name });
+      if (error) {
+        setFilling(false);
+        return Alert.alert("Couldn't fill the list", error.message);
+      }
+      if (old) updated++;
+      else added++;
+    }
+    await load();
+    setFilling(false);
+    Alert.alert('List ready ✨', added || updated
+      ? `${added ? `Added ${added}` : ''}${added && updated ? ', ' : ''}${updated ? `updated ${updated}` : ''} for ${guests} people. Now pick who brings what 👇`
+      : `Already planned for ${guests} people 👍`);
+  };
+
   const remove = (item) =>
     Alert.alert(`Remove "${item.name}"?`, undefined, [
       { text: 'Cancel', style: 'cancel' },
@@ -115,6 +145,25 @@ export default function BringList({ party }) {
         <Text style={styles.title}>🛒 Who brings what</Text>
         {items && items.length ? <Text style={styles.count}>{covered}/{items.length} covered · {ready} ready</Text> : null}
       </View>
+
+      {canPlan(party.kind) && (
+        <View style={styles.plan}>
+          <Text style={styles.planTitle}>✨ Auto-plan: how much to buy</Text>
+          <View style={styles.planRow}>
+            <TouchableOpacity style={styles.step} onPress={() => setGuests(Math.max(1, guests - 1))}>
+              <Text style={styles.stepText}>−</Text>
+            </TouchableOpacity>
+            <Text style={styles.guests}>{guests} {guests === 1 ? 'person' : 'people'}</Text>
+            <TouchableOpacity style={styles.step} onPress={() => setGuests(Math.min(500, guests + 1))}>
+              <Text style={styles.stepText}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.planPreview}>{planFor(party.kind, guests).map((p) => p.name).join('\n')}</Text>
+          <TouchableOpacity style={styles.planBtn} onPress={fillPlan} disabled={filling}>
+            <Text style={styles.planBtnText}>{filling ? 'Filling…' : '✨ Fill the list'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
 
       {items === null ? (
         <ActivityIndicator color={C.accentSoft} />
@@ -215,6 +264,15 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { color: C.text, fontSize: 16, fontWeight: '800' },
   count: { color: C.green, fontSize: 12, fontWeight: '700' },
+  plan: { backgroundColor: C.cardHi, borderRadius: 14, padding: 12, marginBottom: 12 },
+  planTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  planRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  step: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.bg, alignItems: 'center', justifyContent: 'center' },
+  stepText: { color: C.text, fontSize: 20, fontWeight: '800' },
+  guests: { color: C.text, fontSize: 16, fontWeight: '800', marginHorizontal: 14, minWidth: 80, textAlign: 'center' },
+  planPreview: { color: C.sub, fontSize: 13, lineHeight: 20, marginTop: 10 },
+  planBtn: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 10, alignItems: 'center', marginTop: 10 },
+  planBtnText: { color: '#fff', fontSize: 15, fontWeight: '800' },
   empty: { color: C.faint, fontSize: 14, marginBottom: 6 },
   item: { backgroundColor: C.bg, borderRadius: 14, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
   itemDone: { opacity: 0.7 },
