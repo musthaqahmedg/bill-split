@@ -8,6 +8,7 @@ type Person = { id: string; name: string; amount_due: number; not_drinking: bool
 
 export type SharedBill = {
   restaurant: string | null;
+  authenticity?: { verdict: string; signs?: string[] } | null;
   bill_date: string | null;
   total: number;
   payee_name: string | null;
@@ -71,6 +72,20 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
       <div style={s.wrap}>
         <p style={s.kicker}>🌙 THE NIGHT, SORTED</p>
         <h1 style={s.title}>{bill.restaurant || 'Night out'}</h1>
+        {bill.authenticity ? (
+          bill.authenticity.verdict === 'looks_real' ? (
+            <p style={{ color: '#34D399', fontSize: 13, fontWeight: 700, margin: '4px 0 0' }}>✅ Checked: looks like a genuine bill</p>
+          ) : (
+            <div style={{ background: 'rgba(251,191,36,0.12)', border: '1px solid #FBBF24', borderRadius: 12, padding: '10px 12px', margin: '10px 0 0' }}>
+              <div style={{ color: '#FBBF24', fontWeight: 800, fontSize: 14 }}>
+                {bill.authenticity.verdict === 'likely_fake' ? '🚩 This bill may be edited or AI-made' : '⚠️ Some parts of this bill look unusual'}
+              </div>
+              {(bill.authenticity.signs || []).map((x) => (
+                <div key={x} style={{ color: '#E9DDFF', fontSize: 13, marginTop: 4 }}>• {x}</div>
+              ))}
+            </div>
+          )
+        ) : null}
         <p style={s.sub}>
           {bill.bill_date ? `${bill.bill_date} · ` : ''}Total {money(bill.total)} · {bill.people.length} people
         </p>

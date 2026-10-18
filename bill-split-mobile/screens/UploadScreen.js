@@ -31,6 +31,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
   const [items, setItems] = useState([]);
   const [bill, setBill] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [check, setCheck] = useState(null); // 🕵️ does the bill look genuine?
 
   const pickImage = async (fromCamera) => {
     const perm = fromCamera
@@ -53,6 +54,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         setImage(small.uri);
         setBase64(small.base64);
         setItems([]);
+        setCheck(null);
         setBill(null);
       } catch (e) {
         Alert.alert("Couldn't prepare the photo", e.message);
@@ -77,13 +79,25 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         service_charge: data.service_charge || 0,
         discount: data.discount || 0,
         total: data.total || 0,
+        check: data.check || null,
       };
       setItems(data.items);
       setBill(info);
+      setCheck(data.check || null);
 
       if (data.items.length === 0) {
         Alert.alert('No items found', 'Try a clearer, straight-on photo');
         return;
+      }
+
+      // 🕵️ Edited, AI-made or a screenshot? Warn before anyone pays for it.
+      const c = data.check;
+      if (c && c.verdict !== 'looks_real') {
+        Alert.alert(
+          c.verdict === 'likely_fake' ? '🚩 This bill looks fake' : '⚠️ Check this bill',
+          (c.signs && c.signs.length ? c.signs.map((x) => '• ' + x).join('\n') : 'Some parts of this bill look unusual.') +
+            '\n\nYou can still continue. Friends will see this note.',
+        );
       }
 
       const dup = await findDuplicate(info);
@@ -106,6 +120,11 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
 
       <Text style={styles.title}>{title}</Text>
       {bill && bill.restaurant ? <Text style={styles.restaurant}>{bill.restaurant}</Text> : null}
+      {check ? (
+        <Text style={[styles.check, check.verdict === 'looks_real' ? styles.checkOk : check.verdict === 'likely_fake' ? styles.checkBad : styles.checkWarn]}>
+          {check.verdict === 'looks_real' ? '✅ Looks like a genuine bill' : check.verdict === 'likely_fake' ? '🚩 Looks edited or AI-made' : '⚠️ Some parts look unusual'}
+        </Text>
+      ) : null}
 
       {items.length > 0 ? (
         <ScrollView style={styles.list}>
@@ -159,6 +178,10 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
 }
 
 const styles = StyleSheet.create({
+  check: { fontSize: 13, fontWeight: '700', marginBottom: 8 },
+  checkOk: { color: C.green },
+  checkWarn: { color: C.amber },
+  checkBad: { color: C.red },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', marginBottom: 4, color: C.text },

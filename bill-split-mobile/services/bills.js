@@ -38,6 +38,7 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
       service_charge: bill.service_charge || 0,
       discount: bill.discount || 0,
       fingerprint: makeFingerprint(bill),
+      authenticity: bill.check || null,
       status: 'split',
       ...(createdAt ? { created_at: createdAt } : {}),
     })
