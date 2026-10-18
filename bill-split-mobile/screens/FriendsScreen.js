@@ -5,7 +5,9 @@ import {
   TouchableOpacity, View,
 } from 'react-native';
 import FriendButton from './FriendButton';
+import BirthdayPicker from './BirthdayPicker';
 import FriendCard from './FriendCard';
+import { bdayText, friendsBirthdays, myBirthday, planTheTreat, whenText } from '../services/birthday';
 import Pulse from './Pulse';
 import { activeLabel } from '../services/active';
 import { findUser, friendsAtParties, myFriends, removeFriend, respond } from '../services/friends';
@@ -16,15 +18,21 @@ import { C } from '../services/theme';
 const INVITE = 'Join me on Vibe Out 🎉 Plan parties, split bills, no fights → https://bill-split-flax.vercel.app';
 
 // 👫 Your circle: who's vibing now, all friends, requests, and ＋ Add friends
-export default function FriendsScreen({ onBack, startAdding = false }) {
+export default function FriendsScreen({ onBack, startAdding = false, onOpenPlan }) {
   const [list, setList] = useState(null);
   const [tab, setTab] = useState('now');
-  const [adding, setAdding] = useState(startAdding);
+  const [adding, setAdding] = useState(false);
   const [card, setCard] = useState(null); // friend whose profile is open
   const [atParty, setAtParty] = useState({});
+  const [bdays, setBdays] = useState([]);
+  const [mine, setMine] = useState(undefined); // my birthday (undefined = loading, null = not set)
+  const [picking, setPicking] = useState(false);
+  const [treating, setTreating] = useState(null);
 
   const load = useCallback(() => {
     friendsAtParties().then(setAtParty).catch(() => {});
+    friendsBirthdays().then(setBdays).catch(() => {});
+    myBirthday().then(setMine).catch(() => setMine(null));
     return myFriends().then((l) => setList(l || [])).catch(() => setList([]));
   }, []);
   useEffect(() => {
@@ -39,6 +47,14 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
   const recent = friends.filter((f) => f.st && !f.st.now);
   const incoming = all.filter((f) => f.status === 'pending' && f.incoming);
   const sent = all.filter((f) => f.status === 'pending' && !f.incoming);
+
+  // Opened with "＋"? Add friends straight away (or birthday first)
+  useEffect(() => {
+    if (startAdding && mine !== undefined) {
+      if (mine === null) setPicking(true);
+      else setAdding(true);
+    }
+  }, [mine === undefined]);
 
   useEffect(() => {
     if (list && incoming.length && tab === 'now' && !vibing.length) setTab('requests');
@@ -65,7 +81,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
         <TouchableOpacity onPress={onBack}>
           <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setAdding(true)}>
+        <TouchableOpacity style={styles.addBtn} onPress={() => (mine === null ? setPicking(true) : setAdding(true))}>
           <Text style={styles.addText}>＋ Add friends</Text>
         </TouchableOpacity>
       </View>
@@ -80,6 +96,47 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
       </View>
 
       <ScrollView refreshControl={<RefreshControl refreshing={list === null} onRefresh={load} tintColor={C.accentSoft} />} contentContainerStyle={styles.pad}>
+        {mine === null && (
+          <TouchableOpacity style={styles.bdayGate} onPress={() => setPicking(true)}>
+            <Text style={styles.bdayGateTitle}>🎂 Add your birthday to join the circle</Text>
+            <Text style={styles.faint}>Needed to add or accept friends. Your circle gets reminded… treat incoming 😎</Text>
+          </TouchableOpacity>
+        )}
+
+        {tab === 'now' && bdays.filter((b) => b.days_until <= 30).length > 0 && (
+          <>
+            <Text style={styles.section}>🎂 UPCOMING BIRTHDAYS</Text>
+            {bdays.filter((b) => b.days_until <= 30).map((b) => (
+              <View key={b.user_id} style={[styles.row, b.days_until === 0 && styles.bdayToday]}>
+                <Pulse name={b.name} uri={avatarUrl(b.avatar_path)} size={44} />
+                <View style={styles.rowText}>
+                  <Text style={styles.name}>{b.name}</Text>
+                  <Text style={[styles.faint, b.days_until <= 7 && styles.party]}>🎂 {bdayText(b.day, b.month)} · {whenText(b.days_until)}</Text>
+                </View>
+                {onOpenPlan ? (
+                  <TouchableOpacity
+                    style={styles.treatBtn}
+                    disabled={treating === b.user_id}
+                    onPress={async () => {
+                      setTreating(b.user_id);
+                      try {
+                        const p = await planTheTreat(b);
+                        onOpenPlan(p.id);
+                      } catch (e) {
+                        Alert.alert("Couldn't create the plan", e.message);
+                      } finally {
+                        setTreating(null);
+                      }
+                    }}
+                  >
+                    <Text style={styles.treatText}>{treating === b.user_id ? '…' : '🎉 Plan the treat'}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ))}
+          </>
+        )}
+
         {tab === 'now' && (
           <>
             {vibing.length === 0 ? (
@@ -180,6 +237,15 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
       </ScrollView>
 
       <FriendCard userId={card} onClose={() => setCard(null)} />
+      <BirthdayPicker
+        visible={picking}
+        required
+        onClose={() => setPicking(false)}
+        onSaved={(b) => {
+          setMine(b);
+          setPicking(false);
+        }}
+      />
       <AddSheet visible={adding} onClose={() => { setAdding(false); load(); }} />
     </View>
   );
@@ -361,6 +427,11 @@ const styles = StyleSheet.create({
   faint: { color: C.faint, fontSize: 13, marginTop: 2, textAlign: 'left' },
   green: { color: C.green, fontWeight: '600' },
   party: { color: C.pink, fontSize: 13, fontWeight: '600', marginTop: 2 },
+  bdayGate: { backgroundColor: 'rgba(236,72,153,0.12)', borderWidth: 1, borderColor: 'rgba(236,72,153,0.5)', borderRadius: 16, padding: 14, marginBottom: 10 },
+  bdayGateTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
+  bdayToday: { backgroundColor: 'rgba(236,72,153,0.1)', borderRadius: 14, paddingHorizontal: 8 },
+  treatBtn: { backgroundColor: C.pink, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 10 },
+  treatText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   accept: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, marginRight: 10 },
   acceptText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   decline: { color: C.faint, fontSize: 16 },

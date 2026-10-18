@@ -5,6 +5,8 @@ import {
 } from 'react-native';
 import { avatarUrl, deleteAccount, getProfile, isValidUpi, pickAvatar, saveProfile } from '../services/profile';
 import Pulse from './Pulse';
+import BirthdayPicker from './BirthdayPicker';
+import { bdayText, myBirthday } from '../services/birthday';
 import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
@@ -35,6 +37,8 @@ export default function ProfileScreen({ onBack, onLogout }) {
   const [avatar, setAvatar] = useState(null);
   const [xp, setXp] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [bday, setBday] = useState(null);
+  const [bdayOpen, setBdayOpen] = useState(false);
 
   useEffect(() => {
     getProfile()
@@ -52,6 +56,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
       .catch((e) => Alert.alert('Error', e.message))
       .finally(() => setLoading(false));
     myXp().then((d) => setXp(d.xp)).catch(() => {});
+    myBirthday().then(setBday).catch(() => {});
   }, []);
 
   const changePhoto = () =>
@@ -165,6 +170,21 @@ export default function ProfileScreen({ onBack, onLogout }) {
           <Switch value={showActive} onValueChange={toggleActive} trackColor={{ true: C.green }} />
         </View>
 
+        <Text style={styles.label}>Birthday</Text>
+        <TouchableOpacity style={[styles.input, styles.bdayRow]} onPress={() => setBdayOpen(true)}>
+          <Text style={bday ? styles.bdayText : styles.bdayEmpty}>{bday ? `🎂 ${bdayText(bday.day, bday.month)}` : '🎂 Add your birthday (needed for your circle)'}</Text>
+          <Text style={styles.bdayChange}>{bday ? 'Change' : 'Add'}</Text>
+        </TouchableOpacity>
+        <BirthdayPicker
+          visible={bdayOpen}
+          initial={bday}
+          onClose={() => setBdayOpen(false)}
+          onSaved={(b) => {
+            setBday(b);
+            setBdayOpen(false);
+          }}
+        />
+
         <Text style={styles.label}>Bio</Text>
         <TextInput
           inputAccessoryViewID={DONE_ID}
@@ -252,6 +272,10 @@ const styles = StyleSheet.create({
   level: { color: C.amber, fontSize: 13, fontWeight: '700', marginTop: 4 },
   bio: { minHeight: 70, textAlignVertical: 'top' },
   hintSmall: { color: C.faint, fontSize: 12, marginTop: 6 },
+  bdayRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  bdayText: { color: C.text, fontSize: 16 },
+  bdayEmpty: { color: C.faint, fontSize: 15, flex: 1 },
+  bdayChange: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
   activeRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 12, marginTop: 14 },
   activeText: { flex: 1, marginRight: 10 },
   activeTitle: { color: C.text, fontSize: 15, fontWeight: '600' },

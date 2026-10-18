@@ -441,7 +441,16 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'friends') {
-    return <FriendsScreen startAdding={friendsAdd} onBack={() => setScreen('home')} />;
+    return (
+      <FriendsScreen
+        startAdding={friendsAdd}
+        onBack={() => setScreen('home')}
+        onOpenPlan={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
   }
 
   if (screen === 'partyChat') {
