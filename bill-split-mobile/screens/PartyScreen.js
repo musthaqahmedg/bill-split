@@ -8,6 +8,7 @@ import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
 import NightCheck from './NightCheck';
 import PartyPhotos from './PartyPhotos';
+import PartyGames from './PartyGames';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -18,6 +19,7 @@ import { C } from '../services/theme';
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut }) {
+  const [gamesOpen, setGamesOpen] = useState(false);
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -232,6 +234,12 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
           <Text style={styles.chatHint}>Plan everything here with your friends</Text>
         </TouchableOpacity>
 
+        <TouchableOpacity style={styles.gamesBtn} onPress={() => setGamesOpen(true)}>
+          <Text style={styles.gamesText}>🎮 Party games</Text>
+          <Text style={styles.gamesSub}>Spin the wheel · Truth or dare · Charades</Text>
+        </TouchableOpacity>
+        <PartyGames visible={gamesOpen} onClose={() => setGamesOpen(false)} party={party} />
+
         {!['trip', 'daytrip', 'wedding'].includes(party.kind) && onTakeOut ? (
           <BookingCard party={party} onTakeOut={() => onTakeOut(party)} />
         ) : null}
@@ -343,6 +351,9 @@ const styles = StyleSheet.create({
   sheetScroll: { maxHeight: 460 },
   mapsBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center' },
   mapsText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  gamesBtn: { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
+  gamesText: { color: '#F59E0B', fontSize: 16, fontWeight: '800' },
+  gamesSub: { color: C.faint, fontSize: 12, marginTop: 3 },
   shopBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
   shopHint: { color: C.faint, fontSize: 12, marginTop: 3 },
   shopText: { color: C.text, fontSize: 16, fontWeight: '800' },
