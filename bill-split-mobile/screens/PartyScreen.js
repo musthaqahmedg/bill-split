@@ -9,6 +9,7 @@ import BringList from './BringList';
 import NightCheck from './NightCheck';
 import PartyPhotos from './PartyPhotos';
 import PartyGames from './PartyGames';
+import PartyBar from './PartyBar';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -20,6 +21,7 @@ const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut }) {
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [barOpen, setBarOpen] = useState(false);
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -268,6 +270,13 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
           <Text style={styles.gamesSub}>Spin the wheel · Truth or dare · Charades</Text>
         </TouchableOpacity>
         <PartyGames visible={gamesOpen} onClose={() => setGamesOpen(false)} party={party} />
+        {['house', 'party', 'birthday', 'bachelor', 'match', 'nightout', 'trip'].includes(party.kind) ? (
+          <TouchableOpacity style={styles.barBtn} onPress={() => setBarOpen(true)}>
+            <Text style={styles.barTitle}>🍹 Drinks menu</Text>
+            <Text style={styles.gamesSub}>Mocktails & cocktails · recipes · shopping list</Text>
+          </TouchableOpacity>
+        ) : null}
+        <PartyBar visible={barOpen} onClose={() => setBarOpen(false)} party={party} />
 
         {!['trip', 'daytrip', 'wedding'].includes(party.kind) && onTakeOut ? (
           <BookingCard party={party} onTakeOut={() => onTakeOut(party)} />
@@ -389,6 +398,8 @@ const styles = StyleSheet.create({
   sheetScroll: { maxHeight: 460 },
   mapsBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center' },
   mapsText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  barBtn: { backgroundColor: 'rgba(236,72,153,0.13)', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
+  barTitle: { color: C.pink, fontSize: 16, fontWeight: '800' },
   gamesBtn: { backgroundColor: 'rgba(245,158,11,0.15)', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
   gamesText: { color: '#F59E0B', fontSize: 16, fontWeight: '800' },
   gamesSub: { color: C.faint, fontSize: 12, marginTop: 3 },
