@@ -10,6 +10,13 @@ const rpc = async (fn, args) => {
 };
 
 export const myFriends = () => rpc('my_friends_v2');
+// 🎉 Friends at a plan today → { user_id: { label: 'At Gautham's house party', kind } }
+export async function friendsAtParties() {
+  const rows = await rpc('friends_at_parties');
+  const out = {};
+  for (const r of rows || []) out[r.user_id] = r;
+  return out;
+}
 export const profileCard = (userId) => rpc('get_profile_card', { p_user: userId });
 export const findUser = (q) => rpc('find_user', { p_query: q.trim() }).then((r) => (r && r[0]) || null);
 export const sendRequest = (userId) => {

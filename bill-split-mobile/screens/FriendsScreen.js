@@ -8,7 +8,7 @@ import FriendButton from './FriendButton';
 import FriendCard from './FriendCard';
 import Pulse from './Pulse';
 import { activeLabel } from '../services/active';
-import { findUser, myFriends, removeFriend, respond } from '../services/friends';
+import { findUser, friendsAtParties, myFriends, removeFriend, respond } from '../services/friends';
 import { avatarUrl } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
@@ -21,8 +21,12 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
   const [tab, setTab] = useState('now');
   const [adding, setAdding] = useState(startAdding);
   const [card, setCard] = useState(null); // friend whose profile is open
+  const [atParty, setAtParty] = useState({});
 
-  const load = useCallback(() => myFriends().then((l) => setList(l || [])).catch(() => setList([])), []);
+  const load = useCallback(() => {
+    friendsAtParties().then(setAtParty).catch(() => {});
+    return myFriends().then((l) => setList(l || [])).catch(() => setList([]));
+  }, []);
   useEffect(() => {
     load();
     const t = setInterval(load, 60000);
@@ -30,7 +34,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
   }, [load]);
 
   const all = list || [];
-  const friends = all.filter((f) => f.status === 'accepted').map((f) => ({ ...f, st: activeLabel(f.last_seen) }));
+  const friends = all.filter((f) => f.status === 'accepted').map((f) => ({ ...f, st: activeLabel(f.last_seen), party: atParty[f.user_id] && atParty[f.user_id].label }));
   const vibing = friends.filter((f) => f.st && f.st.now);
   const recent = friends.filter((f) => f.st && !f.st.now);
   const incoming = all.filter((f) => f.status === 'pending' && f.incoming);
@@ -90,7 +94,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
                   <TouchableOpacity key={f.user_id} style={styles.tile} onPress={() => setCard(f.user_id)}>
                     <Pulse name={f.name} uri={avatarUrl(f.avatar_path)} on size={64} />
                     <Text style={styles.tileName} numberOfLines={1}>{f.name.split(' ')[0]}</Text>
-                    <Text style={styles.tileNow}>Active now</Text>
+                    <Text style={styles.tileNow} numberOfLines={2}>{f.party ? `🎉 ${f.party}` : 'Active now'}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -188,6 +192,7 @@ function Row({ f, onPress, onLongPress }) {
       <View style={styles.rowText}>
         <Text style={styles.name}>{f.name}</Text>
         <Text style={[styles.faint, f.st && f.st.now && styles.green]}>{f.st ? f.st.text : 'Not active recently'}</Text>
+        {f.party ? <Text style={styles.party} numberOfLines={1}>🎉 {f.party}</Text> : null}
       </View>
     </TouchableOpacity>
   );
@@ -345,7 +350,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   tile: { width: '31%', alignItems: 'center', backgroundColor: 'rgba(52,211,153,0.07)', borderRadius: 18, paddingVertical: 18, marginBottom: 10 },
   tileName: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 10 },
-  tileNow: { color: C.green, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  tileNow: { color: C.green, fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'center', paddingHorizontal: 4 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { color: C.text, fontSize: 17, fontWeight: '600', marginTop: 8 },
@@ -355,6 +360,7 @@ const styles = StyleSheet.create({
   name: { color: C.text, fontSize: 16, fontWeight: '600' },
   faint: { color: C.faint, fontSize: 13, marginTop: 2, textAlign: 'left' },
   green: { color: C.green, fontWeight: '600' },
+  party: { color: C.pink, fontSize: 13, fontWeight: '600', marginTop: 2 },
   accept: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, marginRight: 10 },
   acceptText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   decline: { color: C.faint, fontSize: 16 },

@@ -2,16 +2,20 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pulse from './Pulse';
 import { activeLabel } from '../services/active';
-import { myFriends } from '../services/friends';
+import { friendsAtParties, myFriends } from '../services/friends';
 import { avatarUrl } from '../services/profile';
 import { C } from '../services/theme';
 
 // Home: "Your circle" card. Overlapping faces, who's vibing now, and ＋ to add friends.
 export default function FriendsRow({ onOpen, onAdd }) {
   const [list, setList] = useState(null);
+  const [atParty, setAtParty] = useState({});
 
   useEffect(() => {
-    const load = () => myFriends().then((l) => setList(l || [])).catch(() => setList([]));
+    const load = () => {
+      myFriends().then((l) => setList(l || [])).catch(() => setList([]));
+      friendsAtParties().then(setAtParty).catch(() => {});
+    };
     load();
     const t = setInterval(load, 60000);
     return () => clearInterval(t);
@@ -27,6 +31,9 @@ export default function FriendsRow({ onOpen, onAdd }) {
   if (!friends.length) line = 'Add friends to see who’s vibing';
   else if (!active.length) line = `${friends.length} friend${friends.length === 1 ? '' : 's'} · nobody vibing now`;
   else line = `${active[0].name.split(' ')[0]}${active.length > 1 ? ` +${active.length - 1}` : ''} vibing now`;
+  // 🎉 Someone's at a plan today? That's more fun to show.
+  const partying = friends.find((f) => atParty[f.user_id]);
+  if (partying) line = `🎉 ${partying.name.split(' ')[0]}: ${atParty[partying.user_id].label}`;
 
   return (
     <TouchableOpacity style={styles.card} activeOpacity={0.8} onPress={onOpen}>
