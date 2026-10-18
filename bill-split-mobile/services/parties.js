@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -153,4 +153,10 @@ export async function updateParty(party, { title, kind, party_date, place, budge
       if (error) throw error;
     }
   }
+}
+
+// 🤝 Who paid for whom: "Shafil is paying for Arun" (coverId = null to undo)
+export async function setCoveredBy(memberId, coverId) {
+  const { error } = await supabase.from('party_members').update({ covered_by: coverId }).eq('id', memberId);
+  if (error) throw error;
 }

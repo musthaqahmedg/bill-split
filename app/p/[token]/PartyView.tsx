@@ -68,6 +68,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [polls, setPolls] = useState<Record<string, Poll>>({});
   const [pollOpen, setPollOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
+  const [covers, setCovers] = useState<Record<string, string>>({}); // member → who pays for them
   const [photos, setPhotos] = useState<{ id: string; path: string; uploader_name: string }[]>([]);
   const [booking, setBooking] = useState<{ place_name: string; booking_date: string; booking_time: string; guests: number; notes: string | null; status: string } | null>(null);
   const [safety, setSafety] = useState<{ id: string; name: string; home_at: string | null; is_driver: boolean }[]>([]);
@@ -93,6 +94,11 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           rpc('get_party_polls', { p_token: token }),
           rpc('get_party_list', { p_token: token }),
         ]);
+        const cv = await rpc('get_party_covers', { p_token: token });
+        if (cv.ok && alive) {
+          const rows: { member_id: string; covered_by: string }[] = await cv.json();
+          setCovers(Object.fromEntries(rows.map((r) => [r.member_id, r.covered_by])));
+        }
         const ph = await rpc('get_party_photos', { p_token: token });
         if (ph.ok && alive) setPhotos(await ph.json());
         const bk = await rpc('get_party_booking', { p_token: token });
@@ -141,6 +147,18 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     if (!target) return;
     await rpc('ask_party_item', { p_token: token, p_member: me, p_item: id, p_target: target });
     refreshList();
+  };
+
+  // 🤝 "I'll pay for Arun"
+  const coverFriend = async (target: string) => {
+    if (!me || !target) return;
+    const res = await rpc('guest_cover', { p_token: token, p_member: me, p_target: target });
+    if (res.ok) setCovers((c) => ({ ...c, [target]: me }));
+  };
+  const dueOf = (id: string) => {
+    const m = members.find((x) => x.id === id);
+    const own = covers[id] ? 0 : Number(m?.share || 0);
+    return own + members.filter((x) => covers[x.id] === id).reduce((a, x) => a + Number(x.share || 0), 0);
   };
 
   // 💸 "I've paid" from the settle-up card
@@ -433,14 +451,25 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
                     <div style={{ marginTop: 6 }}>🎁 This one is a treat. Nothing to pay!</div>
                   ) : meM.paid ? (
                     <div style={{ marginTop: 6, fontWeight: 800 }}>✅ You’ve paid. Thank you!</div>
+                  ) : covers[meM.id] ? (
+                    <div style={{ marginTop: 6, fontWeight: 700 }}>🤝 {members.find((x) => x.id === covers[meM.id])?.name || 'A friend'} is paying for you. Thank them 💜</div>
                   ) : (
                     <>
-                      <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>₹{Math.round(meM.share || 0).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>₹{Math.round(dueOf(meM.id)).toLocaleString('en-IN')}</div>
+                      {members.some((x) => covers[x.id] === meM.id) && (
+                        <div style={{ color: '#C9A8FF', fontSize: 13 }}>incl. {members.filter((x) => covers[x.id] === meM.id).map((x) => x.name).join(', ')} 🤝</div>
+                      )}
                       <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
                         {party.host_upi ? (
-                          <a style={{ ...s.payBtn, margin: 0 }} href={upiLink(party.host_upi, host, meM.share || 0, party.title)}>Pay with UPI</a>
+                          <a style={{ ...s.payBtn, margin: 0 }} href={upiLink(party.host_upi, host, dueOf(meM.id), party.title)}>Pay with UPI</a>
                         ) : null}
                         <button style={s.claimBtn} onClick={markPaid}>✅ I’ve paid</button>
+                        <select style={{ ...s.claimBtn, cursor: 'pointer' }} value="" onChange={(e) => coverFriend(e.target.value)}>
+                          <option value="">🤝 Pay for a friend…</option>
+                          {members.filter((x) => x.id !== meM.id && x.name !== 'Me' && !x.paid && !covers[x.id] && Number(x.share || 0) > 0).map((x) => (
+                            <option key={x.id} value={x.id}>{x.name}</option>
+                          ))}
+                        </select>
                       </div>
                     </>
                   )}

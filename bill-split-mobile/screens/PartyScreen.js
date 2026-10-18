@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { deleteParty, getParty, partyLink, setHideBill, setMemberPaid, waNumber } from '../services/parties';
+import { deleteParty, getParty, partyLink, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
 import BookingCard from './BookingCard';
@@ -69,14 +69,43 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
   const paidCount = owing.filter((m) => m.paid_at).length;
   const toCollect = owing.filter((m) => !m.paid_at).reduce((s, m) => s + Number(m.share), 0);
 
+  // 🤝 Who paid for whom
+  const coverOf = (m) => m.covered_by && members.find((x) => x.id === m.covered_by);
+  const coveredBy = (m) => members.filter((x) => x.covered_by === m.id);
+  const dueOf = (m) => (m.covered_by ? 0 : Number(m.share) || 0) + coveredBy(m).reduce((a, x) => a + (Number(x.share) || 0), 0);
+
+  const pickCover = (m) =>
+    Alert.alert(`Who paid for ${m.name}? 🤝`, 'Their share moves to that friend.', [
+      ...members
+        .filter((x) => x.id !== m.id && !x.covered_by)
+        .slice(0, 6)
+        .map((x) => ({
+          text: x.name === 'Me' ? 'You (on the house 🎁)' : x.name,
+          onPress: async () => {
+            try {
+              await setCoveredBy(m.id, x.id);
+              if (x.name === 'Me') await setMemberPaid(m.id, true);
+              reload();
+            } catch (e) {
+              Alert.alert("Couldn't save", e.message);
+            }
+          },
+        })),
+      ...(m.covered_by
+        ? [{ text: 'Nobody (undo)', style: 'destructive', onPress: async () => { await setCoveredBy(m.id, null).catch(() => {}); reload(); } }]
+        : []),
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+
   const togglePaid = async (m) => {
     const paid = !m.paid_at;
     const stamp = paid ? new Date().toISOString() : null;
+    const ids = [m.id, ...coveredBy(m).map((x) => x.id)]; // paying for friends settles them too
     const setStamp = (value) =>
-      setParty((p) => ({ ...p, party_members: p.party_members.map((x) => (x.id === m.id ? { ...x, paid_at: value } : x)) }));
+      setParty((p) => ({ ...p, party_members: p.party_members.map((x) => (ids.includes(x.id) ? { ...x, paid_at: value } : x)) }));
     setStamp(stamp);
     try {
-      await setMemberPaid(m.id, paid);
+      for (const id of ids) await setMemberPaid(id, paid);
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
       setStamp(m.paid_at);
@@ -264,8 +293,10 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
               <View>
                 <Text style={styles.name}>{show(m.name)}</Text>
                 {m.name !== 'Me' ? <ActiveTag status={activeOf(m)} /> : null}
+                {coverOf(m) ? <Text style={styles.cover}>🤝 Covered by {show(coverOf(m).name)}</Text> : null}
+                {coveredBy(m).length ? <Text style={styles.cover}>🤝 Paying for {coveredBy(m).map((x) => show(x.name)).join(', ')}</Text> : null}
               </View>
-              <Text style={styles.pay}>{inr(m.share)}</Text>
+              <Text style={[styles.pay, m.covered_by && styles.payCovered]}>{inr(m.covered_by ? m.share : dueOf(m))}</Text>
             </View>
             {m.name !== 'Me' && (
               <View style={styles.rsvpRow}>
@@ -289,6 +320,10 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
                   <TouchableOpacity style={styles.paidBtn} onPress={() => togglePaid(m)}>
                     <Text style={styles.paidText}>✅ Paid</Text>
                   </TouchableOpacity>
+                ) : m.covered_by ? (
+                  <TouchableOpacity style={styles.remindBtn} onPress={() => pickCover(m)}>
+                    <Text style={styles.remindText}>🤝 Change</Text>
+                  </TouchableOpacity>
                 ) : (
                   <>
                     <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(m)}>
@@ -296,6 +331,9 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.remindBtn} onPress={() => remind(m)}>
                       <Text style={styles.remindText}>Remind</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.remindBtn} onPress={() => pickCover(m)}>
+                      <Text style={styles.remindText}>🤝</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -355,6 +393,8 @@ const styles = StyleSheet.create({
   gamesText: { color: '#F59E0B', fontSize: 16, fontWeight: '800' },
   gamesSub: { color: C.faint, fontSize: 12, marginTop: 3 },
   shopBtn: { backgroundColor: C.cardHi, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
+  cover: { color: C.accentSoft, fontSize: 12, fontWeight: '600', marginTop: 3 },
+  payCovered: { textDecorationLine: 'line-through', color: C.faint },
   shopHint: { color: C.faint, fontSize: 12, marginTop: 3 },
   shopText: { color: C.text, fontSize: 16, fontWeight: '800' },
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
