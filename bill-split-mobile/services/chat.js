@@ -6,7 +6,7 @@ import { track } from './track';
 export async function listMessages(partyId) {
   const { data, error } = await supabase
     .from('party_messages')
-    .select('id, member_id, sender_name, body, kind, poll_id, created_at')
+    .select('id, member_id, sender_name, body, kind, poll_id, created_at, is_pay')
     .eq('party_id', partyId)
     .order('created_at', { ascending: true })
     .limit(300);
@@ -56,5 +56,12 @@ export async function votePoll({ token, memberId, pollId, option }) {
   const { error } = await supabase.rpc('vote_party_poll', {
     p_token: token, p_member: memberId, p_poll: pollId, p_option: option,
   });
+  if (error) throw error;
+}
+
+// 💸 Drop a "settle up" card in the chat (host only)
+export async function postPayRequest(partyId) {
+  track('partyChat', 'asked to settle up');
+  const { error } = await supabase.rpc('post_pay_request', { p_party: partyId });
   if (error) throw error;
 }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { createPoll, getPolls, listMessages, onNewMessage, sendMessage, votePoll } from '../services/chat';
+import { createPoll, getPolls, listMessages, onNewMessage, sendMessage, votePoll, postPayRequest } from '../services/chat';
 import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
 import { getParty } from '../services/parties';
@@ -32,9 +32,10 @@ export default function PartyChatScreen({ partyId, onBack }) {
     getParty(partyId).then(setParty).catch(() => {});
     listMessages(partyId).then(setMessages).catch(() => setMessages([]));
     // Live: add new messages as they arrive (skip ones we already have)
-    return onNewMessage(partyId, (m) =>
-      setMessages((list) => (list && !list.some((x) => x.id === m.id) ? [...list, m] : list))
-    );
+    return onNewMessage(partyId, (m) => {
+      setMessages((list) => (list && !list.some((x) => x.id === m.id) ? [...list, m] : list));
+      if (m.kind === 'system') getParty(partyId).then(setParty).catch(() => {}); // e.g. someone paid
+    });
   }, [partyId]);
 
   const me = party && (party.party_members || []).find((m) => m.name === 'Me');
@@ -79,9 +80,32 @@ export default function PartyChatScreen({ partyId, onBack }) {
     }
   };
 
+  // 💸 Settle-up card: everyone sees "Pay ₹X" on the invite link, you see who has paid
+  const askToPay = () => {
+    const owing = (party.party_members || []).filter((m) => m.name !== 'Me' && Number(m.share) > 0);
+    if (party.split_mode === 'treat' || party.split_mode === 'free' || !owing.length) {
+      return Alert.alert('Nothing to collect', 'This plan is a treat or has no shares to pay.');
+    }
+    Alert.alert('Ask everyone to pay? 💸', 'A pay card goes into the chat. Friends tap it to pay you by UPI.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Send',
+        onPress: async () => {
+          try {
+            await postPayRequest(party.id);
+            getParty(partyId).then(setParty).catch(() => {});
+          } catch (e) {
+            Alert.alert("Couldn't send", e.message);
+          }
+        },
+      },
+    ]);
+  };
+
   const isMine = (m) => me && m.member_id === me.id && m.kind !== 'system';
 
   const renderItem = ({ item }) => {
+    if (item.is_pay) return <PayCard party={party} />;
     if (item.kind === 'system') {
       return <Text style={styles.system}>{item.body}</Text>;
     }
@@ -146,6 +170,9 @@ export default function PartyChatScreen({ partyId, onBack }) {
         <TouchableOpacity style={styles.pollBtn} onPress={() => setPollOpen(true)} disabled={!token}>
           <Text style={styles.pollText}>📊</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.pollBtn} onPress={askToPay} disabled={!party}>
+          <Text style={styles.pollText}>💸</Text>
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={text}
@@ -190,4 +217,39 @@ const styles = StyleSheet.create({
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginLeft: 8 },
   sendOff: { opacity: 0.4 },
   sendText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+});
+
+const inrPay = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+function PayCard({ party }) {
+  if (!party) return null;
+  const owing = (party.party_members || []).filter((m) => m.name !== 'Me' && Number(m.share) > 0);
+  const paid = owing.filter((m) => m.paid_at);
+  const total = owing.reduce((a, m) => a + Number(m.share), 0);
+  const got = paid.reduce((a, m) => a + Number(m.share), 0);
+  return (
+    <View style={payStyles.card}>
+      <Text style={payStyles.title}>💸 Settle up</Text>
+      <Text style={payStyles.big}>{inrPay(got)} <Text style={payStyles.of}>of {inrPay(total)}</Text></Text>
+      <View style={payStyles.track}>
+        <View style={[payStyles.fill, { width: `${total ? (got / total) * 100 : 0}%` }]} />
+      </View>
+      {owing.map((m) => (
+        <Text key={m.id} style={[payStyles.row, m.paid_at && payStyles.paid]}>
+          {m.paid_at ? '✅' : '⏳'} {m.name} · {inrPay(m.share)}
+        </Text>
+      ))}
+      <Text style={payStyles.hint}>Friends pay you by UPI from the invite link, then tap “I’ve paid”.</Text>
+    </View>
+  );
+}
+const payStyles = StyleSheet.create({
+  card: { alignSelf: 'center', width: '88%', backgroundColor: 'rgba(52,211,153,0.1)', borderWidth: 1, borderColor: 'rgba(52,211,153,0.4)', borderRadius: 18, padding: 14, marginVertical: 8 },
+  title: { color: C.green, fontSize: 13, fontWeight: '800', letterSpacing: 0.5 },
+  big: { color: C.text, fontSize: 24, fontWeight: '800', marginTop: 4 },
+  of: { color: C.faint, fontSize: 14, fontWeight: '600' },
+  track: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 8, overflow: 'hidden' },
+  fill: { height: 6, backgroundColor: C.green },
+  row: { color: C.sub, fontSize: 14, marginTop: 3 },
+  paid: { color: C.text },
+  hint: { color: C.faint, fontSize: 11, marginTop: 8 },
 });

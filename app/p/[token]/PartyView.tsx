@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string };
+type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string; is_pay?: boolean };
 type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null; asked_to?: string | null; asked_name?: string | null };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
 type Member = { id: string; name: string; share: number | null; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
@@ -89,7 +89,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     const load = async () => {
       try {
         const [res, pr, li] = await Promise.all([
-          rpc('get_party_chat', { p_token: token }),
+          rpc('get_party_chat_v2', { p_token: token }),
           rpc('get_party_polls', { p_token: token }),
           rpc('get_party_list', { p_token: token }),
         ]);
@@ -143,6 +143,13 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     refreshList();
   };
 
+  // 💸 "I've paid" from the settle-up card
+  const markPaid = async () => {
+    if (!me) return setSendError('Tap your name above first');
+    const res = await rpc('guest_mark_paid', { p_token: token, p_member: me });
+    if (res.ok) setMembers((list) => list.map((m) => (m.id === me ? { ...m, paid: true } : m)));
+  };
+
   const refreshSafety = async () => {
     const sf = await rpc('get_party_safety', { p_token: token });
     if (sf.ok) setSafety(await sf.json());
@@ -180,7 +187,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     setPollOpen(false);
     setPollQ('');
     setPollOpts(['', '']);
-    const again = await rpc('get_party_chat', { p_token: token });
+    const again = await rpc('get_party_chat_v2', { p_token: token });
     if (again.ok) setMessages(await again.json());
     refreshPolls();
   };
@@ -199,7 +206,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
     try {
       const res = await rpc('send_party_message', { p_token: token, p_member: me, p_body: body });
       if (!res.ok) throw new Error();
-      const again = await rpc('get_party_chat', { p_token: token });
+      const again = await rpc('get_party_chat_v2', { p_token: token });
       if (again.ok) setMessages(await again.json());
     } catch {
       setText(body);
@@ -415,6 +422,31 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
         <div style={s.chat}>
           {messages.length === 0 && <p style={s.chatEmpty}>No messages yet. Say hi 👋</p>}
           {messages.map((m) => {
+            if (m.is_pay) {
+              const meM = members.find((x) => x.id === me);
+              return (
+                <div key={m.id} style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.45)', borderRadius: 16, padding: 14, margin: '8px 0' }}>
+                  <div style={{ color: '#34D399', fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>💸 SETTLE UP · from {host}</div>
+                  {!meM ? (
+                    <div style={{ marginTop: 6 }}>Tap your name above to see your share.</div>
+                  ) : party.hide_bill ? (
+                    <div style={{ marginTop: 6 }}>🎁 This one is a treat. Nothing to pay!</div>
+                  ) : meM.paid ? (
+                    <div style={{ marginTop: 6, fontWeight: 800 }}>✅ You’ve paid. Thank you!</div>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 26, fontWeight: 800, marginTop: 4 }}>₹{Math.round(meM.share || 0).toLocaleString('en-IN')}</div>
+                      <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+                        {party.host_upi ? (
+                          <a style={{ ...s.payBtn, margin: 0 }} href={upiLink(party.host_upi, host, meM.share || 0, party.title)}>Pay with UPI</a>
+                        ) : null}
+                        <button style={s.claimBtn} onClick={markPaid}>✅ I’ve paid</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            }
             if (m.kind === 'system') return <p key={m.id} style={s.system}>{m.body}</p>;
             if (m.poll_id) {
               const p = polls[m.poll_id];
