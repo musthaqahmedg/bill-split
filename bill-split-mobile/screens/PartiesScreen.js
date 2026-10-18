@@ -3,6 +3,7 @@ import { Animated, Easing, FlatList, RefreshControl, StyleSheet, Text, Touchable
 import { listParties } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
 import { show } from '../services/names';
+import LevelCard from './LevelCard';
 import StreakCard from './StreakCard';
 import { C } from '../services/theme';
 
@@ -133,7 +134,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
         data={parties}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => <PlanCard item={item} index={index} onPress={() => onOpenParty(item.id)} />}
-        ListHeaderComponent={<StreakCard refreshKey={tick} />}
+        ListHeaderComponent={<><LevelCard refreshKey={tick} /><StreakCard refreshKey={tick} /></>}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
           !loading && (
