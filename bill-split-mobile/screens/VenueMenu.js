@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getVenueMenu, placeName, scanMenu } from '../services/menus';
 import { C } from '../services/theme';
 
@@ -66,6 +66,12 @@ export default function VenueMenu({ place }) {
             <Text style={styles.emptyEmoji}>📋</Text>
             <Text style={styles.emptyTitle}>No {filter === 'food' ? 'food' : filter === 'drinks' ? 'drinks' : ''} menu here yet</Text>
             <Text style={styles.faint}>Be the first to scan it at the table 📸 and everyone gets it.</Text>
+            <TouchableOpacity
+              style={styles.online}
+              onPress={() => Linking.openURL(`https://www.google.com/search?q=${encodeURIComponent(`${name} Palakkad menu zomato`)}`)}
+            >
+              <Text style={styles.onlineText}>🔎 Find the menu online</Text>
+            </TouchableOpacity>
           </View>
         ) : null}
         {Object.entries(groups).map(([g, list]) => (
@@ -111,6 +117,8 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 42 },
   emptyTitle: { color: C.text, fontSize: 17, fontWeight: '700', marginTop: 8 },
   faint: { color: C.faint, fontSize: 13, marginTop: 4, textAlign: 'center' },
+  online: { marginTop: 16, backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 14, paddingVertical: 10, paddingHorizontal: 16 },
+  onlineText: { color: C.text, fontSize: 14, fontWeight: '700' },
   section: { color: C.faint, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginTop: 18, marginBottom: 4 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.1)' },
   icon: { fontSize: 18, width: 30 },
