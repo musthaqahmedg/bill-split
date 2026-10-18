@@ -54,10 +54,16 @@ export default function ProfileScreen({ onBack, onLogout }) {
     myXp().then((d) => setXp(d.xp)).catch(() => {});
   }, []);
 
-  const changePhoto = async () => {
+  const changePhoto = () =>
+    Alert.alert('Profile photo', undefined, [
+      { text: '🤳 Take a selfie', onPress: () => uploadPhoto(true) },
+      { text: '🖼️ Choose from gallery', onPress: () => uploadPhoto(false) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  const uploadPhoto = async (camera) => {
     setUploading(true);
     try {
-      const path = await pickAvatar();
+      const path = await pickAvatar(camera);
       if (path) setAvatar(path);
     } catch (e) {
       Alert.alert("Couldn't change photo", e.message);

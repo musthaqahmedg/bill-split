@@ -33,10 +33,13 @@ export const linkedinUrl = (v) => (/^https?:/i.test(v) ? v : `https://www.linked
 export const avatarUrl = (path) => (path ? supabase.storage.from('avatars').getPublicUrl(path).data.publicUrl : null);
 
 // 📸 Pick a profile photo, square-ish and small, and save it
-export async function pickAvatar() {
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) throw new Error('Please allow photo access.');
-  const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1], mediaTypes: ['images'] });
+export async function pickAvatar(fromCamera = false) {
+  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!perm.granted) throw new Error(fromCamera ? 'Please allow camera access.' : 'Please allow photo access.');
+  const opts = { quality: 0.8, allowsEditing: true, aspect: [1, 1], mediaTypes: ['images'] };
+  const res = fromCamera
+    ? await ImagePicker.launchCameraAsync({ ...opts, cameraType: ImagePicker.CameraType.front })
+    : await ImagePicker.launchImageLibraryAsync(opts);
   if (res.canceled) return null;
   const small = await shrink(res.assets[0], 512);
   const { data: { user } } = await supabase.auth.getUser();
