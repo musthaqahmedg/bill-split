@@ -1,7 +1,7 @@
 import { registerRootComponent } from 'expo';
 import * as LocalAuthentication from 'expo-local-authentication';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Dimensions, Easing, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
@@ -39,11 +39,15 @@ function matchItems(oldItems: any[], newItems: any[]) {
   });
 }
 
-function App() {
+function App({ onScreen }: { onScreen?: (s: string) => void }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
+  // tell Root the page changed, so it can slide the new page in
+  useEffect(() => {
+    if (onScreen) onScreen(screen);
+  }, [screen]);
   const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
   // 🔔 tapping a notification opens the right screen
   useEffect(() => {
@@ -486,9 +490,38 @@ function Root() {
     const { data } = supabase.auth.onAuthStateChange((_e, session) => setUid(session ? session.user.id : null));
     return () => data.subscription.unsubscribe();
   }, []);
+
+  // ✨ Smooth page changes: forward slides in from the right, back from the left (like iPhone)
+  const x = useRef(new Animated.Value(0)).current;
+  const fade = useRef(new Animated.Value(1)).current;
+  const history = useRef<string[]>([]);
+  const onScreen = (next: string) => {
+    const h = history.current;
+    if (!h.length) {
+      h.push(next);
+      return;
+    }
+    const back = h.length > 1 && h[h.length - 2] === next;
+    if (back) h.pop();
+    else {
+      const i = h.lastIndexOf(next);
+      if (i >= 0) h.splice(i + 1);
+      else h.push(next);
+    }
+    const w = Dimensions.get('window').width;
+    x.setValue((back ? -1 : 1) * w * 0.25);
+    fade.setValue(0.4);
+    Animated.parallel([
+      Animated.timing(x, { toValue: 0, duration: 280, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 220, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+    ]).start();
+  };
+
   return (
-    <View style={{ flex: 1 }}>
-      <App />
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateX: x }] }}>
+        <App onScreen={onScreen} />
+      </Animated.View>
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
     </View>
   );
