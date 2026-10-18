@@ -10,6 +10,7 @@ import NightCheck from './NightCheck';
 import PartyPhotos from './PartyPhotos';
 import PartyGames from './PartyGames';
 import PartyBar from './PartyBar';
+import { isVenue } from '../services/menus';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -270,10 +271,10 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
           <Text style={styles.gamesSub}>Spin the wheel · Truth or dare · Charades</Text>
         </TouchableOpacity>
         <PartyGames visible={gamesOpen} onClose={() => setGamesOpen(false)} party={party} />
-        {['house', 'party', 'birthday', 'bachelor', 'match', 'nightout', 'trip'].includes(party.kind) ? (
+        {isVenue(party) || ['house', 'party', 'birthday', 'bachelor', 'match', 'nightout', 'trip'].includes(party.kind) ? (
           <TouchableOpacity style={styles.barBtn} onPress={() => setBarOpen(true)}>
-            <Text style={styles.barTitle}>🍹 Drinks menu</Text>
-            <Text style={styles.gamesSub}>Mocktails & cocktails · recipes · shopping list</Text>
+            <Text style={styles.barTitle}>{isVenue(party) ? `🍽️ Menu at ${party.place.split(',')[0]}` : '🍹 Drinks menu'}</Text>
+            <Text style={styles.gamesSub}>{isVenue(party) ? 'Real drinks & prices · scan the menu card' : 'Mocktails & cocktails · recipes · shopping list'}</Text>
           </TouchableOpacity>
         ) : null}
         <PartyBar visible={barOpen} onClose={() => setBarOpen(false)} party={party} />

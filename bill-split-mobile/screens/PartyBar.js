@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { sendMessage } from '../services/chat';
 import { COCKTAILS, MOCKTAILS, scaled } from '../services/drinks';
+import { isVenue } from '../services/menus';
+import VenueMenu from './VenueMenu';
 import { getProfile } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
@@ -86,12 +88,16 @@ export default function PartyBar({ visible, onClose, party }) {
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={styles.page}>
         <View style={styles.top}>
-          <Text style={styles.title}>🍹 Drinks menu</Text>
+          <Text style={styles.title}>{isVenue(party) ? '🍽️ Menu' : '🍹 Drinks menu'}</Text>
           <TouchableOpacity onPress={onClose}>
             <Text style={styles.link}>Done</Text>
           </TouchableOpacity>
         </View>
 
+        {isVenue(party) ? (
+          <VenueMenu place={party.place} />
+        ) : (
+        <>
         <View style={styles.tabs}>
           <TouchableOpacity style={[styles.tab, tab === 'mock' && styles.tabOn]} onPress={() => setTab('mock')}>
             <Text style={[styles.tabText, tab === 'mock' && styles.tabTextOn]}>🧃 Mocktails</Text>
@@ -151,6 +157,8 @@ export default function PartyBar({ visible, onClose, party }) {
               <Text style={styles.barText}>💬 Share menu</Text>
             </TouchableOpacity>
           </View>
+        )}
+        </>
         )}
       </View>
     </Modal>
