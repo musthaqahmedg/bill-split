@@ -3,6 +3,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pulse from './Pulse';
 import { activeLabel } from '../services/active';
 import { myFriends } from '../services/friends';
+import { avatarUrl } from '../services/profile';
 import { C } from '../services/theme';
 
 // Home: "Your circle" card. Overlapping faces, who's vibing now, and ＋ to add friends.
@@ -32,7 +33,7 @@ export default function FriendsRow({ onOpen, onAdd }) {
       <View style={styles.faces}>
         {faces.length ? (
           faces.map((f, i) => (
-            <Pulse key={f.user_id} name={f.name} on={f.st && f.st.now} size={38} style={{ marginLeft: i ? -12 : 0, zIndex: 10 - i }} />
+            <Pulse key={f.user_id} name={f.name} uri={avatarUrl(f.avatar_path)} on={f.st && f.st.now} size={38} style={{ marginLeft: i ? -12 : 0, zIndex: 10 - i }} />
           ))
         ) : (
           <Text style={styles.empty}>👫</Text>

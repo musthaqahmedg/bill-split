@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Image, StyleSheet, Text, View } from 'react-native';
 import { C } from '../services/theme';
 
 // Avatar with a softly pulsing green ring when the friend is active now
-export default function Pulse({ name, on, size = 48, style }) {
+export default function Pulse({ name, on, size = 48, style, uri }) {
   const p = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (!on) return;
@@ -27,7 +27,11 @@ export default function Pulse({ name, on, size = 48, style }) {
         />
       ) : null}
       <View style={[styles.face, { width: size, height: size, borderRadius: size / 2, backgroundColor: hue + '33', borderColor: on ? C.green : 'rgba(255,255,255,0.12)' }]}>
-        <Text style={[styles.letter, { fontSize: size * 0.4, color: hue }]}>{(name || '?')[0].toUpperCase()}</Text>
+        {uri ? (
+          <Image source={{ uri }} style={{ width: size - 4, height: size - 4, borderRadius: (size - 4) / 2 }} />
+        ) : (
+          <Text style={[styles.letter, { fontSize: size * 0.4, color: hue }]}>{(name || '?')[0].toUpperCase()}</Text>
+        )}
       </View>
       {on ? <View style={[styles.dot, { width: size * 0.26, height: size * 0.26, borderRadius: size * 0.13 }]} /> : null}
     </View>
@@ -36,7 +40,7 @@ export default function Pulse({ name, on, size = 48, style }) {
 
 const styles = StyleSheet.create({
   ring: { position: 'absolute', backgroundColor: C.green },
-  face: { alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  face: { alignItems: 'center', justifyContent: 'center', borderWidth: 2, overflow: 'hidden' },
   letter: { fontWeight: '700' },
   dot: { position: 'absolute', right: 0, bottom: 0, backgroundColor: C.green, borderWidth: 2, borderColor: C.bg },
 });

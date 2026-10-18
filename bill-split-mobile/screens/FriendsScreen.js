@@ -5,9 +5,11 @@ import {
   TouchableOpacity, View,
 } from 'react-native';
 import FriendButton from './FriendButton';
+import FriendCard from './FriendCard';
 import Pulse from './Pulse';
 import { activeLabel } from '../services/active';
 import { findUser, myFriends, removeFriend, respond } from '../services/friends';
+import { avatarUrl } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
 
@@ -18,6 +20,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
   const [list, setList] = useState(null);
   const [tab, setTab] = useState('now');
   const [adding, setAdding] = useState(startAdding);
+  const [card, setCard] = useState(null); // friend whose profile is open
 
   const load = useCallback(() => myFriends().then((l) => setList(l || [])).catch(() => setList([])), []);
   useEffect(() => {
@@ -84,11 +87,11 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
             ) : (
               <View style={styles.grid}>
                 {vibing.map((f) => (
-                  <View key={f.user_id} style={styles.tile}>
-                    <Pulse name={f.name} on size={64} />
+                  <TouchableOpacity key={f.user_id} style={styles.tile} onPress={() => setCard(f.user_id)}>
+                    <Pulse name={f.name} uri={avatarUrl(f.avatar_path)} on size={64} />
                     <Text style={styles.tileName} numberOfLines={1}>{f.name.split(' ')[0]}</Text>
                     <Text style={styles.tileNow}>Active now</Text>
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </View>
             )}
@@ -96,7 +99,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
               <>
                 <Text style={styles.section}>RECENTLY ACTIVE</Text>
                 {recent.map((f) => (
-                  <Row key={f.user_id} f={f} />
+                  <Row key={f.user_id} f={f} onPress={() => setCard(f.user_id)} />
                 ))}
               </>
             )}
@@ -118,6 +121,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
                 <Row
                   key={f.user_id}
                   f={f}
+                  onPress={() => setCard(f.user_id)}
                   onLongPress={() =>
                     Alert.alert(`Remove ${f.name}?`, undefined, [
                       { text: 'Cancel', style: 'cancel' },
@@ -127,7 +131,7 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
                 />
               ))
             )}
-            {friends.length > 0 && <Text style={styles.hint}>Hold a friend to remove them.</Text>}
+            {friends.length > 0 && <Text style={styles.hint}>Tap a friend to see their profile · hold to remove.</Text>}
           </>
         )}
 
@@ -171,15 +175,16 @@ export default function FriendsScreen({ onBack, startAdding = false }) {
         )}
       </ScrollView>
 
+      <FriendCard userId={card} onClose={() => setCard(null)} />
       <AddSheet visible={adding} onClose={() => { setAdding(false); load(); }} />
     </View>
   );
 }
 
-function Row({ f, onLongPress }) {
+function Row({ f, onPress, onLongPress }) {
   return (
-    <TouchableOpacity style={styles.row} activeOpacity={onLongPress ? 0.7 : 1} onLongPress={onLongPress}>
-      <Pulse name={f.name} on={f.st && f.st.now} size={44} />
+    <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={onPress} onLongPress={onLongPress}>
+      <Pulse name={f.name} uri={avatarUrl(f.avatar_path)} on={f.st && f.st.now} size={44} />
       <View style={styles.rowText}>
         <Text style={styles.name}>{f.name}</Text>
         <Text style={[styles.faint, f.st && f.st.now && styles.green]}>{f.st ? f.st.text : 'Not active recently'}</Text>

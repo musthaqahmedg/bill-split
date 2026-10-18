@@ -6,7 +6,7 @@ import { track } from './track';
 // 📸 Party photos (stored in Supabase Storage: party-photos/<party_id>/<file>.jpg)
 
 const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
-function toBytes(b64) {
+export function toBytes(b64) {
   const clean = b64.replace(/[^A-Za-z0-9+/]/g, '');
   const bytes = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let p = 0;
@@ -20,8 +20,8 @@ function toBytes(b64) {
   return bytes.slice(0, p);
 }
 
-async function shrink(asset) {
-  const width = Math.min(asset.width || 1280, 1280);
+export async function shrink(asset, max = 1280) {
+  const width = Math.min(asset.width || max, max);
   const IM = ImageManipulator.ImageManipulator;
   if (IM && IM.manipulate) {
     const ctx = IM.manipulate(asset.uri);

@@ -9,7 +9,8 @@ const rpc = async (fn, args) => {
   return data;
 };
 
-export const myFriends = () => rpc('my_friends');
+export const myFriends = () => rpc('my_friends_v2');
+export const profileCard = (userId) => rpc('get_profile_card', { p_user: userId });
 export const findUser = (q) => rpc('find_user', { p_query: q.trim() }).then((r) => (r && r[0]) || null);
 export const sendRequest = (userId) => {
   track('friends', 'sent a friend request');
