@@ -11,6 +11,7 @@ import PartyPhotos from './PartyPhotos';
 import PartyGames from './PartyGames';
 import PartyBar from './PartyBar';
 import { isVenue } from '../services/menus';
+import { MenuButton } from './MenuSheet';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -202,6 +203,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
             <ScrollView style={styles.sheetScroll}>
               <AboutPlace place={party.place || ''} />
               <PopularHere place={party.place || ''} quietIfEmpty={['trip', 'daytrip', 'wedding', 'house'].includes(party.kind)} />
+              {isVenue(party) ? <MenuButton label="📋 See the full menu" onPress={() => { setPlaceOpen(false); setTimeout(() => setBarOpen(true), 350); }} /> : null}
             </ScrollView>
             <TouchableOpacity style={styles.mapsBtn} onPress={() => Linking.openURL(mapsUrl(party.place))}>
               <Text style={styles.mapsText}>🗺️ Open in Google Maps</Text>

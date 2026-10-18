@@ -8,6 +8,7 @@ import ContactPicker from './ContactPicker';
 import PlaceInput from './PlaceInput';
 import AboutPlace from './AboutPlace';
 import PopularHere from './PopularHere';
+import MenuSheet, { MenuButton } from './MenuSheet';
 import { createParty, sharesFor, updateParty } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
@@ -84,6 +85,7 @@ function FunLine({ text, style }) {
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null }) {
+  const [menuFor, setMenuFor] = useState(null); // 📋 menu of the chosen place
   // editing = an existing plan: the form starts filled in and saves changes instead of creating
   const ex = editing;
   const exMembers = (ex && ex.party_members) || [];
@@ -238,6 +240,10 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         <PlaceInput value={place} onChange={setPlace} onFocus={() => scrollTo('where')} categories={kindOf(kind).places} />
         {place.trim().length >= 3 ? <AboutPlace place={place} /> : null}
         {place.trim().length >= 3 ? <PopularHere place={place} quietIfEmpty={['trip', 'daytrip', 'wedding', 'house'].includes(kind)} /> : null}
+        {place.trim().length >= 3 && !['trip', 'daytrip', 'wedding', 'house'].includes(kind) && !/^my place|current location/i.test(place.trim()) ? (
+          <MenuButton onPress={() => setMenuFor(place)} />
+        ) : null}
+        <MenuSheet place={menuFor} onClose={() => setMenuFor(null)} />
 
         <View onLayout={keep('budget')}>
           <Text style={styles.label}>Total budget (Rs)</Text>

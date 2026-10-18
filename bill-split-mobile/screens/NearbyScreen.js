@@ -4,6 +4,7 @@ import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import BookTable from './BookTable';
+import MenuSheet from './MenuSheet';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import {
   EMOJI, NEARBY, directionsUrl, findPlaces, getMyLocation, listSaved, openPhoneSettings, openStatus, placeDetails,
@@ -27,6 +28,7 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
   const [ageOk, setAgeOk] = useState(false);
   const timer = useRef(null);
   const [booking, setBooking] = useState(null); // place we're booking a table at
+  const [menuFor, setMenuFor] = useState(null); // place whose menu is open
   const going = bookFor ? (bookFor.party_members || []).filter((m) => m.rsvp !== 'out').length : 2;
 
   useEffect(() => {
@@ -143,6 +145,11 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
             </TouchableOpacity>
           ) : null}
           {['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category) ? (
+            <TouchableOpacity style={styles.btn} onPress={() => setMenuFor(p.name)}>
+              <Text style={styles.btnText}>📋 Menu</Text>
+            </TouchableOpacity>
+          ) : null}
+          {['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category) ? (
             <TouchableOpacity style={[styles.btn, styles.bookBtn]} onPress={() => setBooking({ ...p, phone: d.phone || null })}>
               <Text style={[styles.btnText, styles.bookText]}>🍽️ Book</Text>
             </TouchableOpacity>
@@ -231,6 +238,7 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
         contentContainerStyle={styles.listPad}
       />
       <KeyboardDone />
+      <MenuSheet place={menuFor} onClose={() => setMenuFor(null)} />
       <BookTable
         visible={!!booking}
         onClose={() => setBooking(null)}
