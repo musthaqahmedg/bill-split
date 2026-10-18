@@ -68,6 +68,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [polls, setPolls] = useState<Record<string, Poll>>({});
   const [pollOpen, setPollOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
+  const [photos, setPhotos] = useState<{ id: string; path: string; uploader_name: string }[]>([]);
   const [booking, setBooking] = useState<{ place_name: string; booking_date: string; booking_time: string; guests: number; notes: string | null; status: string } | null>(null);
   const [safety, setSafety] = useState<{ id: string; name: string; home_at: string | null; is_driver: boolean }[]>([]);
   const [itemText, setItemText] = useState('');
@@ -92,6 +93,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           rpc('get_party_polls', { p_token: token }),
           rpc('get_party_list', { p_token: token }),
         ]);
+        const ph = await rpc('get_party_photos', { p_token: token });
+        if (ph.ok && alive) setPhotos(await ph.json());
         const bk = await rpc('get_party_booking', { p_token: token });
         if (bk.ok && alive) setBooking((await bk.json())[0] || null);
         const sf = await rpc('get_party_safety', { p_token: token });
@@ -390,6 +393,23 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           })()}
           <div style={{ ...s.itemWho, marginTop: 8 }}>Get the Vibe Out app to build your 🔥 safe-night streak.</div>
         </div>
+
+        {photos.length > 0 && (
+          <>
+            <p style={s.label}>📸 Photos · {photos.length}</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4, marginBottom: 16 }}>
+              {photos.map((ph) => {
+                const url = `${supabaseUrl}/storage/v1/object/public/party-photos/${ph.path}`;
+                return (
+                  <a key={ph.id} href={url} target="_blank" rel="noreferrer" title={`📸 ${ph.uploader_name}`}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Photo by ${ph.uploader_name}`} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, display: 'block' }} />
+                  </a>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         <p style={s.label}>💬 Party chat</p>
         <div style={s.chat}>

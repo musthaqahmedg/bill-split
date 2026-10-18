@@ -7,6 +7,7 @@ import BookingCard from './BookingCard';
 import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
 import NightCheck from './NightCheck';
+import PartyPhotos from './PartyPhotos';
 import KeyboardDone from './KeyboardDone';
 import PopularHere from './PopularHere';
 import { show } from '../services/names';
@@ -241,6 +242,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
             <Text style={styles.shopHint}>Supermarkets and shops near you</Text>
           </TouchableOpacity>
         ) : null}
+        <PartyPhotos party={party} />
         <NightCheck party={party} onChanged={reload} />
 
         <TouchableOpacity style={styles.shareBtn} onPress={shareAll}>
