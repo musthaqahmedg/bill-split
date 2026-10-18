@@ -1,7 +1,7 @@
 import { registerRootComponent } from 'expo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, Easing, View } from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Easing, PanResponder, View } from 'react-native';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
@@ -39,7 +39,7 @@ function matchItems(oldItems: any[], newItems: any[]) {
   });
 }
 
-function App({ onScreen }: { onScreen?: (s: string) => void }) {
+function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; registerNav?: (go: (s: string) => void) => void }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
@@ -48,6 +48,10 @@ function App({ onScreen }: { onScreen?: (s: string) => void }) {
   useEffect(() => {
     if (onScreen) onScreen(screen);
   }, [screen]);
+  // let Root go back on a swipe from the left edge
+  useEffect(() => {
+    if (registerNav) registerNav((s: string) => setScreen(s));
+  }, []);
   const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
   // 🔔 tapping a notification opens the right screen
   useEffect(() => {
@@ -517,11 +521,53 @@ function Root() {
     ]).start();
   };
 
+  // 👈 Swipe from the left edge to go back (the page follows your finger)
+  const nav = useRef<((s: string) => void) | null>(null);
+  const NO_BACK = ['home'];
+  const edge = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => {
+        const h = history.current;
+        return h.length > 1 && !NO_BACK.includes(h[h.length - 1]);
+      },
+      onMoveShouldSetPanResponder: (_e, g) => g.dx > 8 && Math.abs(g.dy) < Math.abs(g.dx),
+      onPanResponderMove: (_e, g) => {
+        x.setValue(Math.max(0, g.dx));
+        fade.setValue(1 - Math.min(0.4, g.dx / 800));
+      },
+      onPanResponderRelease: (_e, g) => {
+        const w = Dimensions.get('window').width;
+        const h = history.current;
+        if ((g.dx > w * 0.3 || g.vx > 0.6) && h.length > 1 && nav.current) {
+          // skip a finished "new plan" form when going back from the plan it created
+          let k = h.length - 2;
+          if (h[k] === 'newParty' && k > 0) {
+            h.splice(k, 1);
+            k -= 1;
+          }
+          Animated.timing(x, { toValue: w, duration: 160, useNativeDriver: true }).start(() => {
+            if (nav.current) nav.current(h[k]);
+          });
+        } else {
+          Animated.parallel([
+            Animated.spring(x, { toValue: 0, useNativeDriver: true, friction: 8 }),
+            Animated.timing(fade, { toValue: 1, duration: 150, useNativeDriver: true }),
+          ]).start();
+        }
+      },
+      onPanResponderTerminate: () => {
+        Animated.spring(x, { toValue: 0, useNativeDriver: true }).start();
+        fade.setValue(1);
+      },
+    })
+  ).current;
+
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateX: x }] }}>
-        <App onScreen={onScreen} />
+        <App onScreen={onScreen} registerNav={(go) => (nav.current = go)} />
       </Animated.View>
+      <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
     </View>
   );
