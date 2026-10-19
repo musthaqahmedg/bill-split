@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { openNotification } from './notifications';
 import { supabase } from './supabaseClient';
+import { track } from './track';
 
 // 📱 Lock-screen notifications (Expo push). The database sends one for every in-app notification.
 
@@ -53,6 +54,7 @@ export function listenPushTaps() {
   const open = (r) => {
     if (!r) return;
     const c = r.notification.request.content;
+    track('push', 'tapped', (c.data && c.data.kind) || c.title);
     openNotification({ title: c.title, body: c.body, data: c.data || {} });
   };
   Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
