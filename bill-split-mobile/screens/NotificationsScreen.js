@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { clearBadge } from '../services/push';
 import { ICON, listNotifications, markAllRead, onNotification, openNotification } from '../services/notifications';
 import { C } from '../services/theme';
 
@@ -18,6 +19,7 @@ export default function NotificationsScreen({ onBack }) {
   const load = useCallback(() => listNotifications().then(setList).catch(() => setList([])), []);
   useEffect(() => {
     load().then(() => markAllRead());
+    clearBadge();
     return onNotification(() => load().then(() => markAllRead()));
   }, [load]);
 

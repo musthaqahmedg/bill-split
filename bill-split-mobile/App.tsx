@@ -15,6 +15,7 @@ import { setNotificationNavigator } from './services/notifications';
 import HomeScreen from './screens/HomeScreen';
 import { track } from './services/track';
 import { startPresence } from './services/active';
+import { listenPushTaps, registerPush, unregisterPush } from './services/push';
 import ItemsScreen from './screens/ItemsScreen';
 import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
@@ -77,6 +78,11 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   useEffect(() => {
     if (loggedIn && !locked) return startPresence();
   }, [loggedIn, locked]);
+  // 📱 lock-screen notifications: register this phone, and open the right page when one is tapped
+  useEffect(() => {
+    if (loggedIn && !locked) registerPush();
+  }, [loggedIn, locked]);
+  useEffect(() => listenPushTaps(), []);
   // 📊 log each screen people open
   useEffect(() => {
     if (loggedIn && !locked) track(screen);
@@ -185,6 +191,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
 
   // Log out properly (ends the Supabase session too)
   const logout = async () => {
+    await unregisterPush();
     try {
       await supabase.auth.signOut();
     } catch (e) {}

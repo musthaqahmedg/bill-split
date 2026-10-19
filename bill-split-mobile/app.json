@@ -43,6 +43,12 @@
         {
           "contactsPermission": "Vibe Out uses your contacts so you can quickly add friends to a party or bill."
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8B5CF6"
+        }
       ]
     ],
     "extra": {
