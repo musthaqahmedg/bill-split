@@ -20,7 +20,7 @@ export default function Privacy() {
           <li><b>Your bills</b>: restaurant, items, prices, and the names of friends you add.</li>
           <li><b>Plans and parties</b> you create: place, date, budget, friends, the bring list, chat, polls, bookings and safe-night check-ins.</li>
           <li><b>App usage</b>: which screens you open and actions like creating a plan, so we can fix problems and improve the app.</li>
-          <li><b>Feedback</b>: when you send feedback or report a bug, we save your message, any screenshot you add, the page you were on and your phone model. Only the founders can see it.</li>
+          <li><b>Help chat</b>: messages you send in “Chat with us”, so our team can reply. Only you and our team can see them.</li>
           <li><b>Your location</b>, only when you allow it, to show places near you. We don&apos;t store it.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
         </ul>

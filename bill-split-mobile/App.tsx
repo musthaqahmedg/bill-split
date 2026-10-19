@@ -7,8 +7,9 @@ import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
-import FeedbackSheet from './screens/FeedbackSheet';
-import { Accelerometer } from 'expo-sensors';
+import HelpScreen from './screens/HelpScreen';
+import SupportChatScreen from './screens/SupportChatScreen';
+import SupportInbox from './screens/SupportInbox';
 import NotificationsScreen from './screens/NotificationsScreen';
 import { setNotificationNavigator } from './services/notifications';
 import HomeScreen from './screens/HomeScreen';
@@ -54,12 +55,16 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   useEffect(() => {
     if (registerNav) registerNav((s: string) => setScreen(s));
   }, []);
+  const [supportThread, setSupportThread] = useState<any>(null); // team: whose support chat is open
   const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
   // 🔔 tapping a notification opens the right screen
   useEffect(() => {
     setNotificationNavigator((n: any) => {
       const d = (n && n.data) || {};
-      if (d.friends) {
+      if (d.support) {
+        setSupportThread(d.thread ? { userId: d.thread, name: ((n.title || '').replace('💬 ', '').replace(' needs help', '')) || 'Support' } : null);
+        setScreen('support');
+      } else if (d.friends) {
         setFriendsAdd(false);
         setScreen('friends');
       } else if (d.party_id) {
@@ -332,7 +337,36 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onBack={() => setScreen('home')} onLogout={logout} />;
+    return <ProfileScreen onBack={() => setScreen('home')} onLogout={logout} onHelp={() => setScreen('help')} />;
+  }
+
+  if (screen === 'help') {
+    return (
+      <HelpScreen
+        onBack={() => setScreen('profile')}
+        onChat={() => {
+          setSupportThread(null);
+          setScreen('support');
+        }}
+        onInbox={() => setScreen('supportInbox')}
+      />
+    );
+  }
+
+  if (screen === 'support') {
+    return <SupportChatScreen key={supportThread ? supportThread.userId : 'me'} thread={supportThread} onBack={() => setScreen(supportThread ? 'supportInbox' : 'help')} />;
+  }
+
+  if (screen === 'supportInbox') {
+    return (
+      <SupportInbox
+        onBack={() => setScreen('help')}
+        onOpen={(t: any) => {
+          setSupportThread(t);
+          setScreen('support');
+        }}
+      />
+    );
   }
 
   if (screen === 'parties') {
@@ -532,28 +566,6 @@ function Root() {
     ]).start();
   };
 
-  // 📳 Shake the phone to report a bug (on the page you're on)
-  const [shake, setShake] = useState(false);
-  const shakeOpen = useRef(false);
-  shakeOpen.current = shake;
-  useEffect(() => {
-    if (!uid) return;
-    let last = 0;
-    let sub: any = null;
-    try {
-      Accelerometer.setUpdateInterval(150);
-      sub = Accelerometer.addListener(({ x: ax, y: ay, z: az }) => {
-        const g = Math.sqrt(ax * ax + ay * ay + az * az);
-        const now = Date.now();
-        if (g > 2.3 && now - last > 4000 && !shakeOpen.current) {
-          last = now;
-          setShake(true);
-        }
-      });
-    } catch (e) {}
-    return () => sub && sub.remove();
-  }, [uid]);
-
   // 👈 Swipe from the left edge to go back (the page follows your finger)
   const nav = useRef<((s: string) => void) | null>(null);
   const NO_BACK = ['home'];
@@ -602,7 +614,6 @@ function Root() {
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
-      <FeedbackSheet visible={shake} shaken onClose={() => setShake(false)} screen={history.current[history.current.length - 1]} />
     </View>
   );
 }

@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 const NAMES = {
   home: 'Home', upload: 'Scan bill', recheck: 'Check items', people: 'Add people', items: 'Who had what', split: 'Split result',
   profile: 'Profile', detail: 'Bill details', parties: 'Plans', newParty: 'New plan', party: 'Plan', partyChat: 'Party chat',
-  groups: 'Groups', group: 'Group', friends: 'Friends', notifications: 'Notifications', nearby: 'Nearby', activity: 'Activity',
+  groups: 'Groups', group: 'Group', friends: 'Friends', notifications: 'Notifications', nearby: 'Nearby', activity: 'Activity', help: 'About & Help', support: 'Chat with us', supportInbox: 'Support inbox',
 };
 export const screenName = (s) => NAMES[s] || s;
 

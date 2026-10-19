@@ -10,10 +10,9 @@ import { bdayText, myBirthday } from '../services/birthday';
 import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import FeedbackSheet from './FeedbackSheet';
 import { C } from '../services/theme';
 
-export default function ProfileScreen({ onBack, onLogout }) {
+export default function ProfileScreen({ onBack, onLogout, onHelp }) {
   const [showActive, setShowActiveState] = useState(true);
   useEffect(() => {
     getShowActive().then(setShowActiveState).catch(() => {});
@@ -40,7 +39,6 @@ export default function ProfileScreen({ onBack, onLogout }) {
   const [uploading, setUploading] = useState(false);
   const [bday, setBday] = useState(null);
   const [bdayOpen, setBdayOpen] = useState(false);
-  const [feedback, setFeedback] = useState(false);
 
   useEffect(() => {
     getProfile()
@@ -249,11 +247,11 @@ export default function ProfileScreen({ onBack, onLogout }) {
 
         <View style={styles.divider} />
 
-        <TouchableOpacity style={styles.feedbackRow} onPress={() => setFeedback(true)}>
-          <Text style={styles.feedbackEmoji}>📝</Text>
+        <TouchableOpacity style={styles.feedbackRow} onPress={onHelp}>
+          <Text style={styles.feedbackEmoji}>ℹ️</Text>
           <View style={styles.activeText}>
-            <Text style={styles.activeTitle}>Send feedback or report a bug</Text>
-            <Text style={styles.activeSub}>Tip: shake your phone anywhere in the app 📳</Text>
+            <Text style={styles.activeTitle}>About & Help</Text>
+            <Text style={styles.activeSub}>Quick answers, and 💬 chat with us</Text>
           </View>
           <Text style={styles.chev}>›</Text>
         </TouchableOpacity>
@@ -271,7 +269,6 @@ export default function ProfileScreen({ onBack, onLogout }) {
         </TouchableOpacity>
       </ScrollView>
       <KeyboardDone />
-      <FeedbackSheet visible={feedback} onClose={() => setFeedback(false)} screen="profile" startKind="idea" />
     </KeyboardAvoidingView>
   );
 }
