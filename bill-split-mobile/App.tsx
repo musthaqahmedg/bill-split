@@ -58,9 +58,11 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }, []);
   const [supportThread, setSupportThread] = useState<any>(null); // team: whose support chat is open
   const [friendsAdd, setFriendsAdd] = useState(false); // open Friends straight on "Add friends"
-  // 🔔 tapping a notification opens the right screen
-  useEffect(() => {
-    setNotificationNavigator((n: any) => {
+  // 🔔 tapping a notification opens the right screen (waits for login / Face ID if the app was closed)
+  const ready = useRef(false);
+  const pendingNotif = useRef<any>(null);
+  const goNotif = useRef<(n: any) => void>(() => {});
+  goNotif.current = (n: any) => {
       const d = (n && n.data) || {};
       if (d.support) {
         setSupportThread(d.thread ? { userId: d.thread, name: ((n.title || '').replace('💬 ', '').replace(' needs help', '')) || 'Support' } : null);
@@ -72,6 +74,11 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
         setOpenPartyId(d.party_id);
         setScreen(d.chat ? 'partyChat' : 'party');
       } else setScreen('notifications');
+  };
+  useEffect(() => {
+    setNotificationNavigator((n: any) => {
+      if (!ready.current) pendingNotif.current = n;
+      else goNotif.current(n);
     });
   }, []);
   // 🟢 tell friends you're active while the app is open
@@ -80,8 +87,14 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }, [loggedIn, locked]);
   // 📱 lock-screen notifications: register this phone, and open the right page when one is tapped
   useEffect(() => {
+    ready.current = loggedIn && !locked && !checking;
     if (loggedIn && !locked) registerPush();
-  }, [loggedIn, locked]);
+    if (ready.current && pendingNotif.current) {
+      const n = pendingNotif.current;
+      pendingNotif.current = null;
+      setTimeout(() => goNotif.current(n), 300);
+    }
+  }, [loggedIn, locked, checking]);
   useEffect(() => listenPushTaps(), []);
   // 📊 log each screen people open
   useEffect(() => {
