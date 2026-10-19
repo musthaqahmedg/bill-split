@@ -1,7 +1,7 @@
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { openNotification } from './notifications';
 import { supabase } from './supabaseClient';
 import { track } from './track';
@@ -50,16 +50,26 @@ export async function unregisterPush() {
 }
 
 // Tapping a lock-screen notification opens the right page (also when the app was closed)
+let handled = null; // each notification opens its page only once
 export function listenPushTaps() {
   const open = (r) => {
     if (!r) return;
+    const id = r.notification.request.identifier;
+    if (id && id === handled) return;
+    handled = id;
     const c = r.notification.request.content;
     track('push', 'tapped', (c.data && c.data.kind) || c.title);
     openNotification({ title: c.title, body: c.body, data: c.data || {} });
   };
-  Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
+  const check = () => Notifications.getLastNotificationResponseAsync().then(open).catch(() => {});
+  check(); // opened from a closed app
   const sub = Notifications.addNotificationResponseReceivedListener(open);
-  return () => sub.remove();
+  // backup: coming back from the background, check again (Expo Go sometimes misses the live tap)
+  const app = AppState.addEventListener('change', (st) => st === 'active' && setTimeout(check, 250));
+  return () => {
+    sub.remove();
+    app.remove();
+  };
 }
 
 export const clearBadge = () => Notifications.setBadgeCountAsync(0).catch(() => {});
