@@ -10,6 +10,7 @@ import { bdayText, myBirthday } from '../services/birthday';
 import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
+import FeedbackSheet from './FeedbackSheet';
 import { C } from '../services/theme';
 
 export default function ProfileScreen({ onBack, onLogout }) {
@@ -39,6 +40,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
   const [uploading, setUploading] = useState(false);
   const [bday, setBday] = useState(null);
   const [bdayOpen, setBdayOpen] = useState(false);
+  const [feedback, setFeedback] = useState(false);
 
   useEffect(() => {
     getProfile()
@@ -247,6 +249,15 @@ export default function ProfileScreen({ onBack, onLogout }) {
 
         <View style={styles.divider} />
 
+        <TouchableOpacity style={styles.feedbackRow} onPress={() => setFeedback(true)}>
+          <Text style={styles.feedbackEmoji}>📝</Text>
+          <View style={styles.activeText}>
+            <Text style={styles.activeTitle}>Send feedback or report a bug</Text>
+            <Text style={styles.activeSub}>Tip: shake your phone anywhere in the app 📳</Text>
+          </View>
+          <Text style={styles.chev}>›</Text>
+        </TouchableOpacity>
+
         <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
@@ -260,6 +271,7 @@ export default function ProfileScreen({ onBack, onLogout }) {
         </TouchableOpacity>
       </ScrollView>
       <KeyboardDone />
+      <FeedbackSheet visible={feedback} onClose={() => setFeedback(false)} screen="profile" startKind="idea" />
     </KeyboardAvoidingView>
   );
 }
@@ -276,6 +288,9 @@ const styles = StyleSheet.create({
   bdayText: { color: C.text, fontSize: 16 },
   bdayEmpty: { color: C.faint, fontSize: 15, flex: 1 },
   bdayChange: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
+  feedbackRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 12, marginBottom: 16 },
+  feedbackEmoji: { fontSize: 22, marginRight: 12 },
+  chev: { color: C.faint, fontSize: 22 },
   activeRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 12, marginTop: 14 },
   activeText: { flex: 1, marginRight: 10 },
   activeTitle: { color: C.text, fontSize: 15, fontWeight: '600' },
