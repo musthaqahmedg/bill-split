@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
@@ -52,11 +53,13 @@ export async function unregisterPush() {
 // Tapping a lock-screen notification opens the right page (also when the app was closed)
 let handled = null; // each notification opens its page only once
 export function listenPushTaps() {
-  const open = (r) => {
+  const open = async (r) => {
     if (!r) return;
     const id = r.notification.request.identifier;
-    if (id && id === handled) return;
+    if (handled === null) handled = await AsyncStorage.getItem('vibeout.pushHandled').catch(() => '');
+    if (id && id === handled) return; // already opened (e.g. after a reload)
     handled = id;
+    AsyncStorage.setItem('vibeout.pushHandled', id || '').catch(() => {});
     const c = r.notification.request.content;
     track('push', 'tapped', (c.data && c.data.kind) || c.title);
     openNotification({ title: c.title, body: c.body, data: c.data || {} });
