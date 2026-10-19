@@ -32,7 +32,7 @@ export default function HelpScreen({ onBack, onChat, onInbox }) {
           </View>
           <Text style={styles.name}>Vibe Out</Text>
           <Text style={styles.tag}>The night, sorted ✨</Text>
-          <Text style={styles.meta}>Version {version} · by MAG Infosystems</Text>
+          <Text style={styles.meta}>Version {version}</Text>
         </View>
 
         <TouchableOpacity style={styles.chat} activeOpacity={0.85} onPress={onChat}>
@@ -76,7 +76,7 @@ export default function HelpScreen({ onBack, onChat, onInbox }) {
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.foot}>Made with 💜 in Kerala</Text>
+        <Text style={styles.foot}>Made with 💜 by Musthaq & Gautham · Kerala</Text>
       </ScrollView>
     </View>
   );
