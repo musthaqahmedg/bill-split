@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Slider from '@react-native-community/slider';
 import { ActivityIndicator, Alert, Animated, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -111,6 +112,55 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
   const [idea, setIdea] = useState(0);
 
+  // 💾 New plans save themselves as a draft, so leaving the page never loses anything
+  const DRAFT = 'vibeout.planDraft';
+  const draftable = !ex && !group;
+  const [resume, setResume] = useState(null); // an unfinished plan from before
+  const hasContent = !!(title.trim() || place.trim() || Number(budget) > 0 || people.length > 1);
+  useEffect(() => {
+    if (!draftable) return;
+    AsyncStorage.getItem(DRAFT)
+      .then((d) => {
+        const v = d ? JSON.parse(d) : null;
+        if (v && (v.title || v.place || v.budget || (v.people || []).length > 1)) setResume(v);
+      })
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (!draftable || resume || !hasContent) return;
+    const t = setTimeout(() => {
+      const d = { title, kind, place, budget, people, phones, emails, mode, special, date: dateObj ? dateObj.toISOString() : null };
+      AsyncStorage.setItem(DRAFT, JSON.stringify(d)).catch(() => {});
+    }, 500);
+    return () => clearTimeout(t);
+  }, [title, kind, place, budget, people, phones, emails, mode, special, dateObj, resume]);
+  const restoreDraft = () => {
+    const d = resume;
+    setTitle(d.title || '');
+    setKind(d.kind || 'party');
+    setPlace(d.place || '');
+    setBudget(d.budget || '');
+    setPeople(d.people && d.people.length ? d.people : ['Me']);
+    setPhones(d.phones || {});
+    setEmails(d.emails || {});
+    setMode(d.mode || 'equal');
+    setSpecial(d.special || 'Me');
+    if (d.date) setDateObj(new Date(d.date));
+    setResume(null);
+  };
+  const startFresh = () => {
+    AsyncStorage.removeItem(DRAFT).catch(() => {});
+    setResume(null);
+  };
+  const leave = () => {
+    if (!draftable || !hasContent) return onBack();
+    Alert.alert('Leave this plan?', 'We saved it as a draft. Finish it any time from “Plan something”.', [
+      { text: 'Keep editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => { AsyncStorage.removeItem(DRAFT).catch(() => {}); onBack(); } },
+      { text: '💾 Keep draft', onPress: onBack },
+    ]);
+  };
+
   // Scroll a box to the top when it's tapped, so the keypad never hides it (or its suggestions)
   const scrollRef = useRef(null);
   const fieldY = useRef({});
@@ -176,6 +226,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         onCreated(ex.id);
       } else {
         const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null });
+        AsyncStorage.removeItem(DRAFT).catch(() => {});
         onCreated(party.id);
       }
     } catch (e) {
@@ -188,10 +239,26 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity onPress={onBack}>
+      <TouchableOpacity onPress={leave}>
         <Text style={styles.back}>Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan something'} {kindOf(kind).emoji}</Text>
+      {resume ? (
+        <View style={styles.draftBox}>
+          <Text style={styles.draftTitle}>📝 Finish your unsaved plan?</Text>
+          <Text style={styles.draftSub} numberOfLines={1}>
+            {resume.title || 'Untitled plan'}{resume.place ? ` · ${resume.place}` : ''}{(resume.people || []).length > 1 ? ` · ${resume.people.length} people` : ''}
+          </Text>
+          <View style={styles.draftBtns}>
+            <TouchableOpacity style={styles.draftGo} onPress={restoreDraft}>
+              <Text style={styles.draftGoText}>Continue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.draftNo} onPress={startFresh}>
+              <Text style={styles.draftNoText}>Start fresh</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : null}
 
       <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
@@ -393,6 +460,14 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
+  draftBox: { backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginTop: 10 },
+  draftTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
+  draftSub: { color: C.sub, fontSize: 13, marginTop: 2 },
+  draftBtns: { flexDirection: 'row', marginTop: 10 },
+  draftGo: { backgroundColor: C.amber, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
+  draftGoText: { color: '#2A1B00', fontSize: 14, fontWeight: '800' },
+  draftNo: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14 },
+  draftNoText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 12 },
   list: { flex: 1 },
