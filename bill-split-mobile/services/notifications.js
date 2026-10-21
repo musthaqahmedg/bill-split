@@ -52,4 +52,4 @@ let navigate = null;
 export const setNotificationNavigator = (fn) => (navigate = fn);
 export const openNotification = (n) => navigate && navigate(n);
 
-export const ICON = { pay: '💸', birthday: '🎂', friend_request: '👫', friend_accept: '🎉', chat: '💬', party: '🎈', support: '💬' };
+export const ICON = { pay: '💸', birthday: '🎂', friend_request: '👫', friend_accept: '🎉', chat: '💬', party: '🎈', support: '💬', test: '🧪', order: '🛎️' };

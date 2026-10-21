@@ -1,7 +1,8 @@
 import { registerRootComponent } from 'expo';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, Easing, PanResponder, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Dimensions, Easing, PanResponder, Text, TouchableOpacity, View } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
@@ -133,6 +134,63 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
     setScreen('upload');
   };
 
+  // 🏠 One tap home from the bill flow, with "Save as draft?" so nothing is lost
+  const DRAFT_KEY = 'vibeout.billDraft';
+  const [draft, setDraft] = useState<any>(null);
+  const clearDraft = () => {
+    AsyncStorage.removeItem(DRAFT_KEY).catch(() => {});
+    setDraft(null);
+  };
+  useEffect(() => {
+    if (screen === 'home') {
+      AsyncStorage.getItem(DRAFT_KEY)
+        .then((d) => setDraft(d ? JSON.parse(d) : null))
+        .catch(() => setDraft(null));
+    }
+  }, [screen]);
+  const goHome = () => {
+    if (!items.length) return setScreen('home');
+    Alert.alert('Leave this bill?', 'Save it as a draft and finish it later from Home.', [
+      { text: 'Keep editing', style: 'cancel' },
+      { text: 'Discard', style: 'destructive', onPress: () => { clearDraft(); setScreen('home'); } },
+      {
+        text: '💾 Save draft',
+        onPress: async () => {
+          const d = { items, bill, people, nonDrinkers, pairs, claims, payers, payment, editingBillId, addingRound, screen, at: Date.now() };
+          await AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(d)).catch(() => {});
+          setScreen('home');
+        },
+      },
+    ]);
+  };
+  const resumeDraft = () => {
+    if (!draft) return;
+    setItems(draft.items || []);
+    setBill(draft.bill || null);
+    setPeople(draft.people || []);
+    setNonDrinkers(draft.nonDrinkers || []);
+    setPairs(draft.pairs || []);
+    setClaims(draft.claims || []);
+    setPayers(draft.payers || []);
+    setPayment(draft.payment || { mode: 'me' });
+    setEditingBillId(draft.editingBillId || null);
+    setAddingRound(!!draft.addingRound);
+    setScreen(draft.screen && draft.screen !== 'upload' ? draft.screen : 'recheck');
+    clearDraft();
+  };
+  const withHome = (el: any) => (
+    <View style={{ flex: 1 }}>
+      {el}
+      <TouchableOpacity
+        onPress={goHome}
+        hitSlop={10}
+        style={{ position: 'absolute', top: 54, right: 18, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' }}
+      >
+        <Text style={{ fontSize: 18 }}>🏠</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // Load a saved bill into the flow (used by Edit and Add a round)
   const loadBill = (flow: any, id: any) => {
     setItems(flow.items);
@@ -243,7 +301,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'upload') {
-    return (
+    return withHome(
       <UploadScreen
         title={addingRound ? 'Add a round ➕' : 'Scan Receipt'}
         onBack={() => {
@@ -280,7 +338,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'recheck') {
-    return (
+    return withHome(
       <RecheckScreen
         items={items}
         bill={bill}
@@ -298,7 +356,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'people') {
-    return (
+    return withHome(
       <PeopleScreen
         initialPeople={people}
         initialNonDrinkers={nonDrinkers}
@@ -323,7 +381,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'items') {
-    return (
+    return withHome(
       <ItemsScreen
         items={items}
         people={people}
@@ -341,7 +399,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'split') {
-    return (
+    return withHome(
       <SplitScreen
         items={items}
         people={people}
@@ -357,6 +415,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
         onBack={() => setScreen('items')}
         onDone={() => {
           setEditingBillId(null);
+          clearDraft();
           setScreen('home');
         }}
       />
@@ -541,6 +600,9 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
 
   return (
     <HomeScreen
+      draft={draft}
+      onResumeDraft={resumeDraft}
+      onDiscardDraft={clearDraft}
       onNewBill={startNewBill}
       onLogout={logout}
       onProfile={() => setScreen('profile')}

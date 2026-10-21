@@ -8,7 +8,7 @@ import { useUnread } from '../services/notifications';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onFriends, onNotifications }) {
+export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -83,6 +83,20 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
       </View>
 
       {!showArchived && onFriends ? <FriendsRow onOpen={() => onFriends(false)} onAdd={() => onFriends(true)} /> : null}
+      {!showArchived && draft ? (
+        <TouchableOpacity style={styles.draft} onPress={onResumeDraft} activeOpacity={0.85}>
+          <Text style={styles.draftEmoji}>📝</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.draftTitle}>Finish your bill</Text>
+            <Text style={styles.draftSub} numberOfLines={1}>
+              {(draft.bill && draft.bill.restaurant) || 'Unsaved bill'} · {(draft.items || []).length} items · tap to continue
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onDiscardDraft} hitSlop={10}>
+            <Text style={styles.draftX}>✕</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      ) : null}
 
       {(archived.length > 0 || showArchived) && (
         <TouchableOpacity style={styles.switch} onPress={() => setShowArchived(!showArchived)}>
@@ -118,6 +132,11 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
 }
 
 const styles = StyleSheet.create({
+  draft: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginBottom: 14 },
+  draftEmoji: { fontSize: 22, marginRight: 10 },
+  draftTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
+  draftSub: { color: C.sub, fontSize: 12, marginTop: 2 },
+  draftX: { color: C.faint, fontSize: 16, paddingHorizontal: 4 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontSize: 30, fontWeight: '800', color: C.text },

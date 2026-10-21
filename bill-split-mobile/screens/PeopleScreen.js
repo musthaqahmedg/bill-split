@@ -128,7 +128,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
                   onPress={() => toggleDrinking(p)}
                 >
                   <Text style={[styles.pillText, dry && styles.pillTextDry]}>
-                    {dry ? '🥤 Not drinking' : '🍺 Drinking'}
+                    {dry ? '🥤 Not drinking ✓' : '🥤 Not drinking?'}
                   </Text>
                 </TouchableOpacity>
                 {p !== 'Me' && (
@@ -250,9 +250,9 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   rowRight: { flexDirection: 'row', alignItems: 'center' },
   name: { fontSize: 18, flex: 1, color: C.text },
-  pill: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 10, marginRight: 12 },
-  pillDry: { backgroundColor: C.greenBg },
-  pillText: { fontSize: 13, color: C.sub },
+  pill: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)', borderRadius: 16, paddingVertical: 5, paddingHorizontal: 10, marginRight: 10 },
+  pillDry: { backgroundColor: C.greenBg, borderColor: C.green },
+  pillText: { color: C.faint, fontSize: 13 },
   pillTextDry: { color: C.green, fontWeight: '700' },
   remove: { color: C.red, fontSize: 15 },
 
