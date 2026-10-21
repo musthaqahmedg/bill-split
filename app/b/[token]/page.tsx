@@ -40,5 +40,5 @@ export default async function SharedBillPage(
   const { token } = await params;
   const bill = await getBill(token);
   if (!bill) notFound();
-  return <ShareView bill={bill} />;
+  return <ShareView bill={bill} token={token} />;
 }

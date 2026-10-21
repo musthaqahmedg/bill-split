@@ -249,3 +249,34 @@ export async function setPayer(billId, participants, name, total) {
   const { error: e3 } = await supabase.from('bill_participants').update({ paid_amount: Math.round(Number(total) || 0) }).eq('id', payer.id);
   if (e3) throw e3;
 }
+
+// 🙋 What friends tagged themselves on the share link (waiting for you to review)
+export async function getSelfClaims(billId) {
+  const { data, error } = await supabase
+    .from('bill_self_claims')
+    .select('participant_id, item_id, units')
+    .eq('bill_id', billId)
+    .eq('status', 'new');
+  if (error) throw error;
+  return data || [];
+}
+
+export async function dismissSelfClaims(billId) {
+  const { error } = await supabase.from('bill_self_claims').update({ status: 'dismissed' }).eq('bill_id', billId);
+  if (error) throw error;
+}
+
+// Put friends' own picks into the bill (each friend who tagged replaces their own items)
+export function applySelfClaims(flow, saved, picks) {
+  const nameOf = Object.fromEntries((saved.bill_participants || []).map((p) => [p.id, p.name]));
+  const idx = Object.fromEntries((saved.bill_items || []).map((it, i) => [it.id, i]));
+  const who = [...new Set(picks.map((p) => nameOf[p.participant_id]).filter(Boolean))];
+  const claims = flow.claims.map((list) => list.filter((n) => !who.includes(n)));
+  picks.forEach((p) => {
+    const i = idx[p.item_id];
+    const name = nameOf[p.participant_id];
+    if (i == null || !name || !p.units) return;
+    claims[i] = [...claims[i], ...Array(p.units).fill(name)];
+  });
+  return { ...flow, claims };
+}

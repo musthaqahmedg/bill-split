@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid, setPayer } from '../services/bills';
+import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getSelfClaims, setNote, setPaid, setPayer } from '../services/bills';
 import { savedPaidMap, transfers } from '../services/settle';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
@@ -23,6 +23,12 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   useEffect(() => {
     getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {});
   }, []);
+
+  // 🙋 friends who tagged their own items on the share link
+  const [picks, setPicks] = useState([]);
+  useEffect(() => {
+    getSelfClaims(billId).then(setPicks).catch(() => {});
+  }, [billId]);
 
   useEffect(() => {
     getBill(billId)
@@ -130,7 +136,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   // Guest link: friends open it in the browser, see their share and pay with UPI
   const shareLink = () =>
     Share.share({
-      message: `🌙 ${bill.title || 'Our night out'}: see what you had and pay your share here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}`,
+      message: `🌙 ${bill.title || 'Our night out'}: see what you had and pay your share here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}\n\nSomething wrong? Tap your name → 🙋 Tag what you had`,
     });
 
   const confirmDelete = () =>
@@ -198,6 +204,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   };
 
   const startEdit = () => onEdit(billToFlow(bill), bill.id);
+  const taggers = [...new Set(picks.map((p) => (participants.find((x) => x.id === p.participant_id) || {}).name).filter(Boolean))];
+  const reviewPicks = () => onEdit(applySelfClaims(billToFlow(bill), bill, picks), bill.id, 'items');
+  const dismissPicks = () =>
+    Alert.alert('Ignore their picks?', 'The bill stays as it is.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Ignore', style: 'destructive', onPress: () => dismissSelfClaims(bill.id).then(() => setPicks([])).catch((e) => Alert.alert('Error', e.message)) },
+    ]);
 
   const when = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
@@ -228,6 +241,21 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
             </TouchableOpacity>
           </View>
         )}
+
+        {taggers.length > 0 && !archived ? (
+          <View style={styles.tagBox}>
+            <Text style={styles.tagTitle}>🙋 {taggers.map(show).join(', ')} tagged what they had</Text>
+            <Text style={styles.tagSub}>Review it, and the split updates with their picks. Nothing changes until you save.</Text>
+            <View style={{ flexDirection: 'row', marginTop: 10 }}>
+              <TouchableOpacity style={styles.markBtn} onPress={reviewPicks}>
+                <Text style={styles.markText}>Review & update</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.remindBtn} onPress={dismissPicks}>
+                <Text style={styles.remindText}>Ignore</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.summary}>
           <View style={styles.sumRow}>
@@ -427,6 +455,9 @@ const styles = StyleSheet.create({
   barBg: { height: 8, backgroundColor: '#1E5A44', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
   barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
   settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },
+  tagBox: { backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.accent, borderRadius: 16, padding: 14, marginBottom: 15 },
+  tagTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  tagSub: { color: C.sub, fontSize: 13, marginTop: 4 },
   move: { color: C.text, fontSize: 14, marginTop: 6 },
   moveDone: { color: C.faint, textDecorationLine: 'line-through' },
   payerChips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },

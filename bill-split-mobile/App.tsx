@@ -68,7 +68,10 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   const goNotif = useRef<(n: any) => void>(() => {});
   goNotif.current = (n: any) => {
       const d = (n && n.data) || {};
-      if (d.bugs || d.feedback_id) {
+      if (d.bill_id) {
+        setOpenBillId(d.bill_id);
+        setScreen('detail');
+      } else if (d.bugs || d.feedback_id) {
         setScreen('bugs');
       } else if (d.support) {
         setSupportThread(d.thread ? { userId: d.thread, name: ((n.title || '').replace('💬 ', '').replace(' needs help', '')) || 'Support' } : null);
@@ -593,9 +596,9 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
         billId={openBillId}
         onBack={() => setScreen('home')}
         onDeleted={() => setScreen('home')}
-        onEdit={(flow: any, id: any) => {
+        onEdit={(flow: any, id: any, start?: string) => {
           loadBill(flow, id);
-          setScreen('recheck');
+          setScreen(start || 'recheck'); // 🙋 reviewing friends' picks jumps straight to "Who had what?"
         }}
         onAddRound={(flow: any, id: any) => {
           loadBill(flow, id);

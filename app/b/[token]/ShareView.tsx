@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { supabase } from '../../../lib/supabaseBrowser';
 
 type Claim = { participant_id: string; paid_by: string | null; units?: number };
-type Item = { name: string; price: number; quantity: number; kind: string | null; about: string | null; claims: Claim[] };
-type Person = { id: string; name: string; amount_due: number; paid_amount?: number; not_drinking: boolean; paid: boolean };
+type Item = { id: string; name: string; price: number; quantity: number; kind: string | null; about: string | null; claims: Claim[] };
+type Person = { id: string; name: string; amount_due: number; paid_amount?: number; not_drinking: boolean; paid: boolean; tagged?: boolean };
 
 export type SharedBill = {
   restaurant: string | null;
@@ -55,9 +56,40 @@ const money = (n: number) => 'Rs ' + (Math.round((Number(n) || 0) * 100) / 100).
 const upiLink = (upi: string, name: string, amount: number, note: string) =>
   `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(name)}&am=${Math.round(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
 
-export default function ShareView({ bill }: { bill: SharedBill }) {
+export default function ShareView({ bill, token }: { bill: SharedBill; token: string }) {
   const [me, setMe] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  // 🙋 Tag what I had
+  const [tagging, setTagging] = useState(false);
+  const [picks, setPicks] = useState<Record<string, number>>({});
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState('');
+  const startTagging = () => {
+    const pre: Record<string, number> = {};
+    bill.items.forEach((it) => {
+      const c = it.claims.find((x) => x.participant_id === me);
+      if (c) pre[it.id] = c.units || 1;
+    });
+    setPicks(pre);
+    setSent('');
+    setTagging(true);
+  };
+  const togglePick = (id: string) => setPicks((p) => {
+    const n = { ...p };
+    if (n[id]) delete n[id];
+    else n[id] = 1;
+    return n;
+  });
+  const setCount = (id: string, v: number, max: number) => setPicks((p) => ({ ...p, [id]: Math.max(1, Math.min(Math.max(max, 1), v)) }));
+  const sendPicks = async () => {
+    setSending(true);
+    const items = Object.entries(picks).map(([item_id, units]) => ({ item_id, units }));
+    const { error } = await supabase().rpc('submit_self_claims', { p_token: token, p_participant: me, p_items: items });
+    setSending(false);
+    if (error) return setSent('❌ ' + error.message);
+    setTagging(false);
+    setSent(`✅ Sent to ${payee}! They'll update the split.`);
+  };
   const nameOf = Object.fromEntries(bill.people.map((p) => [p.id, p.name]));
   const payee = bill.payee_name || 'your friend';
 
@@ -184,8 +216,44 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
                   <p key={'pay' + m.to} style={s.youNote}>💸 Pay {nameFor(m.to)} {inr(m.amount)} by UPI (ask them for their UPI ID).</p>
                 )
               )}
+
+              {!tagging ? (
+                <button onClick={startTagging} style={s.tagBtn}>🙋 Not right? Tag what you had</button>
+              ) : null}
+              {sent ? <p style={{ ...s.youNote, color: sent.startsWith('✅') ? '#34D399' : '#F87171', fontSize: 14 }}>{sent}</p> : null}
             </div>
           )}
+
+          {mine && tagging ? (
+            <div style={s.tagBox}>
+              <p style={s.boxTitle}>🙋 Tap everything you had</p>
+              <p style={{ ...s.youNote, margin: '0 0 10px' }}>Shared something? Tick it too, and it gets split. {payee} checks it before anything changes.</p>
+              {bill.items.map((it) => {
+                const on = !!picks[it.id];
+                return (
+                  <div key={it.id} style={{ ...s.tagRow, ...(on ? s.tagRowOn : {}) }}>
+                    <button onClick={() => togglePick(it.id)} style={s.tagName}>
+                      <span style={{ ...s.box2, ...(on ? s.box2On : {}) }}>{on ? '✓' : ''}</span>
+                      {it.kind ? EMOJI[it.kind] + ' ' : ''}{it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name}
+                      <span style={s.tagPrice}>{money(Number(it.price))}</span>
+                    </button>
+                    {on && it.quantity > 1 ? (
+                      <div style={s.counter}>
+                        <span style={{ color: '#B8A6D9', fontSize: 13 }}>How many did you have?</span>
+                        <button style={s.step} onClick={() => setCount(it.id, picks[it.id] - 1, it.quantity)}>−</button>
+                        <b style={{ minWidth: 22, textAlign: 'center' }}>{picks[it.id]}</b>
+                        <button style={s.step} onClick={() => setCount(it.id, picks[it.id] + 1, it.quantity)}>＋</button>
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+              <button onClick={sendPicks} disabled={sending} style={s.payBtn}>
+                {sending ? 'Sending…' : `Send to ${payee} (${Object.keys(picks).length} item${Object.keys(picks).length === 1 ? '' : 's'})`}
+              </button>
+              <button onClick={() => setTagging(false)} style={s.copyBtn}>Cancel</button>
+            </div>
+          ) : null}
         </section>
 
         <h2 style={s.h2}>Everyone's share</h2>
@@ -250,5 +318,15 @@ const s: Record<string, React.CSSProperties> = {
   line: { color: '#B8A6D9', fontSize: 14, margin: '3px 0' },
   pink: { color: '#F472B6', fontWeight: 600 },
   covering: { color: '#F472B6', fontWeight: 600, fontSize: 14, margin: '8px 0 0' },
+  tagBtn: { display: 'block', width: '100%', marginTop: 14, background: 'transparent', color: '#F4EEFF', border: '1px dashed #8B5CF6', fontSize: 15, fontWeight: 700, padding: '12px 14px', borderRadius: 14, cursor: 'pointer' },
+  tagBox: { marginTop: 16, borderTop: '1px solid #3E2470', paddingTop: 16 },
+  tagRow: { border: '1px solid #3E2470', borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
+  tagRowOn: { borderColor: '#8B5CF6', background: 'rgba(139,92,246,0.12)' },
+  tagName: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: 15, padding: '12px', textAlign: 'left', cursor: 'pointer' },
+  tagPrice: { marginLeft: 'auto', color: '#B8A6D9', fontSize: 14 },
+  box2: { width: 22, height: 22, borderRadius: 6, border: '2px solid #8B5CF6', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 },
+  box2On: { background: '#8B5CF6' },
+  counter: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px 12px 44px' },
+  step: { width: 32, height: 32, borderRadius: 16, border: '1px solid #8B5CF6', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' },
   footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 24 },
 };
