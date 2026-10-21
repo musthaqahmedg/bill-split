@@ -51,6 +51,8 @@ export default function HelpScreen({ onBack, onChat, onInbox }) {
           </TouchableOpacity>
         ) : null}
 
+        <Text style={styles.tip}>📳 Found a bug? Shake your phone on any page to report it.</Text>
+
         <Text style={styles.section}>QUICK ANSWERS</Text>
         <View style={styles.group}>
           {FAQ.map((f, i) => (
@@ -100,6 +102,7 @@ const styles = StyleSheet.create({
   chev: { color: C.faint, fontSize: 22, marginLeft: 6 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: 14, marginBottom: 10 },
   rowText: { color: C.text, fontSize: 15, fontWeight: '500' },
+  tip: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 6 },
   section: { color: C.faint, fontSize: 12, fontWeight: '600', letterSpacing: 0.6, marginTop: 16, marginBottom: 8, marginLeft: 4 },
   group: { backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 14, overflow: 'hidden' },
   line: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(255,255,255,0.12)' },

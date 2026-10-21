@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import NumberWheel from './NumberWheel';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
 import { show } from '../services/names';
@@ -59,6 +60,14 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 
   const claimed = claims.filter((c) => c.length > 0).length;
   const allDone = claimed === items.length;
+  const left = items.length - claimed;
+  const listRef = useRef(null);
+  const cardY = useRef({});
+  const next = () => {
+    if (allDone) return onNext(claims, nonDrinkers);
+    const first = claims.findIndex((c) => c.length === 0);
+    if (listRef.current && cardY.current[first] != null) listRef.current.scrollTo({ y: Math.max(0, cardY.current[first] - 8), animated: true });
+  };
 
   return (
     <View style={styles.container}>
@@ -86,7 +95,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
         </View>
       </View>
 
-      <ScrollView style={styles.list}>
+      <ScrollView style={styles.list} ref={listRef}>
         {items.map((item, i) => {
           const mystery = claims[i].length === 0;
           const who = [...new Set(claims[i])];
@@ -94,7 +103,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
           const canCount = item.qty > 1 && who.length > 1; // only matters when 2+ people share it
           const k = KINDS[kindOf(item)];
           return (
-            <View key={i} style={[styles.card, mystery && styles.mysteryCard]}>
+            <View key={i} style={[styles.card, mystery && styles.mysteryCard]} onLayout={(e) => (cardY.current[i] = e.nativeEvent.layout.y)}>
               <View style={styles.cardTop}>
                 <TouchableOpacity style={styles.nameTap} onPress={() => setInfo(i)}>
                   <Text style={styles.itemName}>
@@ -138,13 +147,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                   {who.map((p) => (
                     <View key={p} style={styles.countRow}>
                       <Text style={styles.countName} numberOfLines={1}>{show(p)}</Text>
-                      <TouchableOpacity style={styles.step} onPress={() => setUnits(i, p, unitsOf(i, p) - 1)}>
-                        <Text style={styles.stepText}>−</Text>
-                      </TouchableOpacity>
-                      <Text style={styles.countNum}>{unitsOf(i, p)}</Text>
-                      <TouchableOpacity style={styles.step} onPress={() => setUnits(i, p, unitsOf(i, p) + 1)}>
-                        <Text style={styles.stepText}>＋</Text>
-                      </TouchableOpacity>
+                      <NumberWheel value={unitsOf(i, p)} min={1} max={item.qty} onChange={(n) => setUnits(i, p, n)} />
                       <Text style={styles.countAmt}>Rs {((item.price * unitsOf(i, p)) / claims[i].length).toFixed(0)}</Text>
                     </View>
                   ))}
@@ -164,12 +167,10 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
         {claimed} of {items.length} items claimed{!allDone ? '  ·  🕵️ = mystery item' : ''}
       </Text>
 
-      <TouchableOpacity
-        style={[styles.button, !allDone && styles.disabled]}
-        disabled={!allDone}
-        onPress={() => onNext(claims, nonDrinkers)}
-      >
-        <Text style={styles.buttonText}>See the split</Text>
+      <TouchableOpacity style={[styles.button, !allDone && styles.disabled]} onPress={next}>
+        <Text style={styles.buttonText}>
+          {allDone ? 'See the split' : `Tag ${left} more item${left === 1 ? '' : 's'} to continue ↑`}
+        </Text>
       </TouchableOpacity>
 
       {/* What's this? — a private pop-up about one item */}

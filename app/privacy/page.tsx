@@ -21,6 +21,7 @@ export default function Privacy() {
           <li><b>Plans and parties</b> you create: place, date, budget, friends, the bring list, chat, polls, bookings and safe-night check-ins.</li>
           <li><b>App usage</b>: which screens you open and actions like creating a plan, so we can fix problems and improve the app.</li>
           <li><b>Notifications</b>: a push token for your phone, so we can send alerts like friend requests and chat messages. You can hide message previews in Profile, or turn notifications off in your phone’s settings.</li>
+          <li><b>Bug notes</b>: when you shake your phone to report a problem, we save your note, any screenshot you add, the page you were on and your phone model. Only our team can see it.</li>
           <li><b>Help chat</b>: messages you send in “Chat with us”, so our team can reply. Only you and our team can see them.</li>
           <li><b>Your location</b>, only when you allow it, to show places near you. We don&apos;t store it.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>

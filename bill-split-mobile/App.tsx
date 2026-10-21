@@ -7,6 +7,8 @@ import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
+import BugSheet from './screens/BugSheet';
+import { Accelerometer } from 'expo-sensors';
 import HelpScreen from './screens/HelpScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
 import SupportInbox from './screens/SupportInbox';
@@ -586,6 +588,28 @@ function Root() {
     ]).start();
   };
 
+  // 📳 Shake the phone anywhere → bug note (with the page you're on)
+  const [bug, setBug] = useState(false);
+  const bugOpen = useRef(false);
+  bugOpen.current = bug;
+  useEffect(() => {
+    if (!uid) return;
+    let last = 0;
+    let sub: any = null;
+    try {
+      Accelerometer.setUpdateInterval(120);
+      sub = Accelerometer.addListener(({ x: ax, y: ay, z: az }) => {
+        const g = Math.sqrt(ax * ax + ay * ay + az * az);
+        const now = Date.now();
+        if (g > 2.4 && now - last > 4000 && !bugOpen.current) {
+          last = now;
+          setBug(true);
+        }
+      });
+    } catch (e) {}
+    return () => sub && sub.remove();
+  }, [uid]);
+
   // 👈 Swipe from the left edge to go back (the page follows your finger)
   const nav = useRef<((s: string) => void) | null>(null);
   const NO_BACK = ['home'];
@@ -634,6 +658,7 @@ function Root() {
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
+      <BugSheet visible={bug} onClose={() => setBug(false)} screen={history.current[history.current.length - 1]} />
     </View>
   );
 }
