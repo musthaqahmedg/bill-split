@@ -46,7 +46,7 @@ export default function Privacy() {
 
         <h2 style={s.h2}>Deleting your data</h2>
         <p style={s.p}>
-          In the app, go to <b>Profile → Delete my account</b>. This permanently deletes your account and all your bills.
+          In the app, go to <b>Profile → Delete my account</b>, or on the web at <a href="/delete-account" style={{ textDecoration: 'underline' }}>bill-split-flax.vercel.app/delete-account</a>. This permanently deletes your account and all your data: bills and plans you created, photos, friends, messages and notifications.
         </p>
 
         <h2 style={s.h2}>Children</h2>
