@@ -128,8 +128,12 @@ export async function updateParty(party, { title, kind, party_date, place, budge
   if (e1) throw e1;
 
   const old = party.party_members || [];
-  const shares = sharesFor(budget, people, mode, special);
   const byName = Object.fromEntries(old.map((m) => [m.name, m]));
+  // People who said "Can't make it" don't pay; the budget splits among the rest
+  const out = (n) => byName[n] && byName[n].rsvp === 'out' && n !== special;
+  const coming = people.filter((n) => !out(n));
+  const comingShares = sharesFor(budget, coming, mode, special);
+  const shares = people.map((n) => (out(n) ? 0 : comingShares[coming.indexOf(n)]));
 
   // Removed people (never the host)
   const gone = old.filter((m) => m.name !== 'Me' && !people.includes(m.name)).map((m) => m.id);

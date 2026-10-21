@@ -90,11 +90,12 @@ export default function SplitScreen({
   const sum = final.reduce((a, b) => a + b, 0);
 
   // ---- 💳 Who paid the bill → who pays whom ----
-  const mode = payment.mode || 'me';
+  // a payer who was removed from the table no longer counts
+  const mode = payment.mode === 'friend' && !people.includes(payment.who) ? 'friend-missing' : payment.mode || 'me';
   const paid = paidMap(payment, people, target);
   const paidSum = Object.values(paid).reduce((a, b) => a + b, 0);
   const multiLeft = mode === 'multi' ? target - paidSum : 0;
-  const moves = mode === 'unpaid' || (mode === 'multi' && multiLeft !== 0) || (mode === 'friend' && !payment.who) ? [] : transfers(finalOf, paid);
+  const moves = mode === 'unpaid' || mode === 'friend-missing' || (mode === 'multi' && multiLeft !== 0) ? [] : transfers(finalOf, paid);
   const outOf = (n) => moves.filter((m) => m.from === n);
   const inOf = (n) => moves.filter((m) => m.to === n);
   const pickPayer = (key) => {
@@ -102,7 +103,7 @@ export default function SplitScreen({
     else if (key === 'Me') onPaymentChange({ mode: 'me', who: null, amounts: {} });
     else onPaymentChange({ mode: 'friend', who: key, amounts: {} });
   };
-  const payerKey = mode === 'me' ? 'Me' : mode === 'friend' ? payment.who : mode;
+  const payerKey = mode === 'me' ? 'Me' : mode === 'friend' ? payment.who : mode === 'friend-missing' ? null : mode;
   const setMultiAmount = (n, v) =>
     onPaymentChange({ ...payment, amounts: { ...(payment.amounts || {}), [n]: v.replace(/[^\d]/g, '') } });
 
@@ -158,7 +159,7 @@ export default function SplitScreen({
 
   // ---- Save ----
   const save = async () => {
-    if (mode === 'friend' && !payment.who) return Alert.alert('Who paid?', 'Pick who paid the bill.');
+    if (mode === 'friend-missing') return Alert.alert('Who paid?', 'Pick who paid the bill.');
     if (mode === 'multi' && multiLeft !== 0) {
       return Alert.alert('Amounts don’t match', `What everyone paid should add up to ${inr(target)} (${multiLeft > 0 ? inr(multiLeft) + ' missing' : inr(-multiLeft) + ' too much'}).`);
     }
@@ -166,7 +167,7 @@ export default function SplitScreen({
     try {
       const payload = {
         bill: { ...bill, total: billTotal }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
-        paidMode: mode, paid,
+        paidMode: payment.mode || 'me', paid,
       };
       if (editingBillId) {
         await updateBill(editingBillId, payload);
@@ -253,7 +254,7 @@ export default function SplitScreen({
                 ? 'Not paid yet: everyone hands over their share below.'
                 : mode === 'me'
                   ? 'You paid, so friends pay you back 👇'
-                  : payment.who ? `${payment.who} paid, so everyone pays ${payment.who} back 👇` : ''}
+                  : mode === 'friend' ? `${payment.who} paid, so everyone pays ${payment.who} back 👇` : 'Pick who paid 👆'}
             </Text>
           )}
         </View>

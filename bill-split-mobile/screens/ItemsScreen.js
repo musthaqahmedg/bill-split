@@ -51,11 +51,14 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       { text: 'Split equally', onPress: () => setClaims(items.map((_, i) => eligible(i))) },
     ]);
 
+  // "All": if everyone's already on it → clear; otherwise add whoever is missing (keeps counts)
   const toggleAll = (i) => {
     const ok = eligible(i);
-    setClaims((prev) => prev.map((list, idx) =>
-      idx !== i ? list : (list.length === ok.length ? [] : [...ok])
-    ));
+    setClaims((prev) => prev.map((list, idx) => {
+      if (idx !== i) return list;
+      const everyone = ok.every((p) => list.includes(p));
+      return everyone ? [] : [...list, ...ok.filter((p) => !list.includes(p))];
+    }));
   };
 
   const claimed = claims.filter((c) => c.length > 0).length;
