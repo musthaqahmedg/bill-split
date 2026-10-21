@@ -657,6 +657,12 @@ function Root() {
 
   // 📳 Shake the phone anywhere → bug note (with the page you're on)
   const [bug, setBug] = useState(false);
+  // 🐞 Testers (us + beta testers) also get a small floating bug button on every page
+  const [tester, setTester] = useState(false);
+  useEffect(() => {
+    if (!uid) return setTester(false);
+    supabase.rpc('is_tester').then(({ data }) => setTester(!!data), () => setTester(false));
+  }, [uid]);
   const bugOpen = useRef(false);
   bugOpen.current = bug;
   useEffect(() => {
@@ -725,6 +731,15 @@ function Root() {
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
+      {tester ? (
+        <TouchableOpacity
+          onPress={() => setBug(true)}
+          activeOpacity={0.8}
+          style={{ position: 'absolute', left: 12, bottom: 96, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(30,18,52,0.85)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+        >
+          <Text style={{ fontSize: 18 }}>🐞</Text>
+        </TouchableOpacity>
+      ) : null}
       <BugSheet visible={bug} onClose={() => setBug(false)} screen={history.current[history.current.length - 1]} />
     </View>
   );
