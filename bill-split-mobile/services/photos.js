@@ -42,7 +42,7 @@ export async function listPhotos(partyId) {
 
 // Pick up to 10 photos (or take one), shrink, upload, then tell the group
 export async function addPhotos(partyId, fromCamera, onProgress) {
-  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : { granted: true } /* gallery = system photo picker, needs no permission (Google Play photo rule) */;
   if (!perm.granted) throw new Error('Please allow photo access to add pictures.');
   const res = fromCamera
     ? await ImagePicker.launchCameraAsync({ quality: 0.8 })

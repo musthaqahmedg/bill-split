@@ -18,7 +18,7 @@ export const placeName = (place) => (place || '').split(',')[0].trim();
 
 // 📸 Snap the menu card → AI reads it → saved for this place (everyone benefits)
 export async function scanMenu(place, fromCamera) {
-  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : { granted: true } /* gallery = system photo picker, needs no permission (Google Play photo rule) */;
   if (!perm.granted) throw new Error('Please allow camera / photo access.');
   const res = fromCamera
     ? await ImagePicker.launchCameraAsync({ quality: 0.9 })

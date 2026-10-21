@@ -13,7 +13,7 @@ const deviceText = () =>
   [Device.brand, Device.modelName, `${Platform.OS} ${Device.osVersion || Platform.Version}`].filter(Boolean).join(' · ');
 
 export async function pickScreenshot() {
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const perm = { granted: true } /* gallery = system photo picker, needs no permission (Google Play photo rule) */;
   if (!perm.granted) throw new Error('Please allow photo access to add a screenshot.');
   const res = await ImagePicker.launchImageLibraryAsync({ quality: 0.8, mediaTypes: ['images'] });
   return res.canceled ? null : res.assets[0];

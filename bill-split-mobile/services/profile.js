@@ -34,7 +34,7 @@ export const avatarUrl = (path) => (path ? supabase.storage.from('avatars').getP
 
 // 📸 Pick a profile photo, square-ish and small, and save it
 export async function pickAvatar(fromCamera = false) {
-  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  const perm = fromCamera ? await ImagePicker.requestCameraPermissionsAsync() : { granted: true } /* gallery = system photo picker, needs no permission (Google Play photo rule) */;
   if (!perm.granted) throw new Error(fromCamera ? 'Please allow camera access.' : 'Please allow photo access.');
   const opts = { quality: 0.8, allowsEditing: true, aspect: [1, 1], mediaTypes: ['images'] };
   const res = fromCamera

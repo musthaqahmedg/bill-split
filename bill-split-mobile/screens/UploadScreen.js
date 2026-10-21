@@ -36,7 +36,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
   const pickImage = async (fromCamera) => {
     const perm = fromCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      : { granted: true } /* gallery = system photo picker, needs no permission (Google Play photo rule) */;
 
     if (!perm.granted) {
       Alert.alert('Permission needed', 'Please allow access to continue');
