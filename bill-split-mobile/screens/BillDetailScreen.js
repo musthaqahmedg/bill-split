@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid } from '../services/bills';
+import { archiveBill, billToFlow, deleteBill, getBill, setNote, setPaid, setPayer } from '../services/bills';
+import { savedPaidMap, transfers } from '../services/settle';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
@@ -74,11 +75,27 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     return Object.entries(out);
   };
 
-  // ---- Settle up: who still owes you ----
-  const owes = (p) => p.name !== 'Me' && Number(p.amount_due) > 0;
+  // ---- 💳 Settle up: who paid the bill → who pays whom ----
+  const notPaidYet = bill.paid_mode === 'unpaid';
+  const dues = Object.fromEntries(participants.map((p) => [p.name, Number(p.amount_due) || 0]));
+  const moves = notPaidYet ? [] : transfers(dues, savedPaidMap(bill, participants));
+  const byName = Object.fromEntries(participants.map((p) => [p.name, p]));
+  const outOf = (name) => moves.filter((m) => m.from === name);
+  const inOf = (name) => moves.filter((m) => m.to === name);
+  const owes = (p) => outOf(p.name).length > 0;
   const toCollect = people.filter(owes);
   const paidList = toCollect.filter((p) => p.paid_at);
-  const stillToCollect = toCollect.filter((p) => !p.paid_at).reduce((s, p) => s + Number(p.amount_due), 0);
+  const stillToCollect = moves.filter((m) => !(byName[m.from] && byName[m.from].paid_at)).reduce((s, m) => s + m.amount, 0);
+  const who = (n) => (n === 'Me' ? 'you' : n);
+
+  const markPayer = async (name) => {
+    try {
+      await setPayer(bill.id, participants, name, bill.total);
+      setBill(await getBill(bill.id));
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
 
   const togglePaid = async (p) => {
     const paid = !p.paid_at;
@@ -99,12 +116,16 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     }
   };
 
-  const remind = (p) =>
+  const remind = (p) => {
+    const lines = outOf(p.name).map((m) =>
+      m.to === 'Me'
+        ? `${inr(m.amount)} to me${myUpi ? ` (UPI: ${myUpi})` : ''}`
+        : `${inr(m.amount)} to ${m.to}`
+    );
     Share.share({
-      message: myUpi
-        ? `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please pay to UPI: ${myUpi} 🙏`
-        : `Hey ${p.name}! 👋 Your share for ${bill.title || 'last night'} is ${inr(p.amount_due)}. Please send it when you can 🙏`,
+      message: `Hey ${p.name}! 👋 For ${bill.title || 'last night'}, please pay ${lines.join(' and ')} 🙏`,
     });
+  };
 
   // Guest link: friends open it in the browser, see their share and pay with UPI
   const shareLink = () =>
@@ -259,7 +280,19 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           </TouchableOpacity>
         )}
 
-        {toCollect.length > 0 && (
+        {notPaidYet ? (
+          <View style={styles.settle}>
+            <Text style={styles.settleTitle}>⏳ Not paid yet</Text>
+            <Text style={styles.settleNote}>Once the bill is paid, tap who paid it:</Text>
+            <View style={styles.payerChips}>
+              {participants.map((p) => (
+                <TouchableOpacity key={p.id} style={styles.payerChip} onPress={() => markPayer(p.name)}>
+                  <Text style={styles.payerChipText}>💳 {show(p.name)}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        ) : toCollect.length > 0 ? (
           <View style={styles.settle}>
             <View style={styles.settleTop}>
               <Text style={styles.settleTitle}>💸 Settle up</Text>
@@ -268,11 +301,19 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
             <View style={styles.barBg}>
               <View style={[styles.barFill, { width: `${(paidList.length / toCollect.length) * 100}%` }]} />
             </View>
+            {moves.map((m) => {
+              const done = byName[m.from] && byName[m.from].paid_at;
+              return (
+                <Text key={m.from + m.to} style={[styles.move, done && styles.moveDone]}>
+                  {done ? '✅' : '⏳'} {show(m.from)} → {who(m.to)} · {inr(m.amount)}
+                </Text>
+              );
+            })}
             <Text style={styles.settleNote}>
-              {stillToCollect > 0 ? `${inr(stillToCollect)} still to collect` : "Everyone's paid 🎉"}
+              {stillToCollect > 0 ? `${inr(stillToCollect)} still to settle` : "Everyone's settled 🎉"}
             </Text>
           </View>
-        )}
+        ) : null}
 
         <Text style={styles.tapHint}>Tap any item to see what it is 🔍</Text>
 
@@ -288,6 +329,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
                   ? <Text style={styles.coveredPay}>Covered 💛</Text>
                   : <Text style={styles.pay}>{inr(p.amount_due)}</Text>}
               </View>
+
+              {inOf(p.name).length > 0 ? (
+                <Text style={styles.gets}>💳 Paid the bill · gets back {inr(inOf(p.name).reduce((a, m) => a + m.amount, 0))}</Text>
+              ) : null}
+              {outOf(p.name).map((m) => (
+                <Text key={m.to} style={styles.owesLine}>→ {p.name === 'Me' ? 'You pay' : 'Pays'} {who(m.to)} {inr(m.amount)}</Text>
+              ))}
 
               {mine.map((it) => (
                 <Text key={it.id} style={styles.line} onPress={() => setInfoItem(it)}>
@@ -315,11 +363,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
                   ) : (
                     <>
                       <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(p)}>
-                        <Text style={styles.markText}>Mark paid</Text>
+                        <Text style={styles.markText}>{p.name === 'Me' ? "I've paid" : 'Mark paid'}</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.remindBtn} onPress={() => remind(p)}>
-                        <Text style={styles.remindText}>Remind</Text>
-                      </TouchableOpacity>
+                      {p.name !== 'Me' ? (
+                        <TouchableOpacity style={styles.remindBtn} onPress={() => remind(p)}>
+                          <Text style={styles.remindText}>Remind</Text>
+                        </TouchableOpacity>
+                      ) : null}
                     </>
                   )}
                 </View>
@@ -377,6 +427,13 @@ const styles = StyleSheet.create({
   barBg: { height: 8, backgroundColor: '#1E5A44', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
   barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
   settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },
+  move: { color: C.text, fontSize: 14, marginTop: 6 },
+  moveDone: { color: C.faint, textDecorationLine: 'line-through' },
+  payerChips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
+  payerChip: { backgroundColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
+  payerChipText: { color: '#0B2A1F', fontSize: 14, fontWeight: '800' },
+  gets: { color: C.green, fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  owesLine: { color: C.amber, fontSize: 14, fontWeight: '700', marginBottom: 6 },
   payRow: { flexDirection: 'row', marginTop: 10 },
   markBtn: { backgroundColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
   markText: { color: '#0B2A1F', fontSize: 14, fontWeight: '800' },

@@ -109,6 +109,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   const [pairs, setPairs] = useState<any[]>([]);
   const [claims, setClaims] = useState<any[]>([]);
   const [payers, setPayers] = useState<any[]>([]);
+  const [payment, setPayment] = useState<any>({ mode: 'me' }); // 💳 who paid the bill
   const [openBillId, setOpenBillId] = useState<any>(null);
   const [editingBillId, setEditingBillId] = useState<any>(null);
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
@@ -126,6 +127,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
     setPairs([]);
     setClaims([]);
     setPayers([]);
+    setPayment({ mode: 'me' });
     setEditingBillId(null);
     setAddingRound(false);
     setScreen('upload');
@@ -140,6 +142,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
     setPairs([]);
     setClaims(flow.claims);
     setPayers(flow.payers || flow.items.map(() => ({})));
+    setPayment(flow.payment || { mode: 'me' });
     setEditingBillId(id);
   };
 
@@ -347,6 +350,8 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
         claims={claims}
         payers={payers}
         onPayersChange={setPayers}
+        payment={payment}
+        onPaymentChange={setPayment}
         bill={bill}
         editingBillId={editingBillId}
         onBack={() => setScreen('items')}

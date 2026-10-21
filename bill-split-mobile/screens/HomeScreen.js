@@ -40,13 +40,19 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
           <Text style={styles.cardTitle}>{item.title || 'Night out'}</Text>
           <Text style={styles.cardTotal}>{inr(item.total)}</Text>
         </View>
-        <Text style={styles.cardMeta}>{when}  ·  {people.length} {people.length === 1 ? 'person' : 'people'}</Text>
+        <Text style={styles.cardMeta}>
+          {when}  ·  {people.length} {people.length === 1 ? 'person' : 'people'}
+          {item.paid_mode === 'unpaid' ? '  ·  ⏳ Not paid yet' : ''}
+        </Text>
         <View style={styles.people}>
-          {people.map((p) => (
-            <Text key={p.name} style={[styles.person, p.paid_at && styles.personPaid]}>
-              {p.paid_at ? '✅ ' : ''}{show(p.name)} {inr(p.amount_due)}
-            </Text>
-          ))}
+          {people.map((p) => {
+            const payer = Number(p.paid_amount) > 0 || (!item.paid_mode && p.name === 'Me'); // 💳 paid the restaurant
+            return (
+              <Text key={p.name} style={[styles.person, (p.paid_at || payer) && styles.personPaid]}>
+                {payer ? '💳 ' : p.paid_at ? '✅ ' : ''}{show(p.name)} {inr(p.amount_due)}
+              </Text>
+            );
+          })}
         </View>
       </TouchableOpacity>
     );

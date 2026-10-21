@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 type Claim = { participant_id: string; paid_by: string | null; units?: number };
 type Item = { name: string; price: number; quantity: number; kind: string | null; about: string | null; claims: Claim[] };
-type Person = { id: string; name: string; amount_due: number; not_drinking: boolean; paid: boolean };
+type Person = { id: string; name: string; amount_due: number; paid_amount?: number; not_drinking: boolean; paid: boolean };
 
 export type SharedBill = {
   restaurant: string | null;
@@ -13,9 +13,39 @@ export type SharedBill = {
   total: number;
   payee_name: string | null;
   payee_upi: string | null;
+  paid_mode?: 'me' | 'friend' | 'unpaid' | 'multi';
   people: Person[];
   items: Item[];
 };
+
+// 💳 Who paid the bill → fewest payments so everyone pays exactly their share
+function transfers(bill: SharedBill) {
+  if (bill.paid_mode === 'unpaid') return [] as { from: string; to: string; amount: number }[];
+  const paid: Record<string, number> = {};
+  bill.people.forEach((p) => {
+    const v = Number(p.paid_amount) || 0;
+    if (v > 0) paid[p.id] = v;
+  });
+  if (!Object.keys(paid).length) {
+    const me = bill.people.find((p) => p.name === 'Me'); // old bills: the person who shared it paid
+    if (me) paid[me.id] = Math.round(Number(bill.total) || 0);
+  }
+  const bal = bill.people.map((p) => ({ id: p.id, v: Math.round((paid[p.id] || 0) - (Number(p.amount_due) || 0)) }));
+  const cred = bal.filter((b) => b.v > 0).sort((a, b) => b.v - a.v);
+  const debt = bal.filter((b) => b.v < 0).map((b) => ({ id: b.id, v: -b.v })).sort((a, b) => b.v - a.v);
+  const out: { from: string; to: string; amount: number }[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < debt.length && j < cred.length) {
+    const amt = Math.min(debt[i].v, cred[j].v);
+    if (amt > 0) out.push({ from: debt[i].id, to: cred[j].id, amount: amt });
+    debt[i].v -= amt;
+    cred[j].v -= amt;
+    if (debt[i].v === 0) i++;
+    if (cred[j].v === 0) j++;
+  }
+  return out;
+}
 
 const EMOJI: Record<string, string> = { alcohol: '🍺', soft: '🥤', food: '🍽️' };
 const inr = (n: number) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -60,7 +90,10 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
   };
 
   const mine = bill.people.find((p) => p.id === me) || null;
-  const owes = mine && Number(mine.amount_due) > 0 && mine.name !== 'Me';
+  const moves = transfers(bill);
+  const myMoves = mine ? moves.filter((m) => m.from === mine.id) : [];
+  const getsBack = mine ? moves.filter((m) => m.to === mine.id).reduce((a, m) => a + m.amount, 0) : 0;
+  const nameFor = (id: string) => (nameOf[id] === 'Me' ? payee : nameOf[id]);
 
   const copyUpi = async () => {
     try {
@@ -109,31 +142,47 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
 
           {mine && (
             <div style={s.you}>
-              {mine.paid ? (
+              {bill.paid_mode === 'unpaid' ? (
+                <>
+                  <p style={s.youLabel}>⏳ Not paid yet. Your share</p>
+                  <p style={s.youBig}>{inr(mine.amount_due)}</p>
+                  <p style={s.youNote}>Includes your share of tax & service.</p>
+                </>
+              ) : mine.paid ? (
                 <p style={s.youBig}>Paid ✅</p>
-              ) : Number(mine.amount_due) === 0 && lines(mine.id).length > 0 ? (
-                <p style={s.youBig}>You're covered 💛</p>
+              ) : getsBack > 0 ? (
+                <>
+                  <p style={s.youLabel}>💳 You paid the bill. You get back</p>
+                  <p style={s.youBig}>{inr(getsBack)}</p>
+                </>
+              ) : myMoves.length === 0 ? (
+                <p style={s.youBig}>{Number(mine.amount_due) === 0 && lines(mine.id).length > 0 ? "You're covered 💛" : 'All settled ✅'}</p>
               ) : (
                 <>
-                  <p style={s.youLabel}>You owe {payee}</p>
-                  <p style={s.youBig}>{inr(mine.amount_due)}</p>
+                  {myMoves.map((m) => (
+                    <div key={m.to}>
+                      <p style={s.youLabel}>You owe {nameFor(m.to)}</p>
+                      <p style={s.youBig}>{inr(m.amount)}</p>
+                    </div>
+                  ))}
                   <p style={s.youNote}>Includes your share of tax & service.</p>
                 </>
               )}
 
-              {owes && !mine.paid && bill.payee_upi && (
-                <>
-                  <a
-                    href={upiLink(bill.payee_upi, payee, Number(mine.amount_due), `${bill.restaurant || 'Bill'} split`)}
-                    style={s.payBtn}
-                  >
-                    Pay {inr(mine.amount_due)} with UPI
-                  </a>
-                  <button onClick={copyUpi} style={s.copyBtn}>
-                    {copied ? 'Copied ✅' : `Copy UPI ID: ${bill.payee_upi}`}
-                  </button>
-                  <p style={s.youNote}>If the Pay button doesn't open your UPI app, copy the ID and pay in GPay / PhonePe / Paytm.</p>
-                </>
+              {!mine.paid && bill.paid_mode !== 'unpaid' && myMoves.map((m) =>
+                nameOf[m.to] === 'Me' && bill.payee_upi ? (
+                  <div key={'pay' + m.to}>
+                    <a href={upiLink(bill.payee_upi, payee, m.amount, `${bill.restaurant || 'Bill'} split`)} style={s.payBtn}>
+                      Pay {payee} {inr(m.amount)} with UPI
+                    </a>
+                    <button onClick={copyUpi} style={s.copyBtn}>
+                      {copied ? 'Copied ✅' : `Copy UPI ID: ${bill.payee_upi}`}
+                    </button>
+                    <p style={s.youNote}>If the Pay button doesn't open your UPI app, copy the ID and pay in GPay / PhonePe / Paytm.</p>
+                  </div>
+                ) : (
+                  <p key={'pay' + m.to} style={s.youNote}>💸 Pay {nameFor(m.to)} {inr(m.amount)} by UPI (ask them for their UPI ID).</p>
+                )
               )}
             </div>
           )}

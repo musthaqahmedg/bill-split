@@ -5,10 +5,11 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  Text, TouchableOpacity,
+  Text, TextInput, TouchableOpacity,
   View,
 } from 'react-native';
 import { saveBill, updateBill } from '../services/bills';
+import { paidMap, transfers } from '../services/settle';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 
@@ -17,6 +18,7 @@ const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({
   items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
+  payment = { mode: 'me' }, onPaymentChange = () => {},
 }) {
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
@@ -87,6 +89,23 @@ export default function SplitScreen({
     .sort((a, b) => b.pay - a.pay);
   const sum = final.reduce((a, b) => a + b, 0);
 
+  // ---- 💳 Who paid the bill → who pays whom ----
+  const mode = payment.mode || 'me';
+  const paid = paidMap(payment, people, target);
+  const paidSum = Object.values(paid).reduce((a, b) => a + b, 0);
+  const multiLeft = mode === 'multi' ? target - paidSum : 0;
+  const moves = mode === 'unpaid' || (mode === 'multi' && multiLeft !== 0) || (mode === 'friend' && !payment.who) ? [] : transfers(finalOf, paid);
+  const outOf = (n) => moves.filter((m) => m.from === n);
+  const inOf = (n) => moves.filter((m) => m.to === n);
+  const pickPayer = (key) => {
+    if (key === 'unpaid' || key === 'multi') onPaymentChange({ mode: key, who: null, amounts: key === 'multi' ? payment.amounts || {} : {} });
+    else if (key === 'Me') onPaymentChange({ mode: 'me', who: null, amounts: {} });
+    else onPaymentChange({ mode: 'friend', who: key, amounts: {} });
+  };
+  const payerKey = mode === 'me' ? 'Me' : mode === 'friend' ? payment.who : mode;
+  const setMultiAmount = (n, v) =>
+    onPaymentChange({ ...payment, amounts: { ...(payment.amounts || {}), [n]: v.replace(/[^\d]/g, '') } });
+
   // ---- Sponsor sheet ----
   const mineOf = (name) => (shares.find((s) => s.name === name) || { mine: [] }).mine;
 
@@ -139,10 +158,15 @@ export default function SplitScreen({
 
   // ---- Save ----
   const save = async () => {
+    if (mode === 'friend' && !payment.who) return Alert.alert('Who paid?', 'Pick who paid the bill.');
+    if (mode === 'multi' && multiLeft !== 0) {
+      return Alert.alert('Amounts don’t match', `What everyone paid should add up to ${inr(target)} (${multiLeft > 0 ? inr(multiLeft) + ' missing' : inr(-multiLeft) + ' too much'}).`);
+    }
     setSaving(true);
     try {
       const payload = {
         bill: { ...bill, total: billTotal }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
+        paidMode: mode, paid,
       };
       if (editingBillId) {
         await updateBill(editingBillId, payload);
@@ -186,6 +210,54 @@ export default function SplitScreen({
       </View>
 
       <ScrollView style={styles.list}>
+        {/* 💳 Who paid the bill? */}
+        <View style={styles.paidBox}>
+          <Text style={styles.paidTitle}>💳 Who paid the bill?</Text>
+          <View style={styles.chips}>
+            {people.map((p) => (
+              <TouchableOpacity key={p} style={[styles.payChip, payerKey === p && styles.payChipOn]} onPress={() => pickPayer(p)}>
+                <Text style={[styles.payChipText, payerKey === p && styles.payChipTextOn]}>{show(p)}</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={[styles.payChip, mode === 'unpaid' && styles.payChipOn]} onPress={() => pickPayer('unpaid')}>
+              <Text style={[styles.payChipText, mode === 'unpaid' && styles.payChipTextOn]}>⏳ Not yet</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.payChip, mode === 'multi' && styles.payChipOn]} onPress={() => pickPayer('multi')}>
+              <Text style={[styles.payChipText, mode === 'multi' && styles.payChipTextOn]}>👥 More than one</Text>
+            </TouchableOpacity>
+          </View>
+          {mode === 'multi' ? (
+            <View style={{ marginTop: 6 }}>
+              {people.map((p) => (
+                <View key={p} style={styles.multiRow}>
+                  <Text style={styles.multiName}>{show(p)} paid</Text>
+                  <Text style={styles.multiRs}>Rs</Text>
+                  <TextInput
+                    style={styles.multiInput}
+                    keyboardType="number-pad"
+                    keyboardAppearance="dark"
+                    value={String((payment.amounts || {})[p] || '')}
+                    onChangeText={(v) => setMultiAmount(p, v)}
+                    placeholder="0"
+                    placeholderTextColor={C.faint}
+                  />
+                </View>
+              ))}
+              <Text style={[styles.multiLeft, multiLeft === 0 && { color: C.green }]}>
+                {multiLeft === 0 ? `✓ Adds up to ${inr(target)}` : multiLeft > 0 ? `${inr(multiLeft)} left to add` : `${inr(-multiLeft)} too much`}
+              </Text>
+            </View>
+          ) : (
+            <Text style={styles.paidHint}>
+              {mode === 'unpaid'
+                ? 'Not paid yet: everyone hands over their share below.'
+                : mode === 'me'
+                  ? 'You paid, so friends pay you back 👇'
+                  : payment.who ? `${payment.who} paid, so everyone pays ${payment.who} back 👇` : ''}
+            </Text>
+          )}
+        </View>
+
         {rows.map((r) => {
           const extra = r.ownExact - r.subtotal;
           const fullyCovered = r.mine.length > 0 && r.mine.every((m) => m.paidBy !== r.name);
@@ -205,6 +277,16 @@ export default function SplitScreen({
                   ? <Text style={styles.coveredPay}>Covered 💛</Text>
                   : <Text style={styles.pay}>{inr(r.pay)}</Text>}
               </View>
+
+              {/* who pays whom */}
+              {inOf(r.name).length > 0 ? (
+                <Text style={styles.gets}>💳 Paid the bill · gets back {inr(inOf(r.name).reduce((a, m) => a + m.amount, 0))}</Text>
+              ) : null}
+              {outOf(r.name).map((m) => (
+                <Text key={m.to} style={styles.owes}>→ Pays {m.to === 'Me' ? 'you' : m.to} {inr(m.amount)}</Text>
+              ))}
+              {mode === 'unpaid' && r.pay > 0 ? <Text style={styles.owes}>⏳ Hands over {inr(r.pay)}</Text> : null}
+              {paid[r.name] && !inOf(r.name).length && mode !== 'unpaid' ? <Text style={styles.gets}>💳 Paid their share ✓</Text> : null}
 
               {partnerOf(r.name) && (
                 <Text style={styles.pairTag}>💑 with {partnerOf(r.name)}</Text>
@@ -241,7 +323,7 @@ export default function SplitScreen({
       </Text>
 
       <TouchableOpacity style={styles.wholeBtn} onPress={() => setWholeOpen(true)}>
-        <Text style={styles.wholeText}>🎉 I've got the whole bill</Text>
+        <Text style={styles.wholeText}>🎁 It's a treat (one person pays for all)</Text>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={save} disabled={saving}>
@@ -319,7 +401,7 @@ export default function SplitScreen({
       <Modal visible={wholeOpen} transparent animationType="slide" onRequestClose={() => setWholeOpen(false)}>
         <View style={styles.overlay}>
           <View style={styles.sheet}>
-            <Text style={styles.sheetTitle}>Who's paying the whole bill? 🎉</Text>
+            <Text style={styles.sheetTitle}>Who's treating everyone? 🎁</Text>
             {people.map((p) => (
               <TouchableOpacity key={p} style={styles.wholeRow} onPress={() => wholeBill(p)}>
                 <Text style={styles.wholeName}>{show(p)}</Text>
@@ -363,6 +445,20 @@ const styles = StyleSheet.create({
   extra: { color: C.faint, fontSize: 13, marginTop: 4 },
   covering: { color: C.pink, fontSize: 14, fontWeight: '700', marginTop: 6 },
   check: { color: C.green, textAlign: 'center', marginVertical: 10, fontWeight: '700' },
+  paidBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.accent, borderRadius: 16, padding: 14, marginBottom: 12 },
+  paidTitle: { color: C.text, fontSize: 16, fontWeight: '800', marginBottom: 10 },
+  payChip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
+  payChipOn: { backgroundColor: C.accent, borderColor: C.accent },
+  payChipText: { color: C.sub, fontSize: 14, fontWeight: '600' },
+  payChipTextOn: { color: '#fff' },
+  paidHint: { color: C.faint, fontSize: 13, marginTop: 2 },
+  multiRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  multiName: { flex: 1, color: C.text, fontSize: 15 },
+  multiRs: { color: C.faint, fontSize: 14, marginRight: 6 },
+  multiInput: { width: 100, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingVertical: 6, paddingHorizontal: 10, color: C.text, fontSize: 15, textAlign: 'right' },
+  multiLeft: { color: C.amber, fontSize: 13, fontWeight: '700', marginTop: 4 },
+  gets: { color: C.green, fontSize: 14, fontWeight: '700', marginBottom: 6 },
+  owes: { color: C.amber, fontSize: 14, fontWeight: '700', marginBottom: 6 },
   wholeBtn: { borderWidth: 1, borderColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 },
   wholeText: { color: C.pink, fontSize: 16, fontWeight: '800' },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },

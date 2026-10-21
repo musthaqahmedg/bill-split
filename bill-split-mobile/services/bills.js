@@ -1,4 +1,5 @@
 import { kindOf } from './kinds';
+import { savedPayment } from './settle';
 import { supabase } from './supabaseClient';
 import { track } from './track';
 
@@ -23,7 +24,7 @@ export async function findDuplicate(bill) {
 
 // payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
 // nonDrinkers: names of people marked "Not drinking"
-export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt }) {
+export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt, paidMode, paid }) {
   track('upload', 'saved a bill');
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
@@ -40,6 +41,7 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
       fingerprint: makeFingerprint(bill),
       authenticity: bill.check || null,
       status: 'split',
+      paid_mode: paidMode || 'me', // 💳 who paid the restaurant
       ...(createdAt ? { created_at: createdAt } : {}),
     })
     .select()
@@ -62,6 +64,7 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
     .from('bill_participants')
     .insert(people.map((name) => ({
       bill_id: saved.id, name, amount_due: amounts[name] || 0, not_drinking: dry.includes(name),
+      paid_amount: (paid && paid[name]) || 0,
       paid_at: (paidAt && paidAt[name]) || null,
     })))
     .select();
@@ -156,13 +159,15 @@ export function billToFlow(saved) {
     return map;
   });
 
-  return { items, bill, people, nonDrinkers, claims, payers };
+  const payment = savedPayment(saved, participants);
+
+  return { items, bill, people, nonDrinkers, claims, payers, payment };
 }
 
 export async function listBills() {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, title, total, bill_date, created_at, status, bill_participants(name, amount_due, paid_at)')
+    .select('id, title, total, bill_date, created_at, status, bill_participants(name, amount_due, paid_amount, paid_at), paid_mode')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -171,7 +176,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by, units)), bill_participants(id, name, amount_due, not_drinking, paid_at)')
+    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by, units)), bill_participants(id, name, amount_due, paid_amount, not_drinking, paid_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -231,4 +236,16 @@ export async function recentFriends(limit = 12) {
     })
   );
   return names.slice(0, limit);
+}
+
+// 💳 A "not paid yet" bill got paid: mark who paid the restaurant
+export async function setPayer(billId, participants, name, total) {
+  const payer = participants.find((p) => p.name === name);
+  if (!payer) throw new Error('Pick who paid');
+  const { error: e1 } = await supabase.from('bills').update({ paid_mode: name === 'Me' ? 'me' : 'friend' }).eq('id', billId);
+  if (e1) throw e1;
+  const { error: e2 } = await supabase.from('bill_participants').update({ paid_amount: 0 }).eq('bill_id', billId);
+  if (e2) throw e2;
+  const { error: e3 } = await supabase.from('bill_participants').update({ paid_amount: Math.round(Number(total) || 0) }).eq('id', payer.id);
+  if (e3) throw e3;
 }
