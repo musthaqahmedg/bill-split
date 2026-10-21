@@ -48,9 +48,12 @@ export default function SplitScreen({
     items.forEach((it, i) => {
       const who = claims[i] || [];
       if (who.includes(name)) {
+        const units = who.filter((n) => n === name).length; // 🍺 how many of this item they had
+        const counted = new Set(who).size !== who.length;
         mine.push({
           i, name: it.name, qty: it.qty,
-          amount: it.price / who.length, ways: who.length,
+          amount: (it.price * units) / who.length, ways: new Set(who).size,
+          units, totalUnits: who.length, counted,
           paidBy: payerOf(i, name),
         });
       }
@@ -212,7 +215,7 @@ export default function SplitScreen({
               {r.mine.map((m, j) => (
                 <Text key={j} style={styles.line}>
                   {m.qty > 1 ? `${m.qty} × ` : ''}{m.name}
-                  {m.ways > 1 ? `  (shared ${m.ways} ways)` : ''}  ·  {money(m.amount)}
+                  {m.counted ? `  (had ${m.units} of ${m.totalUnits})` : m.ways > 1 ? `  (shared ${m.ways} ways)` : ''}  ·  {money(m.amount)}
                   {m.paidBy !== r.name ? <Text style={styles.paidBy}>{`  ${m.paidBy} pays 💛`}</Text> : null}
                 </Text>
               ))}

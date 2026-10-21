@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 
-type Claim = { participant_id: string; paid_by: string | null };
+type Claim = { participant_id: string; paid_by: string | null; units?: number };
 type Item = { name: string; price: number; quantity: number; kind: string | null; about: string | null; claims: Claim[] };
 type Person = { id: string; name: string; amount_due: number; not_drinking: boolean; paid: boolean };
 
@@ -36,12 +36,15 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
       .filter((it) => it.claims.some((c) => c.participant_id === pid))
       .map((it) => {
         const c = it.claims.find((x) => x.participant_id === pid)!;
+        const total = it.claims.reduce((s, x) => s + (x.units || 1), 0) || 1;
+        const units = c.units || 1;
         return {
           name: it.name,
           kind: it.kind,
           qty: it.quantity,
-          share: Number(it.price) / it.claims.length,
+          share: (Number(it.price) * units) / total,
           ways: it.claims.length,
+          had: total !== it.claims.length ? `had ${units} of ${total}` : null,
           coveredBy: c.paid_by && c.paid_by !== pid ? nameOf[c.paid_by] : null,
         };
       });
@@ -157,7 +160,7 @@ export default function ShareView({ bill }: { bill: SharedBill }) {
                 <p key={j} style={s.line}>
                   {l.kind ? EMOJI[l.kind] + ' ' : ''}
                   {l.qty > 1 ? `${l.qty} × ` : ''}{l.name}
-                  {l.ways > 1 ? ` (shared ${l.ways} ways)` : ''} · {money(l.share)}
+                  {l.had ? ` (${l.had})` : l.ways > 1 ? ` (shared ${l.ways} ways)` : ''} · {money(l.share)}
                   {l.coveredBy ? <span style={s.pink}>{`  ${l.coveredBy} pays 💛`}</span> : null}
                 </p>
               ))}

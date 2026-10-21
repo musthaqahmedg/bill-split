@@ -54,7 +54,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       .map((it) => {
         const claim = (it.item_claims || []).find((c) => c.participant_id === pid);
         if (!claim) return null;
-        return { ...it, ways: it.item_claims.length, paidBy: claim.paid_by || pid };
+        const total = it.item_claims.reduce((s, c) => s + (c.units || 1), 0) || 1;
+        const units = claim.units || 1;
+        return { ...it, ways: it.item_claims.length, units, totalUnits: total, counted: total !== it.item_claims.length, share: (Number(it.price) * units) / total, paidBy: claim.paid_by || pid };
       })
       .filter(Boolean);
 
@@ -62,10 +64,10 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   const coversOf = (pid) => {
     const out = {};
     items.forEach((it) => {
-      const ways = (it.item_claims || []).length || 1;
+      const ways = (it.item_claims || []).reduce((s, c) => s + (c.units || 1), 0) || 1;
       (it.item_claims || []).forEach((c) => {
         if (c.paid_by === pid && c.participant_id !== pid) {
-          out[c.participant_id] = (out[c.participant_id] || 0) + (Number(it.price) / ways) * ratio;
+          out[c.participant_id] = (out[c.participant_id] || 0) + ((Number(it.price) * (c.units || 1)) / ways) * ratio;
         }
       });
     });
@@ -290,7 +292,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
               {mine.map((it) => (
                 <Text key={it.id} style={styles.line} onPress={() => setInfoItem(it)}>
                   {it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name}
-                  {it.ways > 1 ? `  (shared ${it.ways} ways)` : ''}  ·  {money(Number(it.price) / it.ways)}
+                  {it.counted ? `  (had ${it.units} of ${it.totalUnits})` : it.ways > 1 ? `  (shared ${it.ways} ways)` : ''}  ·  {money(it.share)}
                   {it.paidBy !== p.id && nameOf[it.paidBy]
                     ? <Text style={styles.paidBy}>{`  ${show(nameOf[it.paidBy])} ${nameOf[it.paidBy] === 'Me' ? 'pay' : 'pays'} 💛`}</Text>
                     : null}

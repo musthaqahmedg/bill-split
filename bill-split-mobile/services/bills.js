@@ -71,12 +71,14 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
   const idOf = Object.fromEntries(savedPeople.map((p) => [p.name, p.id]));
   const rows = [];
   items.forEach((_, i) => {
-    (claims[i] || []).forEach((name) => {
+    const list = claims[i] || [];
+    [...new Set(list)].forEach((name) => {
       const payer = payers && payers[i] && payers[i][name];
       rows.push({
         item_id: savedItems[i].id,
         participant_id: idOf[name],
         paid_by: payer && idOf[payer] ? idOf[payer] : null,
+        units: list.filter((n) => n === name).length, // 🍺 how many they had
       });
     });
   });
@@ -141,7 +143,7 @@ export function billToFlow(saved) {
   const nameOf = Object.fromEntries(participants.map((p) => [p.id, p.name]));
 
   const claims = (saved.bill_items || []).map((it) =>
-    (it.item_claims || []).map((c) => nameOf[c.participant_id]).filter(Boolean)
+    (it.item_claims || []).flatMap((c) => (nameOf[c.participant_id] ? Array(c.units || 1).fill(nameOf[c.participant_id]) : []))
   );
 
   const payers = (saved.bill_items || []).map((it) => {
@@ -169,7 +171,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by)), bill_participants(id, name, amount_due, not_drinking, paid_at)')
+    .select('*, bill_items(id, name, price, quantity, kind, about, item_claims(participant_id, paid_by, units)), bill_participants(id, name, amount_due, not_drinking, paid_at)')
     .eq('id', id)
     .single();
   if (error) throw error;

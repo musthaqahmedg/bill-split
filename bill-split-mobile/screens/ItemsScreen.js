@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
 import { show } from '../services/names';
 import { C } from '../services/theme';
@@ -36,6 +36,20 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
     }));
   };
 
+  // 🍺 How many of this item a person had (each name appears once per drink/peg)
+  const unitsOf = (i, person) => claims[i].filter((p) => p === person).length;
+  const setUnits = (i, person, n) => {
+    if (n < 1 || n > 99) return;
+    setClaims((prev) => prev.map((list, idx) => (idx !== i ? list : [...list.filter((p) => p !== person), ...Array(n).fill(person)])));
+  };
+
+  // 🤷 Nobody remembers who had what → everyone shares everything equally (non-drinkers still skip alcohol)
+  const splitEqually = () =>
+    Alert.alert('Split everything equally?', 'Every item is shared by everyone. Non-drinkers still skip alcohol 🥤', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Split equally', onPress: () => setClaims(items.map((_, i) => eligible(i))) },
+    ]);
+
   const toggleAll = (i) => {
     const ok = eligible(i);
     setClaims((prev) => prev.map((list, idx) =>
@@ -54,6 +68,9 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 
       <Text style={styles.title}>Who had what?</Text>
       <Text style={styles.sub}>Tap everyone who had each item. Shared items split between them.</Text>
+      <TouchableOpacity style={styles.equalBtn} onPress={splitEqually}>
+        <Text style={styles.equalText}>🤷 Can’t remember? Split everything equally</Text>
+      </TouchableOpacity>
 
       <View style={styles.dryBox}>
         <Text style={styles.dryLabel}>Not drinking?</Text>
@@ -72,6 +89,9 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       <ScrollView style={styles.list}>
         {items.map((item, i) => {
           const mystery = claims[i].length === 0;
+          const who = [...new Set(claims[i])];
+          const counted = who.length !== claims[i].length;
+          const canCount = item.qty > 1 && who.length > 1; // only matters when 2+ people share it
           const k = KINDS[kindOf(item)];
           return (
             <View key={i} style={[styles.card, mystery && styles.mysteryCard]}>
@@ -88,6 +108,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
               <View style={styles.chips}>
                 {people.map((p) => {
                   const on = claims[i].includes(p);
+                  const n = unitsOf(i, p);
                   const blocked = !canHave(i, p);
                   return (
                     <TouchableOpacity
@@ -97,7 +118,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                       disabled={blocked}
                     >
                       <Text style={[styles.chipText, on && styles.chipTextOn, blocked && styles.chipTextBlocked]}>
-                        {blocked ? `🥤 ${show(p)}` : show(p)}
+                        {blocked ? `🥤 ${show(p)}` : show(p)}{n > 1 ? ` ×${n}` : ''}
                       </Text>
                     </TouchableOpacity>
                   );
@@ -107,9 +128,31 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                 </TouchableOpacity>
               </View>
 
-              {claims[i].length > 1 && (
+              {canCount ? (
+                <View style={styles.countBox}>
+                  <Text style={styles.countTitle}>
+                    🔢 How many each? <Text style={[styles.countSum, claims[i].length !== item.qty && styles.countOff]}>
+                      {claims[i].length} of {item.qty} counted
+                    </Text>
+                  </Text>
+                  {who.map((p) => (
+                    <View key={p} style={styles.countRow}>
+                      <Text style={styles.countName} numberOfLines={1}>{show(p)}</Text>
+                      <TouchableOpacity style={styles.step} onPress={() => setUnits(i, p, unitsOf(i, p) - 1)}>
+                        <Text style={styles.stepText}>−</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.countNum}>{unitsOf(i, p)}</Text>
+                      <TouchableOpacity style={styles.step} onPress={() => setUnits(i, p, unitsOf(i, p) + 1)}>
+                        <Text style={styles.stepText}>＋</Text>
+                      </TouchableOpacity>
+                      <Text style={styles.countAmt}>Rs {((item.price * unitsOf(i, p)) / claims[i].length).toFixed(0)}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+              {who.length > 1 && !counted && !canCount && (
                 <Text style={styles.shared}>
-                  Split {claims[i].length} ways · Rs {(item.price / claims[i].length).toFixed(2)} each
+                  Split {who.length} ways · Rs {(item.price / who.length).toFixed(2)} each
                 </Text>
               )}
             </View>
@@ -191,6 +234,18 @@ const styles = StyleSheet.create({
   chipAll: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 8 },
   chipAllText: { color: C.sub, fontSize: 14 },
   shared: { color: C.faint, fontSize: 13, marginTop: 2 },
+  equalBtn: { alignSelf: 'flex-start', backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginBottom: 12 },
+  equalText: { color: C.sub, fontSize: 13, fontWeight: '600' },
+  countBox: { backgroundColor: C.bg, borderRadius: 12, padding: 10, marginTop: 2 },
+  countTitle: { color: C.sub, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  countSum: { color: C.green, fontWeight: '600' },
+  countOff: { color: C.amber },
+  countRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
+  countName: { flex: 1, color: C.text, fontSize: 14 },
+  step: { width: 30, height: 30, borderRadius: 15, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center' },
+  stepText: { color: C.text, fontSize: 17 },
+  countNum: { color: C.text, fontSize: 15, fontWeight: '800', width: 30, textAlign: 'center' },
+  countAmt: { color: C.faint, fontSize: 13, width: 64, textAlign: 'right' },
   count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
   disabled: { backgroundColor: '#4B3A73' },
