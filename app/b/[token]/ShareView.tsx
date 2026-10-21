@@ -248,7 +248,7 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
                   </div>
                 );
               })}
-              <button onClick={sendPicks} disabled={sending} style={s.payBtn}>
+              <button onClick={sendPicks} disabled={sending} style={{ ...s.payBtn, width: '100%', border: 'none', cursor: 'pointer' }}>
                 {sending ? 'Sending…' : `Send to ${payee} (${Object.keys(picks).length} item${Object.keys(picks).length === 1 ? '' : 's'})`}
               </button>
               <button onClick={() => setTagging(false)} style={s.copyBtn}>Cancel</button>
