@@ -8,7 +8,7 @@ import { C } from '../services/theme';
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) UIManager.setLayoutAnimationEnabledExperimental(true);
 
 // ℹ️ About & Help: who we are, quick answers, and 💬 chat with the team
-export default function HelpScreen({ onBack, onChat, onInbox }) {
+export default function HelpScreen({ onBack, onChat, onInbox, onBugs }) {
   const [open, setOpen] = useState(null);
   const [admin, setAdmin] = useState(false);
   useEffect(() => {
@@ -47,6 +47,12 @@ export default function HelpScreen({ onBack, onChat, onInbox }) {
         {admin ? (
           <TouchableOpacity style={styles.row} onPress={onInbox}>
             <Text style={styles.rowText}>🛟 Support inbox (team only)</Text>
+            <Text style={styles.chev}>›</Text>
+          </TouchableOpacity>
+        ) : null}
+        {admin ? (
+          <TouchableOpacity style={styles.row} onPress={onBugs}>
+            <Text style={styles.rowText}>🐞 Bug reports (team only)</Text>
             <Text style={styles.chev}>›</Text>
           </TouchableOpacity>
         ) : null}

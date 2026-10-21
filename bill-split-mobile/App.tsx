@@ -13,6 +13,7 @@ import { Accelerometer } from 'expo-sensors';
 import HelpScreen from './screens/HelpScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
 import SupportInbox from './screens/SupportInbox';
+import BugListScreen from './screens/BugListScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import { setNotificationNavigator } from './services/notifications';
 import HomeScreen from './screens/HomeScreen';
@@ -67,7 +68,9 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   const goNotif = useRef<(n: any) => void>(() => {});
   goNotif.current = (n: any) => {
       const d = (n && n.data) || {};
-      if (d.support) {
+      if (d.bugs || d.feedback_id) {
+        setScreen('bugs');
+      } else if (d.support) {
         setSupportThread(d.thread ? { userId: d.thread, name: ((n.title || '').replace('💬 ', '').replace(' needs help', '')) || 'Support' } : null);
         setScreen('support');
       } else if (d.friends) {
@@ -435,8 +438,13 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
           setScreen('support');
         }}
         onInbox={() => setScreen('supportInbox')}
+        onBugs={() => setScreen('bugs')}
       />
     );
+  }
+
+  if (screen === 'bugs') {
+    return <BugListScreen onBack={() => setScreen('help')} />;
   }
 
   if (screen === 'support') {
