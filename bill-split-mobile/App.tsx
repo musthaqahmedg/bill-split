@@ -18,6 +18,9 @@ import NotificationsScreen from './screens/NotificationsScreen';
 import { setNotificationNavigator } from './services/notifications';
 import HomeScreen from './screens/HomeScreen';
 import { track } from './services/track';
+import { crashScreen, crashUser, initCrash, wrapApp } from './services/crash';
+
+initCrash();
 import { startPresence } from './services/active';
 import { listenPushTaps, registerPush, unregisterPush } from './services/push';
 import ItemsScreen from './screens/ItemsScreen';
@@ -639,12 +642,14 @@ function Root() {
     const { data } = supabase.auth.onAuthStateChange((_e, session) => setUid(session ? session.user.id : null));
     return () => data.subscription.unsubscribe();
   }, []);
+  useEffect(() => crashUser(uid), [uid]);
 
   // ✨ Smooth page changes: forward slides in from the right, back from the left (like iPhone)
   const x = useRef(new Animated.Value(0)).current;
   const fade = useRef(new Animated.Value(1)).current;
   const history = useRef<string[]>([]);
   const onScreen = (next: string) => {
+    crashScreen(next);
     const h = history.current;
     if (!h.length) {
       h.push(next);
@@ -756,5 +761,6 @@ function Root() {
   );
 }
 
-export default Root;
-registerRootComponent(Root);
+const VibeOut = wrapApp(Root);
+export default VibeOut;
+registerRootComponent(VibeOut);

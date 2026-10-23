@@ -22,6 +22,7 @@ export default function Privacy() {
           <li><b>App usage</b>: which screens you open and actions like creating a plan, so we can fix problems and improve the app.</li>
           <li><b>Notifications</b>: a push token for your phone, so we can send alerts like friend requests and chat messages. You can hide message previews in Profile, or turn notifications off in your phone’s settings.</li>
           <li><b>Bug notes</b>: when you shake your phone to report a problem, we save your note, any screenshot you add, the page you were on and your phone model. Only our team can see it.</li>
+          <li><b>Crash reports</b>: if the app breaks, an error report is sent to Sentry (stored in the EU) with the error, the page you were on, your phone model and an account ID. No names, numbers, emails or bill contents.</li>
           <li><b>Help chat</b>: messages you send in “Chat with us”, so our team can reply. Only you and our team can see them.</li>
           <li><b>Your location</b>, only when you allow it, to show places near you. We don&apos;t store it.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
