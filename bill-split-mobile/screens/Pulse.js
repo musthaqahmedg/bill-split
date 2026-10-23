@@ -14,7 +14,7 @@ export default function Pulse({ name, on, size = 48, style, uri }) {
     return () => loop.stop();
   }, [on]);
 
-  const hue = ['#8B5CF6', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'][((name || '?').charCodeAt(0) || 0) % 6];
+  const hue = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'][((name || '?').charCodeAt(0) || 0) % 6];
   return (
     <View style={[{ width: size, height: size }, style]}>
       {on ? (

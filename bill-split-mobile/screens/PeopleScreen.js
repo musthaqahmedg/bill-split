@@ -256,11 +256,11 @@ const styles = StyleSheet.create({
   pillTextDry: { color: C.green, fontWeight: '700' },
   remove: { color: C.red, fontSize: 15 },
 
-  pairBox: { backgroundColor: '#3A1532', borderRadius: 16, padding: 14, marginTop: 16 },
+  pairBox: { backgroundColor: '#2A1621', borderRadius: 16, padding: 14, marginTop: 16 },
   pairHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   pairTitle: { fontSize: 16, fontWeight: '800', color: C.pink },
   pairAdd: { fontSize: 15, fontWeight: '700', color: C.pink },
-  pairAddOff: { color: '#7A4A68' },
+  pairAddOff: { color: '#4A3440' },
   pairHint: { color: C.faint, fontSize: 13, marginTop: 6 },
   pairRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   pairText: { fontSize: 15, color: C.text, flex: 1 },
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
 
   count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
-  disabled: { backgroundColor: '#4B3A73' },
+  disabled: { backgroundColor: '#34343F' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
@@ -279,10 +279,10 @@ const styles = StyleSheet.create({
   chip: { borderWidth: 1, borderColor: C.pink, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
   chipOn: { backgroundColor: C.pink },
   chipText: { color: C.pink, fontSize: 14 },
-  chipTextOn: { color: '#2A0E22', fontWeight: '700' },
+  chipTextOn: { color: '#0E0E13', fontWeight: '700' },
   sheetButtons: { flexDirection: 'row', marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: C.border, marginRight: 10 },
   cancelText: { color: C.sub, fontSize: 16, fontWeight: '700' },
   doneBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.pink },
-  doneOff: { backgroundColor: '#7A4A68' },
+  doneOff: { backgroundColor: '#4A3440' },
 });

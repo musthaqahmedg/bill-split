@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   countAmt: { color: C.faint, fontSize: 13, width: 64, textAlign: 'right' },
   count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
-  disabled: { backgroundColor: '#4B3A73' },
+  disabled: { backgroundColor: '#34343F' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
   infoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 28 },

@@ -751,7 +751,7 @@ function Root() {
         <TouchableOpacity
           onPress={() => setBug(true)}
           activeOpacity={0.8}
-          style={{ position: 'absolute', left: 12, bottom: 96, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(30,18,52,0.85)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'absolute', left: 12, bottom: 96, width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(24,24,31,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
         >
           <Text style={{ fontSize: 18 }}>🐞</Text>
         </TouchableOpacity>

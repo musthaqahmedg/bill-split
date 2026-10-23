@@ -7,11 +7,11 @@
     "icon": "./assets/images/icon.png",
     "scheme": "billsplitmobile",
     "userInterfaceStyle": "dark",
-    "backgroundColor": "#160A2B",
+    "backgroundColor": "#0E0E13",
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#160A2B"
+        "backgroundColor": "#0E0E13"
       },
       "package": "com.maginfosystems.vibeout",
       "blockedPermissions": [
@@ -28,7 +28,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#160A2B",
+          "backgroundColor": "#0E0E13",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
@@ -56,7 +56,7 @@
       [
         "expo-notifications",
         {
-          "color": "#8B5CF6"
+          "color": "#7C5CFF"
         }
       ],
       [

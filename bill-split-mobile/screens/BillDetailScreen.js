@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   sumTotal: { borderTopWidth: 1, borderTopColor: C.border, paddingTop: 8, marginTop: 4, marginBottom: 0 },
   sumBold: { fontSize: 16, fontWeight: '800', color: C.text },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, marginBottom: 12 },
-  coveredCard: { borderColor: C.pink, backgroundColor: '#3A1532' },
+  coveredCard: { borderColor: C.pink, backgroundColor: '#2A1621' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   name: { fontSize: 18, fontWeight: '800', color: C.text },
   pay: { fontSize: 22, fontWeight: '800', color: C.accentSoft },

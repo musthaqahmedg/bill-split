@@ -13,7 +13,7 @@ import { useFriendsActive } from '../services/active';
 const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
 // Colour for each friend's name, so the chat is easy to follow
-const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#C9A8FF', '#FB923C', '#2DD4BF'];
+const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#B3A1FF', '#FB923C', '#2DD4BF'];
 const colorFor = (name) => NAME_COLORS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % NAME_COLORS.length];
 
 export default function PartyChatScreen({ partyId, onBack }) {

@@ -5,7 +5,7 @@ import { CHARADES, DARES, NEVER, TRUTHS, WHEEL_REASONS, pick } from '../services
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
 
-const COLORS = ['#8B5CF6', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA', '#F87171', '#A3E635'];
+const COLORS = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA', '#F87171', '#A3E635'];
 
 // 🎮 Party games: spin the wheel, never have I ever, truth or dare, charades
 export default function PartyGames({ visible, onClose, party }) {
@@ -32,7 +32,7 @@ export default function PartyGames({ visible, onClose, party }) {
   };
 
   const GAMES = [
-    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#8B5CF6' },
+    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#7C5CFF' },
     { key: 'never', emoji: '🙋', name: 'Never have I ever', sub: 'Clean, funny confessions', color: '#EC4899' },
     { key: 'tod', emoji: '🎭', name: 'Truth or dare', sub: 'Pass the phone around', color: '#F59E0B' },
     { key: 'charades', emoji: '🤫', name: 'Charades', sub: 'Act it out, 60 seconds', color: '#22D3EE' },

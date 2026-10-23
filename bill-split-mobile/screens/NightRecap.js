@@ -38,7 +38,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       if (brought.length) out.push({ bg: '#22D3EE', emoji: '🛒', big: 'Who brought what', lines: brought.slice(0, 6).map((x) => `${x.name.split(' · ')[0]} — ${x.claimed_name === 'Me' ? 'host' : x.claimed_name}`) });
       const msgs = chat.filter((m) => m.kind === 'text' && !m.poll_id).length;
       const polls = chat.filter((m) => m.poll_id).length;
-      if (msgs || polls) out.push({ bg: '#8B5CF6', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
+      if (msgs || polls) out.push({ bg: '#7C5CFF', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
       const budget = Number(party.budget) || 0;
       if (party.split_mode === 'treat') out.push({ bg: '#F59E0B', emoji: '🎁', big: 'It was a treat!', small: 'Someone paid for everyone 💜' });
       else if (budget) {
@@ -49,7 +49,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       const home = members.filter((m) => m.home_at).length;
       const driver = members.find((m) => m.is_driver);
       if (home || driver) out.push({ bg: '#60A5FA', emoji: '🏠', big: `${home} got home safe`, small: driver ? `🛡️ ${show(driver.name)} was the driver. Legend.` : 'Safe nights only 💙' });
-      out.push({ bg: '#160A2B', emoji: '✨', big: 'What a night', small: 'Planned on Vibe Out', end: true });
+      out.push({ bg: '#0E0E13', emoji: '✨', big: 'What a night', small: 'Planned on Vibe Out', end: true });
       setSlides(out);
     })();
     return () => {
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   names: { color: '#fff', fontSize: 18, textAlign: 'center', marginTop: 16, lineHeight: 28, fontWeight: '600' },
   line: { color: '#fff', fontSize: 17, marginTop: 8, fontWeight: '500' },
   shareBtn: { marginTop: 28, backgroundColor: '#fff', borderRadius: 24, paddingVertical: 13, paddingHorizontal: 26, zIndex: 20 },
-  shareText: { color: '#160A2B', fontSize: 16, fontWeight: '700' },
+  shareText: { color: '#0E0E13', fontSize: 16, fontWeight: '700' },
   taps: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', top: 110, bottom: 140 },
   tapHalf: { flex: 1 },
 });

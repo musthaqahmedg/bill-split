@@ -46,7 +46,7 @@ export default function NotificationBanner({ enabled }) {
 const styles = StyleSheet.create({
   wrap: { position: 'absolute', top: 54, left: 10, right: 10, zIndex: 100, elevation: 20 },
   banner: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(40,24,70,0.97)', borderRadius: 20, padding: 14,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(28,28,36,0.97)', borderRadius: 20, padding: 14,
     borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.18)',
     shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 16, shadowOffset: { width: 0, height: 6 },
   },

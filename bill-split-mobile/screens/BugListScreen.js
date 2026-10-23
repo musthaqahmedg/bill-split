@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   sevRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
   sev: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9 },
   sevText: { color: C.faint, fontSize: 12, fontWeight: '600' },
-  sevTextOn: { color: '#1A0E2E' },
+  sevTextOn: { color: '#0E0E13' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, gap: 8 },
   ghost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12 },
   ghostText: { color: C.sub, fontSize: 13, fontWeight: '600' },

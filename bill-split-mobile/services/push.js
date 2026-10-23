@@ -26,7 +26,7 @@ export async function registerPush() {
         name: 'Plans, friends & chats',
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 200, 120, 200],
-        lightColor: '#8B5CF6',
+        lightColor: '#7C5CFF',
       });
     }
     let { status } = await Notifications.getPermissionsAsync();
