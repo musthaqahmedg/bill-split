@@ -11,6 +11,11 @@ const ago = (t) => {
   return `${Math.round(m / 1440)}d ago`;
 };
 const EMOJI = { bug: '🐞', idea: '💡', love: '❤️' };
+const SEV = [
+  ['blocker', '🔴 Blocker', '#F87171'],
+  ['major', '🟠 Major', '#FBBF24'],
+  ['minor', '🟢 Minor', '#34D399'],
+];
 
 // 🐞 Team only: every bug note and idea from testers, with a ✅ Fixed tick
 export default function BugListScreen({ onBack }) {
@@ -20,7 +25,7 @@ export default function BugListScreen({ onBack }) {
   const [photo, setPhoto] = useState(null);
 
   const load = async () => {
-    const { data, error } = await supabase.rpc('bug_list');
+    const { data, error } = await supabase.rpc('bug_list_v2');
     if (error) Alert.alert('Error', error.message);
     setList(data || []);
   };
@@ -38,6 +43,17 @@ export default function BugListScreen({ onBack }) {
     }
   };
 
+  // 🚦 how bad is it? (Blocker = must fix before launch)
+  const setSeverity = async (b, sev) => {
+    const next = b.severity === sev ? null : sev;
+    setList((l) => l.map((x) => (x.id === b.id ? { ...x, severity: next } : x)));
+    const { error } = await supabase.from('feedback').update({ severity: next }).eq('id', b.id);
+    if (error) {
+      Alert.alert("Couldn't save", error.message);
+      load();
+    }
+  };
+
   const openPhoto = async (path) => {
     const { data, error } = await supabase.storage.from('feedback').createSignedUrl(path, 600);
     if (error) return Alert.alert('Photo', error.message);
@@ -46,6 +62,7 @@ export default function BugListScreen({ onBack }) {
 
   const shown = (list || []).filter((b) => (tab === 'open' ? b.status !== 'fixed' : b.status === 'fixed'));
   const openCount = (list || []).filter((b) => b.status !== 'fixed').length;
+  const blockers = (list || []).filter((b) => b.status !== 'fixed' && b.severity === 'blocker').length;
 
   return (
     <View style={styles.page}>
@@ -53,6 +70,7 @@ export default function BugListScreen({ onBack }) {
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>🐞 Bug reports</Text>
+      {blockers ? <Text style={styles.blockers}>🔴 {blockers} blocker{blockers === 1 ? '' : 's'} to fix before launch</Text> : null}
 
       <View style={styles.tabs}>
         {[['open', `Open · ${openCount}`], ['fixed', 'Fixed ✅']].map(([k, label]) => (
@@ -80,6 +98,15 @@ export default function BugListScreen({ onBack }) {
               <Text style={styles.meta}>
                 {b.screen ? `📍 ${b.screen}` : ''}{b.device ? `  ·  📱 ${b.device}` : ''}{b.app_version ? `  ·  v${b.app_version}` : ''}
               </Text>
+              {b.kind === 'bug' ? (
+                <View style={styles.sevRow}>
+                  {SEV.map(([k, label, color]) => (
+                    <TouchableOpacity key={k} onPress={() => setSeverity(b, k)} style={[styles.sev, b.severity === k && { backgroundColor: color, borderColor: color }]}>
+                      <Text style={[styles.sevText, b.severity === k && styles.sevTextOn]}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              ) : null}
               <View style={styles.actions}>
                 {b.photo_path ? (
                   <TouchableOpacity style={styles.ghost} onPress={() => openPhoto(b.photo_path)}>
@@ -108,6 +135,7 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 6 },
   title: { color: C.text, fontSize: 28, fontWeight: '700', marginBottom: 12 },
+  blockers: { color: '#F87171', fontSize: 14, fontWeight: '700', marginTop: -6, marginBottom: 10 },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 3, marginBottom: 12 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10 },
   tabOn: { backgroundColor: 'rgba(255,255,255,0.14)' },
@@ -122,6 +150,10 @@ const styles = StyleSheet.create({
   when: { color: C.faint, fontSize: 12 },
   msg: { color: C.text, fontSize: 15, lineHeight: 21 },
   meta: { color: C.faint, fontSize: 12, marginTop: 8 },
+  sevRow: { flexDirection: 'row', gap: 6, marginTop: 10 },
+  sev: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9 },
+  sevText: { color: C.faint, fontSize: 12, fontWeight: '600' },
+  sevTextOn: { color: '#1A0E2E' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, gap: 8 },
   ghost: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12 },
   ghostText: { color: C.sub, fontSize: 13, fontWeight: '600' },
