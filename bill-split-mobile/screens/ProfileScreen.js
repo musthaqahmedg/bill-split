@@ -13,7 +13,7 @@ import { getPushPreview, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
-export default function ProfileScreen({ onBack, onLogout, onHelp }) {
+export default function ProfileScreen({ onBack, onLogout, onHelp, onBug }) {
   const [showActive, setShowActiveState] = useState(true);
   const [preview, setPreview] = useState(true);
   useEffect(() => {
@@ -268,6 +268,17 @@ export default function ProfileScreen({ onBack, onLogout, onHelp }) {
         </TouchableOpacity>
 
         <View style={styles.divider} />
+
+        {onBug ? (
+          <TouchableOpacity style={styles.feedbackRow} onPress={onBug}>
+            <Text style={styles.feedbackEmoji}>🐞</Text>
+            <View style={styles.activeText}>
+              <Text style={styles.activeTitle}>Report a problem</Text>
+              <Text style={styles.activeSub}>Something broken or odd? Tell us (or just shake your phone 📳)</Text>
+            </View>
+            <Text style={styles.chev}>›</Text>
+          </TouchableOpacity>
+        ) : null}
 
         <TouchableOpacity style={styles.feedbackRow} onPress={onHelp}>
           <Text style={styles.feedbackEmoji}>ℹ️</Text>

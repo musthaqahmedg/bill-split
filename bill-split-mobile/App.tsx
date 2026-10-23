@@ -51,7 +51,7 @@ function matchItems(oldItems: any[], newItems: any[]) {
   });
 }
 
-function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; registerNav?: (go: (s: string) => void) => void }) {
+function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void; registerNav?: (go: (s: string) => void) => void; onBug?: () => void }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
@@ -457,7 +457,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
   }
 
   if (screen === 'help') {
@@ -697,12 +697,6 @@ function Root() {
 
   // 📳 Shake the phone anywhere → bug note (with the page you're on)
   const [bug, setBug] = useState(false);
-  // 🐞 Testers (us + beta testers) also get a small floating bug button on every page
-  const [tester, setTester] = useState(false);
-  useEffect(() => {
-    if (!uid) return setTester(false);
-    supabase.rpc('is_tester').then(({ data }) => setTester(!!data), () => setTester(false));
-  }, [uid]);
   const bugOpen = useRef(false);
   bugOpen.current = bug;
   useEffect(() => {
@@ -767,19 +761,10 @@ function Root() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateX: x }] }}>
-        <App onScreen={onScreen} registerNav={(go) => (nav.current = go)} />
+        <App onScreen={onScreen} registerNav={(go) => (nav.current = go)} onBug={() => setBug(true)} />
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
-      {tester ? (
-        <TouchableOpacity
-          onPress={() => setBug(true)}
-          activeOpacity={0.8}
-          style={{ position: 'absolute', right: 8, top: '45%', width: 36, height: 36, borderRadius: 18, opacity: 0.75, backgroundColor: 'rgba(24,24,31,0.9)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}
-        >
-          <Text style={{ fontSize: 18 }}>🐞</Text>
-        </TouchableOpacity>
-      ) : null}
       <BugSheet visible={bug} onClose={() => setBug(false)} screen={history.current[history.current.length - 1]} />
     </View>
   );
