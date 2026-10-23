@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
+import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 
@@ -32,62 +33,13 @@ export default function SplitScreen({
     return pr ? (pr.a === name ? pr.b : pr.a) : null;
   };
 
-  const payerOf = (i, name) => {
-    const p = payers[i] && payers[i][name];
-    return p && people.includes(p) ? p : name;
-  };
-
-  const itemsTotal = items.reduce((s, it) => s + it.price, 0);
-  const billTotal = bill && bill.total > 0
-    ? bill.total
-    : itemsTotal + (bill?.tax || 0) + (bill?.service_charge || 0) - (bill?.discount || 0);
-  const extras = billTotal - itemsTotal; // tax + service - discount + round-off
-  const withExtras = (amt) => (itemsTotal > 0 ? amt + extras * (amt / itemsTotal) : 0);
-
-  // What each person had
-  const shares = people.map((name) => {
-    const mine = [];
-    items.forEach((it, i) => {
-      const who = claims[i] || [];
-      if (who.includes(name)) {
-        const units = who.filter((n) => n === name).length; // 🍺 how many of this item they had
-        const counted = new Set(who).size !== who.length;
-        mine.push({
-          i, name: it.name, qty: it.qty,
-          amount: (it.price * units) / who.length, ways: new Set(who).size,
-          units, totalUnits: who.length, counted,
-          paidBy: payerOf(i, name),
-        });
-      }
-    });
-    const subtotal = mine.reduce((s, m) => s + m.amount, 0);
-    return { name, mine, subtotal, ownExact: withExtras(subtotal) };
-  });
-
-  // What each person actually pays: their own uncovered items + anything they cover
-  const payExact = Object.fromEntries(people.map((n) => [n, 0]));
-  const covering = Object.fromEntries(people.map((n) => [n, {}]));
-  shares.forEach((s) => s.mine.forEach((m) => {
-    const amt = withExtras(m.amount);
-    payExact[m.paidBy] += amt;
-    if (m.paidBy !== s.name) covering[m.paidBy][s.name] = (covering[m.paidBy][s.name] || 0) + amt;
-  }));
-
-  // Round to whole rupees so everyone adds up exactly to the bill
-  const target = Math.round(billTotal);
-  const exacts = people.map((n) => payExact[n]);
-  const final = exacts.map((e) => Math.floor(e));
-  let left = target - final.reduce((a, b) => a + b, 0);
-  exacts
-    .map((e, i) => ({ i, frac: e - Math.floor(e) }))
-    .sort((a, b) => b.frac - a.frac)
-    .forEach((o) => { if (left > 0) { final[o.i] += 1; left -= 1; } });
-  const finalOf = Object.fromEntries(people.map((n, i) => [n, final[i]]));
+  // 🧮 All the maths lives in the tested split engine
+  const { itemsTotal, billTotal, extras, target, shares, covering, finalOf, sum } = computeSplit({ items, people, claims, payers, bill });
+  const final = people.map((n) => finalOf[n]);
 
   const rows = shares
     .map((s) => ({ ...s, pay: finalOf[s.name], covers: covering[s.name] }))
     .sort((a, b) => b.pay - a.pay);
-  const sum = final.reduce((a, b) => a + b, 0);
 
   // ---- 💳 Who paid the bill → who pays whom ----
   // a payer who was removed from the table no longer counts
