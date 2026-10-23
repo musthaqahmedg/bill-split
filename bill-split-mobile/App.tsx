@@ -10,6 +10,7 @@ import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
 import BugSheet from './screens/BugSheet';
 import TabBar from './screens/TabBar';
+import BugBubble from './screens/BugBubble';
 import { Accelerometer } from 'expo-sensors';
 import HelpScreen from './screens/HelpScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
@@ -697,6 +698,12 @@ function Root() {
 
   // 📳 Shake the phone anywhere → bug note (with the page you're on)
   const [bug, setBug] = useState(false);
+  // 🐞 Testers (us + beta testers) also get a floating bug bubble they can drag anywhere
+  const [tester, setTester] = useState(false);
+  useEffect(() => {
+    if (!uid) return setTester(false);
+    supabase.rpc('is_tester').then(({ data }) => setTester(!!data), () => setTester(false));
+  }, [uid]);
   const bugOpen = useRef(false);
   bugOpen.current = bug;
   useEffect(() => {
@@ -765,6 +772,7 @@ function Root() {
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
+      {tester ? <BugBubble onPress={() => setBug(true)} /> : null}
       <BugSheet visible={bug} onClose={() => setBug(false)} screen={history.current[history.current.length - 1]} />
     </View>
   );
