@@ -61,3 +61,35 @@ export function savedPaidMap(bill, participants) {
   }
   return Object.fromEntries(participants.filter((p) => Number(p.paid_amount) > 0).map((p) => [p.name, Number(p.paid_amount)]));
 }
+
+// 🏠 Home summary for one saved bill: what I still get back, what I still owe (ticked payments don't count)
+export function billBalance(bill) {
+  const ps = bill.bill_participants || [];
+  if (bill.paid_mode === 'unpaid') return { owed: 0, owe: 0, open: true, settled: false };
+  const dues = Object.fromEntries(ps.map((p) => [p.name, Math.round(Number(p.amount_due) || 0)]));
+  const done = new Set(ps.filter((p) => p.paid_at).map((p) => p.name));
+  const moves = transfers(dues, savedPaidMap(bill, ps));
+  let owed = 0;
+  let owe = 0;
+  moves.forEach((m) => {
+    if (m.to === 'Me' && !done.has(m.from)) owed += m.amount;
+    if (m.from === 'Me' && !done.has('Me')) owe += m.amount;
+  });
+  const left = moves.filter((m) => !done.has(m.from)).length;
+  return { owed, owe, open: false, settled: left === 0 };
+}
+
+// 🏠 Totals across all active bills
+export function homeBalance(bills) {
+  let owed = 0;
+  let owe = 0;
+  let unpaid = 0;
+  (bills || []).forEach((b) => {
+    if (b.status === 'archived') return;
+    const r = billBalance(b);
+    owed += r.owed;
+    owe += r.owe;
+    if (r.open) unpaid++;
+  });
+  return { owed, owe, unpaid };
+}

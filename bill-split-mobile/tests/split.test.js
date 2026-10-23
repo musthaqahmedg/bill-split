@@ -167,3 +167,24 @@ test('500 random settle-ups always balance to zero', () => {
     assert.ok(t.length <= people.length - 1);
   }
 });
+
+// ---- 🏠 Home summary ----
+import { billBalance, homeBalance } from '../services/settle.js';
+
+test('🏠 I paid: friends owe me, ticked friends drop off', () => {
+  const bill = { total: 1255, paid_mode: 'me', bill_participants: [
+    { name: 'Me', amount_due: 419, paid_amount: 1255 },
+    { name: 'Shajaaz', amount_due: 418 },
+    { name: 'Pranav', amount_due: 418, paid_at: '2026-10-22' },
+  ] };
+  assert.deepEqual(billBalance(bill), { owed: 418, owe: 0, open: false, settled: false });
+});
+
+test('🏠 a friend paid: I owe my share; old bills (no mode) = I paid', () => {
+  const a = { total: 900, paid_mode: 'friend', bill_participants: [{ name: 'Me', amount_due: 300 }, { name: 'Arun', amount_due: 600, paid_amount: 900 }] };
+  const old = { total: 500, bill_participants: [{ name: 'Me', amount_due: 250 }, { name: 'B', amount_due: 250 }] };
+  const unpaid = { total: 100, paid_mode: 'unpaid', bill_participants: [{ name: 'Me', amount_due: 100 }] };
+  const arch = { ...old, status: 'archived' };
+  assert.deepEqual(homeBalance([a, old, unpaid, arch]), { owed: 250, owe: 300, unpaid: 1 });
+  assert.equal(billBalance({ ...a, bill_participants: [{ ...a.bill_participants[0], paid_at: 'x' }, a.bill_participants[1]] }).settled, true);
+});
