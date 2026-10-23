@@ -64,7 +64,7 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
         <Text style={styles.title}>{showArchived ? 'Archived' : 'Your Bills'}</Text>
         <View style={styles.headerBtns}>
           {onNotifications ? (
-            <TouchableOpacity style={[styles.profileBtn, styles.partyBtn]} onPress={onNotifications}>
+            <TouchableOpacity style={styles.profileBtn} onPress={onNotifications}>
               <Text style={styles.profileIcon}>🔔</Text>
               {unread ? (
                 <View style={styles.bellBadge}>
@@ -73,12 +73,6 @@ export default function HomeScreen({ onNewBill, onProfile, onOpenBill, onParties
               ) : null}
             </TouchableOpacity>
           ) : null}
-          <TouchableOpacity style={styles.plansBtn} onPress={onParties} activeOpacity={0.85}>
-            <Text style={styles.plansText}>🎉 Plans</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.profileBtn} onPress={onProfile}>
-            <Text style={styles.profileIcon}>👤</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -162,6 +156,6 @@ const styles = StyleSheet.create({
   empty: { alignItems: 'center' },
   emptyText: { fontSize: 18, color: C.sub },
   emptySub: { fontSize: 14, color: C.faint, marginTop: 6 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginBottom: 30 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 4, marginBottom: 14 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

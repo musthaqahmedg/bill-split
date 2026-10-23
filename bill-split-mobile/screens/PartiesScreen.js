@@ -109,9 +109,11 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
   return (
     <View style={styles.container}>
       <View style={styles.headRow}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
+        {onBack ? (
+          <TouchableOpacity onPress={onBack}>
+            <Text style={styles.back}>‹ Back</Text>
+          </TouchableOpacity>
+        ) : <View />}
         <View style={styles.topBtns}>
           <TouchableOpacity style={styles.topBtn} onPress={onNearby}>
             <Text style={styles.topBtnText}>📍 Nearby</Text>

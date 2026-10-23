@@ -144,9 +144,11 @@ export default function ProfileScreen({ onBack, onLogout, onHelp }) {
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
-      </TouchableOpacity>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.back}>Back</Text>
+        </TouchableOpacity>
+      ) : null}
 
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.hero}>

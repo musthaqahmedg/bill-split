@@ -78,9 +78,11 @@ export default function FriendsScreen({ onBack, startAdding = false, onOpenPlan 
   return (
     <View style={styles.container}>
       <View style={styles.headRow}>
-        <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>‹ Back</Text>
-        </TouchableOpacity>
+        {onBack ? (
+          <TouchableOpacity onPress={onBack}>
+            <Text style={styles.back}>‹ Back</Text>
+          </TouchableOpacity>
+        ) : <View />}
         <TouchableOpacity style={styles.addBtn} onPress={() => (mine === null ? setPicking(true) : setAdding(true))}>
           <Text style={styles.addText}>＋ Add friends</Text>
         </TouchableOpacity>

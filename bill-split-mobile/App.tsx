@@ -9,6 +9,7 @@ import GroupsScreen from './screens/GroupsScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
 import BugSheet from './screens/BugSheet';
+import TabBar from './screens/TabBar';
 import { Accelerometer } from 'expo-sensors';
 import HelpScreen from './screens/HelpScreen';
 import SupportChatScreen from './screens/SupportChatScreen';
@@ -309,6 +310,30 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
   }
 
+  // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
+  const TAB_PAGES = ['home', 'parties', 'friends', 'profile'];
+  const page = renderPage();
+  if (!TAB_PAGES.includes(screen)) return page;
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg }}>
+      <View style={{ flex: 1 }}>{page}</View>
+      <TabBar
+        current={screen}
+        onTab={(t: string) => {
+          if (t === 'friends') setFriendsAdd(false);
+          setScreen(t);
+        }}
+        onPlan={() => {
+          setPlanGroup(null);
+          setEditPlan(null);
+          setScreen('newParty');
+        }}
+        onBill={startNewBill}
+      />
+    </View>
+  );
+
+  function renderPage() {
   if (screen === 'upload') {
     return withHome(
       <UploadScreen
@@ -432,7 +457,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onBack={() => setScreen('home')} onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen onLogout={logout} onHelp={() => setScreen('help')} />;
   }
 
   if (screen === 'help') {
@@ -472,7 +497,6 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
   if (screen === 'parties') {
     return (
       <PartiesScreen
-        onBack={() => setScreen('home')}
         onNewParty={() => {
           setPlanGroup(null);
           setEditPlan(null);
@@ -580,7 +604,6 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
     return (
       <FriendsScreen
         startAdding={friendsAdd}
-        onBack={() => setScreen('home')}
         onOpenPlan={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
@@ -632,6 +655,7 @@ function App({ onScreen, registerNav }: { onScreen?: (s: string) => void; regist
       }}
     />
   );
+  }
 }
 
 // Whole app + the notification banner that slides over any screen
