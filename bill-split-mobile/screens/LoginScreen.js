@@ -20,7 +20,8 @@ const toE164 = (raw) => {
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 // linking = a guest saving their account: same screen, but the code is attached to the guest account so nothing is lost
-export default function LoginScreen({ onLoginSuccess, onBack, linking: linkingProp = false }) {
+export default function LoginScreen({ onLoginSuccess, onBack, onGuest, linking: linkingProp = false }) {
+  const [guestBusy, setGuestBusy] = useState(false);
   const [linking, setLinking] = useState(linkingProp);
   const [method, setMethod] = useState('email'); // 'email' (free code by email) or 'phone' (test numbers)
   const [email, setEmail] = useState('');
@@ -185,6 +186,37 @@ export default function LoginScreen({ onLoginSuccess, onBack, linking: linkingPr
               {method === 'email' ? 'Use phone number instead' : 'Use email instead'}
             </Text>
           </TouchableOpacity>
+
+          {onGuest && !linking ? (
+            <>
+              <View style={styles.orRow}>
+                <View style={styles.orLine} />
+                <Text style={styles.orText}>or</Text>
+                <View style={styles.orLine} />
+              </View>
+              <TouchableOpacity
+                style={styles.guestBtn}
+                disabled={guestBusy}
+                onPress={async () => {
+                  setGuestBusy(true);
+                  try {
+                    await onGuest();
+                  } finally {
+                    setGuestBusy(false);
+                  }
+                }}
+              >
+                {guestBusy ? (
+                  <ActivityIndicator color={C.text} />
+                ) : (
+                  <>
+                    <Text style={styles.guestTitle}>👀 Continue as guest</Text>
+                    <Text style={styles.guestSub}>No sign-up needed. Save your account later.</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : null}
         </>
       ) : (
         <>
@@ -230,6 +262,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: C.bg },
   backBtn: { position: 'absolute', top: 60, left: 24 },
   back: { color: C.accentSoft, fontSize: 17 },
+  orRow: { flexDirection: 'row', alignItems: 'center', marginTop: 22 },
+  orLine: { flex: 1, height: 1, backgroundColor: C.border },
+  orText: { color: C.faint, fontSize: 13, marginHorizontal: 12 },
+  guestBtn: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, alignItems: 'center', marginTop: 18 },
+  guestTitle: { color: C.text, fontSize: 16, fontWeight: '800' },
+  guestSub: { color: C.faint, fontSize: 12, marginTop: 3 },
   trust: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   logo: { fontSize: 56, textAlign: 'center' },
   title: { fontSize: 38, fontWeight: '800', textAlign: 'center', color: C.text, marginTop: 8 },

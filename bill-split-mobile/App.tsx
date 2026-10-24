@@ -355,7 +355,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         />
       );
     }
-    return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} onBack={() => setWelcomed(false)} />;
+    return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} onBack={() => setWelcomed(false)} onGuest={startAsGuest} />;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
