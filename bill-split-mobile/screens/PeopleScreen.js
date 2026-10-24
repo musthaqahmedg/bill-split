@@ -4,6 +4,7 @@ import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
+import BillSteps from './BillSteps';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
   const [people, setPeople] = useState(
@@ -84,6 +85,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
+      <BillSteps at={2} />
       <Text style={styles.title}>Who's at the table?</Text>
 
       <View style={styles.inputRow}>

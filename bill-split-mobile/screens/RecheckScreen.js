@@ -12,6 +12,7 @@ import {
 import { guessKind, KINDS, nextKind } from '../services/kinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
+import BillSteps from './BillSteps';
 
 const DONE_BAR = 'recheckDone';
 
@@ -98,6 +99,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
+      <BillSteps at={1} />
       <Text style={styles.title}>Check the bill</Text>
       <Text style={styles.sub}>Fix anything the scan got wrong. Tap a tag to change an item's type.</Text>
 
@@ -130,7 +132,6 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                 <View style={styles.qtyBox}>
                   <Text style={styles.label}>Qty</Text>
                   <TextInput
-          inputAccessoryViewID={DONE_ID}
                     style={styles.qty}
                     value={r.qty}
                     onChangeText={(v) => update(i, 'qty', v)}
@@ -142,7 +143,6 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
                 <View style={styles.priceBox}>
                   <Text style={styles.label}>Rs</Text>
                   <TextInput
-          inputAccessoryViewID={DONE_ID}
                     style={styles.price}
                     value={r.price}
                     onChangeText={(v) => update(i, 'price', v)}
@@ -166,12 +166,11 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
         <View style={styles.summary}>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Items add up to</Text>
-            <Text style={styles.sumLabel}>Rs {itemsTotal.toFixed(2)}</Text>
+            <Text style={styles.sumLabel}>₹{itemsTotal.toFixed(2)}</Text>
           </View>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Bill total</Text>
             <TextInput
-          inputAccessoryViewID={DONE_ID}
               style={styles.totalInput}
               value={total}
               onChangeText={setTotal}

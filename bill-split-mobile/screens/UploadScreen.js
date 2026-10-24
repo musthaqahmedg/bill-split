@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, Touchabl
 import { findDuplicate } from '../services/bills';
 import { supabase } from '../services/supabaseClient';
 import { C } from '../services/theme';
+import BillSteps from './BillSteps';
 
 // Shrink the photo before sending: smaller = faster upload and faster reading
 const MAX_WIDTH = 1400;
@@ -25,7 +26,7 @@ async function shrink(asset) {
   );
 }
 
-export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext }) {
+export default function UploadScreen({ title = 'Scan the bill', onBack, onNext }) {
   const [image, setImage] = useState(null);
   const [base64, setBase64] = useState(null);
   const [items, setItems] = useState([]);
@@ -118,6 +119,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
+      <BillSteps at={0} />
       <Text style={styles.title}>{title}</Text>
       {bill && bill.restaurant ? <Text style={styles.restaurant}>{bill.restaurant}</Text> : null}
       {check ? (
@@ -133,13 +135,13 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
               <Text style={styles.itemName}>
                 {item.qty > 1 ? `${item.qty} × ` : ''}{item.name}
               </Text>
-              <Text style={styles.itemPrice}>Rs {item.price}</Text>
+              <Text style={styles.itemPrice}>₹{item.price}</Text>
             </View>
           ))}
           {bill && bill.total > 0 && (
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Bill total</Text>
-              <Text style={styles.totalValue}>Rs {bill.total}</Text>
+              <Text style={styles.totalValue}>₹{bill.total}</Text>
             </View>
           )}
         </ScrollView>
@@ -147,7 +149,9 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         <Image source={{ uri: image }} style={styles.preview} />
       ) : (
         <View style={styles.placeholder}>
-          <Text style={styles.placeholderText}>No receipt selected</Text>
+          <Text style={styles.placeholderEmoji}>🧾</Text>
+          <Text style={styles.placeholderTitle}>Snap the receipt</Text>
+          <Text style={styles.placeholderText}>We read every item and price for you</Text>
         </View>
       )}
 
@@ -155,7 +159,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         <TouchableOpacity style={styles.button} onPress={readReceipt} disabled={loading}>
           {loading
             ? <ActivityIndicator color="#fff" />
-            : <Text style={styles.buttonText}>Read Receipt</Text>}
+            : <Text style={styles.buttonText}>✨ Read the bill</Text>}
         </TouchableOpacity>
       )}
       {loading && <Text style={styles.wait}>Reading your bill… usually 5–15 seconds</Text>}
@@ -166,13 +170,14 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity style={styles.buttonAlt} onPress={() => pickImage(true)}>
-        <Text style={styles.buttonAltText}>Take Photo</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.buttonAlt} onPress={() => pickImage(false)}>
-        <Text style={styles.buttonAltText}>Choose from Gallery</Text>
-      </TouchableOpacity>
+      <View style={styles.pickRow}>
+        <TouchableOpacity style={[styles.buttonAlt, styles.pickBtn]} onPress={() => pickImage(true)}>
+          <Text style={styles.buttonAltText}>📸 Take photo</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.buttonAlt, styles.pickBtn, styles.pickGap]} onPress={() => pickImage(false)}>
+          <Text style={styles.buttonAltText}>🖼️ Gallery</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -187,8 +192,13 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: '800', marginBottom: 4, color: C.text },
   restaurant: { fontSize: 15, color: C.sub, marginBottom: 12 },
   preview: { flex: 1, borderRadius: 16, marginBottom: 15, marginTop: 12, resizeMode: 'contain' },
-  placeholder: { flex: 1, borderWidth: 2, borderColor: C.border, borderStyle: 'dashed', borderRadius: 16, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },
-  placeholderText: { color: C.faint, fontSize: 16 },
+  placeholder: { flex: 1, borderWidth: 2, borderColor: C.border, borderStyle: 'dashed', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },
+  placeholderEmoji: { fontSize: 46 },
+  placeholderTitle: { color: C.text, fontSize: 18, fontWeight: '700', marginTop: 10 },
+  placeholderText: { color: C.sub, fontSize: 14, marginTop: 4 },
+  pickRow: { flexDirection: 'row' },
+  pickBtn: { flex: 1 },
+  pickGap: { marginLeft: 10 },
   list: { flex: 1, marginBottom: 15 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   itemName: { fontSize: 16, flex: 1, marginRight: 10, color: C.text },
@@ -196,9 +206,9 @@ const styles = StyleSheet.create({
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 14 },
   totalLabel: { fontSize: 16, fontWeight: '800', color: C.text },
   totalValue: { fontSize: 16, fontWeight: '800', color: C.accentSoft },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 18, alignItems: 'center', marginBottom: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
   wait: { color: C.faint, fontSize: 13, textAlign: 'center', marginBottom: 10 },
-  buttonAlt: { borderWidth: 1, borderColor: C.accent, padding: 14, borderRadius: 14, alignItems: 'center', marginBottom: 10 },
-  buttonAltText: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
+  buttonAlt: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, padding: 14, borderRadius: 18, alignItems: 'center', marginBottom: 10 },
+  buttonAltText: { color: C.text, fontSize: 15, fontWeight: '700' },
 });

@@ -4,6 +4,7 @@ import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } fr
 import { KINDS, kindOf } from '../services/kinds';
 import { show } from '../services/names';
 import { C } from '../services/theme';
+import BillSteps from './BillSteps';
 
 export default function ItemsScreen({ items, people, initialClaims, initialNonDrinkers, onBack, onNext }) {
   const [nonDrinkers, setNonDrinkers] = useState(
@@ -78,6 +79,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
+      <BillSteps at={3} />
       <Text style={styles.title}>Who had what?</Text>
       <Text style={styles.sub}>Tap everyone who had each item. Shared items split between them.</Text>
       <TouchableOpacity style={styles.equalBtn} onPress={splitEqually}>
@@ -114,7 +116,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                     <Text style={styles.infoIcon}>  🔍</Text>
                   </Text>
                 </TouchableOpacity>
-                <Text style={styles.itemPrice}>Rs {item.price}</Text>
+                <Text style={styles.itemPrice}>₹{item.price}</Text>
               </View>
 
               <View style={styles.chips}>
@@ -151,14 +153,14 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                     <View key={p} style={styles.countRow}>
                       <Text style={styles.countName} numberOfLines={1}>{show(p)}</Text>
                       <NumberWheel value={unitsOf(i, p)} min={1} max={item.qty} onChange={(n) => setUnits(i, p, n)} />
-                      <Text style={styles.countAmt}>Rs {((item.price * unitsOf(i, p)) / claims[i].length).toFixed(0)}</Text>
+                      <Text style={styles.countAmt}>₹{((item.price * unitsOf(i, p)) / claims[i].length).toFixed(0)}</Text>
                     </View>
                   ))}
                 </View>
               ) : null}
               {who.length > 1 && !counted && !canCount && (
                 <Text style={styles.shared}>
-                  Split {who.length} ways · Rs {(item.price / who.length).toFixed(2)} each
+                  Split {who.length} ways · ₹{(item.price / who.length).toFixed(2)} each
                 </Text>
               )}
             </View>

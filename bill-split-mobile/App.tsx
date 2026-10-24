@@ -338,7 +338,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'upload') {
     return withHome(
       <UploadScreen
-        title={addingRound ? 'Add a round ➕' : 'Scan Receipt'}
+        title={addingRound ? 'Add a round ➕' : 'Scan the bill 🧾'}
         onBack={() => {
           if (addingRound) {
             setAddingRound(false);

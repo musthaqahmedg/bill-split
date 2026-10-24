@@ -13,6 +13,7 @@ import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
 import { C } from '../services/theme';
+import BillSteps from './BillSteps';
 
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
@@ -144,6 +145,7 @@ export default function SplitScreen({
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
+      <BillSteps at={4} />
       <Text style={styles.title}>The split 🎉</Text>
       <Text style={styles.hint}>Tap someone to have a friend cover them 💛</Text>
 
