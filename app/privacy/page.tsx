@@ -55,8 +55,26 @@ export default function Privacy() {
           In the app, go to <b>Profile → Delete my account</b>, or on the web at <a href="/delete-account" style={{ textDecoration: 'underline' }}>bill-split-flax.vercel.app/delete-account</a>. This permanently deletes your account and all your data: bills and plans you created, photos, friends, messages and notifications.
         </p>
 
+        <h2 style={s.h2}>Your rights</h2>
+        <p style={s.p}>
+          Under India&apos;s Digital Personal Data Protection Act, 2023, you can: see and download your data (Profile → Your data &amp; privacy), correct it, withdraw your consent and have it erased (Profile → Delete my account), and raise a complaint. We ask for your consent before using your data, and you can withdraw it at any time.
+        </p>
+
+        <h2 style={s.h2}>How long we keep it</h2>
+        <p style={s.p}>
+          Your data stays while your account is active. When you delete your account, it is removed from the app straight away. Where Indian law requires us to keep certain records and logs (for example, for one year), we keep them locked away and use them for nothing else, then delete them.
+        </p>
+
+        <h2 style={s.h2}>If something goes wrong</h2>
+        <p style={s.p}>If there is ever a data breach that affects you, we will tell you and the Data Protection Board of India without delay, with what happened and what we are doing about it.</p>
+
         <h2 style={s.h2}>Children</h2>
-        <p style={s.p}>The app is not meant for anyone under 18.</p>
+        <p style={s.p}>The app is only for people aged 18 or over. Everyone confirms this before using it. If we learn that someone under 18 has an account, we delete it.</p>
+
+        <h2 style={s.h2}>Grievance officer</h2>
+        <p style={s.p}>
+          For any complaint about your data, write to our Grievance Officer at MAG Infosystems: <a href={`mailto:${CONTACT}`} style={s.link}>{CONTACT}</a>. We reply within 7 days and resolve within 30 days. If you are not satisfied, you can complain to the Data Protection Board of India.
+        </p>
 
         <h2 style={s.h2}>Contact us</h2>
         <p style={s.p}>Vibe Out is made by <b>MAG Infosystems</b>. Questions about your data? Write to us: <a href={`mailto:${CONTACT}`} style={s.link}>{CONTACT}</a></p>

@@ -77,6 +77,13 @@ export default function YourDataScreen({ onBack, onDelete }) {
           </Text>
         </View>
 
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>📮 Questions or complaints</Text>
+          <Text style={styles.body}>
+            Email our grievance officer at maginfosystems@gmail.com. We reply within 7 days. You can also complain to the Data Protection Board of India. The app is for people aged 18+.
+          </Text>
+        </View>
+
         <Text style={styles.section}>Your controls</Text>
         <TouchableOpacity style={styles.action} onPress={exportData} disabled={busy}>
           <Text style={styles.actionEmoji}>📦</Text>

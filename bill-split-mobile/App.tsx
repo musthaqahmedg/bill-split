@@ -31,6 +31,7 @@ import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
+import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
 import PartyChatScreen from './screens/PartyChatScreen';
@@ -74,6 +75,19 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     setLoggedIn(true);
   };
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
+  // ✍️ Privacy notice + 18+ consent (DPDP): once per person, again if the notice changes
+  const [consented, setConsented] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!loggedIn || locked) return;
+    let live = true;
+    supabase.auth.getUser().then(async ({ data }) => {
+      const id = data && data.user ? data.user.id : null;
+      if (!id) return;
+      const { data: p } = await supabase.from('profiles').select('consent_version').eq('id', id).maybeSingle();
+      if (live) setConsented(!!p && p.consent_version === CONSENT_VERSION);
+    }).catch(() => {});
+    return () => { live = false; };
+  }, [loggedIn, locked]);
   const [screen, setScreen] = useState('home');
   // tell Root the page changed, so it can slide the new page in
   useEffect(() => {
@@ -356,6 +370,23 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       );
     }
     return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} onBack={() => setWelcomed(false)} onGuest={startAsGuest} />;
+  }
+
+  if (consented === false) {
+    return (
+      <ConsentScreen
+        onDone={() => setConsented(true)}
+        onDecline={async () => {
+          await unregisterPush();
+          try {
+            await supabase.auth.signOut();
+          } catch (e) {}
+          setConsented(null);
+          setLoggedIn(false);
+          setWelcomed(false);
+        }}
+      />
+    );
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
