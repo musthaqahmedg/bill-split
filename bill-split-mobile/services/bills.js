@@ -280,3 +280,14 @@ export function applySelfClaims(flow, saved, picks) {
   });
   return { ...flow, claims };
 }
+
+// 💰 My Money habits: bills with items and who claimed them (my bills only, thanks to RLS)
+export async function listBillsDetailed() {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('id, title, bill_date, created_at, bill_items(name, price, kind, item_claims(participant_id, units)), bill_participants(id, name, amount_due)')
+    .order('created_at', { ascending: false })
+    .limit(400);
+  if (error) throw error;
+  return data || [];
+}

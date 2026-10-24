@@ -236,3 +236,29 @@ test('💰 budget meter: on track / fast / over', () => {
   assert.equal(budgetStatus(6000, 5000, mid).mood.text, 'Over by ₹1,000');
   assert.equal(shiftMonth('2026-01', -1), '2025-12');
 });
+
+// ---- 🍺🚬 Habits in My Money ----
+import { habitsSummary, myHabitSplit } from '../services/money.js';
+
+test('🍺🚬 habits: my share of drinks / smoke, tax included, adds up', () => {
+  const bill = {
+    created_at: '2026-10-10T21:00:00',
+    bill_participants: [{ id: 'me', name: 'Me', amount_due: 1100 }, { id: 'a', name: 'Arun', amount_due: 550 }],
+    bill_items: [
+      { name: 'Kingfisher Pint', price: 600, item_claims: [{ participant_id: 'me', units: 2 }, { participant_id: 'a', units: 1 }] }, // me 400
+      { name: 'Hookah - mint', price: 400, item_claims: [{ participant_id: 'me' }, { participant_id: 'a' }] }, // me 200
+      { name: 'Chicken 65', price: 500, item_claims: [{ participant_id: 'me' }, { participant_id: 'a' }] }, // me 250
+      { name: 'Fresh lime soda', price: 150, item_claims: [{ participant_id: 'me' }] }, // me 150
+    ],
+  };
+  const h = myHabitSplit(bill); // my subtotal 1000 → ×1.1 = 1100
+  assert.deepEqual(h, { drinks: 440, smoke: 220, other: 440, total: 1100 });
+  const dry = { created_at: '2026-10-12T21:00:00', bill_participants: [{ id: 'me', name: 'Me', amount_due: 300 }], bill_items: [{ name: 'Virgin mojito', price: 300, item_claims: [{ participant_id: 'me' }] }] };
+  const s = habitsSummary([bill, dry], '2026-10');
+  assert.equal(s.habit, 660);
+  assert.equal(s.nights, 2);
+  assert.equal(s.dry, 1);
+  assert.equal(s.pct, 47);
+  assert.equal(s.yearly, 7920);
+  assert.ok(s.swaps.length >= 1);
+});

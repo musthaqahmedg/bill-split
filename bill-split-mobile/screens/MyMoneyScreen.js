@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { listBills } from '../services/bills';
-import { budgetStatus, monthKey, monthLabel, moneySummary, shiftMonth } from '../services/money';
+import { listBills, listBillsDetailed } from '../services/bills';
+import { budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth } from '../services/money';
 import { show } from '../services/names';
 import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
@@ -43,6 +43,7 @@ function Ring({ pct, color, size = 190, children }) {
 
 export default function MyMoneyScreen({ onBack }) {
   const [bills, setBills] = useState(null);
+  const [detailed, setDetailed] = useState([]); // items + claims, for the habits card
   const [budget, setBudget] = useState(0);
   const [month, setMonth] = useState(monthKey(new Date()));
   const [editing, setEditing] = useState(false);
@@ -53,6 +54,7 @@ export default function MyMoneyScreen({ onBack }) {
     try {
       const [b, u] = await Promise.all([listBills(), supabase.auth.getUser()]);
       setBills(b || []);
+      listBillsDetailed().then(setDetailed).catch(() => setDetailed([]));
       const id = u && u.data && u.data.user ? u.data.user.id : null;
       if (id) {
         const { data } = await supabase.from('profiles').select('monthly_budget').eq('id', id).maybeSingle();
@@ -94,6 +96,7 @@ export default function MyMoneyScreen({ onBack }) {
   const st = isNow ? budgetStatus(s.spent, budget) : null;
   const ringColor = !st ? C.accent : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.green;
   const maxBar = Math.max(1, ...s.months.map((m) => m.spent));
+  const h = habitsSummary(detailed, month);
 
   return (
     <View style={styles.page}>
@@ -207,6 +210,46 @@ export default function MyMoneyScreen({ onBack }) {
           </View>
         )}
 
+        {/* 🍺🚬 Habits: private, gentle, motivating */}
+        {h.nights ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>🍺 Drinks & 🚬 smoke</Text>
+            {h.habit ? (
+              <>
+                <View style={styles.habitRow}>
+                  <View style={styles.habitBox}>
+                    <Text style={styles.habitBig}>{inr(h.drinks)}</Text>
+                    <Text style={styles.statLabel}>🍺 drinks</Text>
+                  </View>
+                  <View style={styles.habitBox}>
+                    <Text style={styles.habitBig}>{inr(h.smoke)}</Text>
+                    <Text style={styles.statLabel}>🚬 smoke</Text>
+                  </View>
+                  <View style={styles.habitBox}>
+                    <Text style={styles.habitBig}>{h.pct}%</Text>
+                    <Text style={styles.statLabel}>of your spend</Text>
+                  </View>
+                </View>
+                <View style={styles.habitBar}>
+                  <View style={{ flex: h.drinks || 0.0001, backgroundColor: C.amber }} />
+                  <View style={{ flex: h.smoke || 0.0001, backgroundColor: C.pink }} />
+                  <View style={{ flex: Math.max(h.total - h.habit, 0.0001), backgroundColor: C.cardHi }} />
+                </View>
+                <Text style={styles.swapTitle}>💡 At this pace that's {inr(h.yearly)} a year. That could be:</Text>
+                {h.swaps.map((sw) => (
+                  <Text key={sw.what} style={styles.swap}>
+                    {sw.emoji} <Text style={styles.b}>{sw.count}</Text> {sw.what}
+                  </Text>
+                ))}
+                {h.dry ? <Text style={styles.dry}>🌿 {h.dry} of {h.nights} nights with no drinks or smoke. Nice 💪</Text> : null}
+              </>
+            ) : (
+              <Text style={styles.body}>🌿 No drinks or smoke on your bills this month. Your wallet (and body) say thanks 💪</Text>
+            )}
+            <Text style={styles.private}>🔒 Only you see this. We never share it or rank anyone.</Text>
+          </View>
+        ) : null}
+
         {/* 💸 Still to settle (all months) */}
         <View style={styles.settle}>
           <View style={styles.settleBox}>
@@ -300,6 +343,14 @@ const styles = StyleSheet.create({
   settleBox: { flex: 1, alignItems: 'center' },
   settleLine: { width: 1, backgroundColor: C.border },
   settleBig: { fontSize: 20, fontWeight: '800', marginTop: 3 },
+  habitRow: { flexDirection: 'row' },
+  habitBox: { flex: 1, alignItems: 'center' },
+  habitBig: { color: C.text, fontSize: 18, fontWeight: '800' },
+  habitBar: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', marginTop: 14, backgroundColor: C.cardHi },
+  swapTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 14, marginBottom: 4 },
+  swap: { color: C.sub, fontSize: 14, lineHeight: 22 },
+  dry: { color: C.green, fontSize: 13, fontWeight: '600', marginTop: 10 },
+  private: { color: C.faint, fontSize: 11, marginTop: 10 },
   foot: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 16 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },

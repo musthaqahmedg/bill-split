@@ -1,3 +1,4 @@
+import { kindOf } from './kinds.js';
 // 💰 My Money: what YOU spent going out, from bills you saved (your share only). Pure maths, tested.
 const pad = (n) => String(n).padStart(2, '0');
 export const monthKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;
@@ -75,4 +76,65 @@ export function budgetStatus(spent, budget, now = new Date()) {
   else if (pct > dayPct + 0.15) mood = { emoji: '⚠️', text: 'Spending fast this month' };
   else mood = { emoji: '✅', text: 'On track' };
   return { left, pct, mood };
+}
+
+// 🍺🚬 Habits: what part of MY spend went on drinks and smoking (private, for motivation, never shared)
+const SMOKE = /(^|[^a-z])(cig|cigs|cigarette|cigarettes|smoke|smokes|hookah|hukka|sheesha|shisha|beedi|bidi|vape|marlboro|gold flake|wills|classic milds|benson)([^a-z]|$)/i;
+export const habitOf = (item) => (SMOKE.test(String(item.name || '')) ? 'smoke' : kindOf(item) === 'alcohol' ? 'drinks' : 'other');
+
+// My share of one detailed bill, split by habit. Tax/service included (same proportion as my bill share).
+export function myHabitSplit(bill) {
+  const me = (bill.bill_participants || []).find((p) => p.name === 'Me');
+  if (!me) return { drinks: 0, smoke: 0, other: 0, total: 0 };
+  const raw = { drinks: 0, smoke: 0, other: 0 };
+  for (const it of bill.bill_items || []) {
+    const claims = it.item_claims || [];
+    const units = (c) => (Number(c.units) > 0 ? Number(c.units) : 1);
+    const all = claims.reduce((s, c) => s + units(c), 0);
+    const mine = claims.filter((c) => c.participant_id === me.id).reduce((s, c) => s + units(c), 0);
+    if (all && mine) raw[habitOf(it)] += (Number(it.price) || 0) * (mine / all);
+  }
+  const sub = raw.drinks + raw.smoke + raw.other;
+  const total = Math.round(Number(me.amount_due) || 0);
+  if (!sub) return { drinks: 0, smoke: 0, other: total, total };
+  const k = total / sub;
+  const drinks = Math.round(raw.drinks * k);
+  const smoke = Math.round(raw.smoke * k);
+  return { drinks, smoke, other: total - drinks - smoke, total };
+}
+
+// What that money could have been instead (gentle motivation, not judgement)
+export const SWAPS = [
+  { emoji: '🎬', what: 'movie tickets', one: 'movie ticket', price: 250 },
+  { emoji: '🎧', what: 'months of Spotify', one: 'month of Spotify', price: 119 },
+  { emoji: '🍕', what: 'pizzas', one: 'pizza', price: 400 },
+  { emoji: '👟', what: 'pairs of sneakers', one: 'pair of sneakers', price: 3500 },
+  { emoji: '✈️', what: 'flights to Goa', one: 'flight to Goa', price: 5000 },
+  { emoji: '📱', what: 'new phones', one: 'new phone', price: 20000 },
+];
+export function swapsFor(amount) {
+  return SWAPS.map((s) => {
+    const count = Math.floor(amount / s.price);
+    return { ...s, count, what: count === 1 ? s.one : s.what };
+  }).filter((s) => s.count >= 1).slice(-3);
+}
+
+export function habitsSummary(detailedBills, key) {
+  let drinks = 0;
+  let smoke = 0;
+  let total = 0;
+  let nights = 0;
+  let dry = 0;
+  for (const b of detailedBills || []) {
+    if (monthKey(billDate(b)) !== key) continue;
+    const h = myHabitSplit(b);
+    if (!h.total) continue;
+    nights++;
+    if (!h.drinks && !h.smoke) dry++;
+    drinks += h.drinks;
+    smoke += h.smoke;
+    total += h.total;
+  }
+  const habit = drinks + smoke;
+  return { drinks, smoke, habit, total, nights, dry, pct: total ? Math.round((habit / total) * 100) : 0, yearly: habit * 12, swaps: swapsFor(habit * 12) };
 }
