@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -163,4 +163,24 @@ export async function updateParty(party, { title, kind, party_date, place, budge
 export async function setCoveredBy(memberId, coverId) {
   const { error } = await supabase.from('party_members').update({ covered_by: coverId }).eq('id', memberId);
   if (error) throw error;
+}
+
+// 😎 Fun crew badges for Night Mode (host gives them; null = clear)
+export const BADGES = [
+  '👑 Main character', '⏰ Always late', '💃 Dance machine', '📸 Photographer', '🎤 DJ', '🍗 Snack hunter',
+  '🧭 Navigator', '😂 Comedian', '🧊 Chill one', '🛡️ Caretaker', '💧 Hydration hero', '🚗 Driver hero',
+  '🗣️ Hype person', '🕺 Last one standing', '💸 Big spender', '🌙 Night owl',
+];
+export async function setBadge(memberId, badge) {
+  const { error } = await supabase.from('party_members').update({ badge: badge || null }).eq('id', memberId);
+  if (error) throw error;
+}
+// Badge to show: the one given, else an automatic one from what happened tonight
+export function badgeOf(m, members, party) {
+  if (m.badge) return m.badge;
+  if (m.is_driver) return '🚗 Driver hero';
+  const home = (members || []).filter((x) => x.home_at).sort((a, b) => new Date(a.home_at) - new Date(b.home_at));
+  if (home[0] && home[0].id === m.id) return '🏠 First home';
+  if (m.name === 'Me' && party) return '🎟️ Host';
+  return null;
 }

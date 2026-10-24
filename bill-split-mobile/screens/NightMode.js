@@ -1,7 +1,8 @@
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Modal, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { kindOf } from '../services/partyKinds';
+import { BADGES, badgeOf, setBadge } from '../services/parties';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 import NightCheck from './NightCheck';
@@ -18,6 +19,17 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
   const [now, setNow] = useState(clock());
   const [games, setGames] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [badgeFor, setBadgeFor] = useState(null); // 😎 giving someone a fun badge
+  const giveBadge = async (b) => {
+    const m = badgeFor;
+    setBadgeFor(null);
+    try {
+      await setBadge(m.id, b);
+      onChanged && onChanged();
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
 
   useEffect(() => {
     if (!visible) return;
@@ -82,18 +94,19 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           {/* 👥 The crew tonight */}
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text style={styles.cardTitle}>The crew</Text>
+              <Text style={styles.cardTitle}>The crew <Text style={styles.cardHint}>· tap to give a badge 😎</Text></Text>
               <Text style={styles.cardSub}>{home ? `🏠 ${home}/${crew.length} home safe` : `${crew.length} out tonight`}</Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {crew.map((m) => (
-                <View key={m.id || m.name} style={styles.person}>
+                <TouchableOpacity key={m.id || m.name} style={styles.person} onPress={() => m.id && setBadgeFor(m)} activeOpacity={0.7}>
                   <View style={[styles.face, { backgroundColor: hue(m.name) }, m.home_at && styles.faceHome]}>
                     <Text style={styles.faceText}>{show(m.name).charAt(0).toUpperCase()}</Text>
                     <Text style={styles.badge}>{m.home_at ? '🏠' : m.is_driver ? '🚗' : '🎉'}</Text>
                   </View>
                   <Text style={styles.personName} numberOfLines={1}>{show(m.name)}</Text>
-                </View>
+                  {badgeOf(m, crew, party) ? <Text style={styles.personBadge} numberOfLines={2}>{badgeOf(m, crew, party)}</Text> : null}
+                </TouchableOpacity>
               ))}
             </ScrollView>
           </View>
@@ -116,6 +129,27 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
         </ScrollView>
       </View>
       <PartyGames visible={games} onClose={() => setGames(false)} party={party} />
+
+      {/* 😎 Pick a fun badge */}
+      <Modal visible={!!badgeFor} transparent animationType="fade" onRequestClose={() => setBadgeFor(null)}>
+        <Pressable style={styles.overlay} onPress={() => setBadgeFor(null)}>
+          <Pressable style={styles.sheet}>
+            <Text style={styles.sheetTitle}>Badge for {badgeFor ? show(badgeFor.name) : ''} 😎</Text>
+            <View style={styles.badges}>
+              {BADGES.map((b) => (
+                <TouchableOpacity key={b} style={[styles.badgeChip, badgeFor && badgeFor.badge === b && styles.badgeOn]} onPress={() => giveBadge(b)}>
+                  <Text style={styles.badgeText}>{b}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {badgeFor && badgeFor.badge ? (
+              <TouchableOpacity onPress={() => giveBadge(null)}>
+                <Text style={styles.clear}>Remove badge</Text>
+              </TouchableOpacity>
+            ) : null}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </Modal>
   );
 }
@@ -135,7 +169,17 @@ const styles = StyleSheet.create({
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cardTitle: { color: C.text, fontSize: 16, fontWeight: '700' },
   cardSub: { color: C.green, fontSize: 13, fontWeight: '600' },
-  person: { alignItems: 'center', width: 64, marginRight: 6 },
+  person: { alignItems: 'center', width: 72, marginRight: 4 },
+  personBadge: { color: C.accentSoft, fontSize: 10, fontWeight: '700', textAlign: 'center', marginTop: 2 },
+  cardHint: { color: C.faint, fontSize: 12, fontWeight: '500' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
+  sheetTitle: { color: C.text, fontSize: 20, fontWeight: '800', marginBottom: 14 },
+  badges: { flexDirection: 'row', flexWrap: 'wrap' },
+  badgeChip: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
+  badgeOn: { backgroundColor: C.accent },
+  badgeText: { color: C.text, fontSize: 14, fontWeight: '600' },
+  clear: { color: C.red, fontSize: 14, textAlign: 'center', marginTop: 10 },
   face: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   faceHome: { opacity: 0.55 },
   faceText: { color: '#fff', fontSize: 18, fontWeight: '800' },
