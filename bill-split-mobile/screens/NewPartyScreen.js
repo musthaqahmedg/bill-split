@@ -83,6 +83,13 @@ function FunLine({ text, style }) {
   );
 }
 
+const STEPS = [
+  { key: 'what', emoji: '✨', label: 'What' },
+  { key: 'when', emoji: '📅', label: 'When' },
+  { key: 'who', emoji: '👥', label: 'Who' },
+  { key: 'money', emoji: '💰', label: 'Money' },
+];
+
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null }) {
@@ -215,10 +222,23 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
   const uneven = paying.some((x) => x !== perHead);
   const who = special === 'Me' ? 'You' : special;
 
+  // 👣 4 simple steps instead of one long form
+  const [step, setStep] = useState(0);
+  const go = (i) => {
+    Keyboard.dismiss();
+    setStep(i);
+    if (scrollRef.current) scrollRef.current.scrollTo({ y: 0, animated: false });
+  };
+  const next = () => {
+    if (step === 0 && !title.trim()) return Alert.alert('Name needed', `Give it a name, e.g. ${kindOf(kind).ideas[0]}`);
+    if (step === 2 && people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
+    go(step + 1);
+  };
+
   const create = async () => {
-    if (!title.trim()) return Alert.alert('Name needed', "Give the party a name, e.g. Arun's birthday 🎂");
+    if (!title.trim()) return go(0), Alert.alert('Name needed', "Give the plan a name, e.g. Arun's birthday 🎂");
+    if (people.length < 2) return go(2), Alert.alert('Add people', 'Add at least one friend');
     if (!(Number(budget) > 0)) return Alert.alert('Budget needed', 'Enter the total budget in rupees');
-    if (people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
     setSaving(true);
     try {
       if (ex) {
@@ -239,10 +259,18 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <TouchableOpacity onPress={leave}>
-        <Text style={styles.back}>Back</Text>
+      <TouchableOpacity onPress={() => (step > 0 ? go(step - 1) : leave())}>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan something'} {kindOf(kind).emoji}</Text>
+      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan a night'} {kindOf(kind).emoji}</Text>
+      <View style={styles.steps}>
+        {STEPS.map((st, i) => (
+          <TouchableOpacity key={st.key} style={styles.stepItem} onPress={() => (i <= step || ex ? go(i) : next())} activeOpacity={0.7}>
+            <View style={[styles.stepBar, i <= step && styles.stepBarOn]} />
+            <Text style={[styles.stepText, i === step && styles.stepTextOn]}>{st.emoji} {st.label}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       {resume ? (
         <View style={styles.draftBox}>
           <Text style={styles.draftTitle}>📝 Finish your unsaved plan?</Text>
@@ -261,6 +289,8 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
       ) : null}
 
       <ScrollView ref={scrollRef} style={styles.list} contentContainerStyle={styles.scrollPad} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {step === 0 && (
+          <>
         {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
         <Text style={styles.label}>What's the plan?</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.kinds} keyboardShouldPersistTaps="handled">
@@ -277,6 +307,11 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
           inputAccessoryViewID={DONE_ID} style={styles.input} value={title} onChangeText={setTitle}
           placeholder={kindOf(kind).ideas[idea % kindOf(kind).ideas.length]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
 
+          </>
+        )}
+
+        {step === 1 && (
+          <>
         <Text style={styles.label}>When</Text>
         <TouchableOpacity style={styles.input} onPress={() => { Keyboard.dismiss(); setShowCal(!showCal); }}>
           <Text style={date ? styles.dateText : styles.datePlaceholder}>{date || '📅 Pick a date'}</Text>
@@ -312,37 +347,11 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         ) : null}
         <MenuSheet place={menuFor} onClose={() => setMenuFor(null)} />
 
-        <View onLayout={keep('budget')}>
-          <Text style={styles.label}>Total budget (Rs)</Text>
-        </View>
-        <TextInput
-          inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
-          onFocus={() => scrollTo('budget')}
-          placeholder={`e.g. ${ROLLING[idea % ROLLING.length].toLocaleString('en-IN')}`} placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
-        <Slider
-          style={styles.slider}
-          minimumValue={0}
-          maximumValue={1}
-          value={toPos(budget)}
-          onValueChange={(v) => setBudget(String(toBudget(v)))}
-          minimumTrackTintColor={C.accent}
-          maximumTrackTintColor={C.border}
-          thumbTintColor={C.accentSoft}
-        />
-        <View style={styles.scale}>
-          <Text style={styles.scaleText}>{inr(MIN_B)}</Text>
-          <Text style={styles.scaleText}>{inr(10000)}</Text>
-          <Text style={styles.scaleText}>{inr(MAX_B)}+</Text>
-        </View>
-        <Text style={styles.scaleHint}>Slide, tap a pick, or type any amount — no limit ♾️</Text>
-        <View style={styles.chips}>
-          {BUDGET_PICKS.map((b) => (
-            <TouchableOpacity key={b} style={[styles.mode, Number(budget) === b && styles.modeOn]} onPress={() => setBudget(String(b))}>
-              <Text style={[styles.modeText, Number(budget) === b && styles.modeTextOn]}>{inr(b)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          </>
+        )}
 
+        {step === 2 && (
+          <>
         <Text style={styles.label}>Who's coming ({people.length})</Text>
         <View style={styles.chips}>
           {people.map((p) => (
@@ -392,6 +401,42 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
             </View>
           </>
         )}
+
+          </>
+        )}
+
+        {step === 3 && (
+          <>
+        <View onLayout={keep('budget')}>
+          <Text style={styles.label}>Total budget (Rs)</Text>
+        </View>
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
+          onFocus={() => scrollTo('budget')}
+          placeholder={`e.g. ${ROLLING[idea % ROLLING.length].toLocaleString('en-IN')}`} placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={1}
+          value={toPos(budget)}
+          onValueChange={(v) => setBudget(String(toBudget(v)))}
+          minimumTrackTintColor={C.accent}
+          maximumTrackTintColor={C.border}
+          thumbTintColor={C.accentSoft}
+        />
+        <View style={styles.scale}>
+          <Text style={styles.scaleText}>{inr(MIN_B)}</Text>
+          <Text style={styles.scaleText}>{inr(10000)}</Text>
+          <Text style={styles.scaleText}>{inr(MAX_B)}+</Text>
+        </View>
+        <Text style={styles.scaleHint}>Slide, tap a pick, or type any amount — no limit ♾️</Text>
+        <View style={styles.chips}>
+          {BUDGET_PICKS.map((b) => (
+            <TouchableOpacity key={b} style={[styles.mode, Number(budget) === b && styles.modeOn]} onPress={() => setBudget(String(b))}>
+              <Text style={[styles.modeText, Number(budget) === b && styles.modeTextOn]}>{inr(b)}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         <Text style={styles.label}>Who pays?</Text>
         <View style={styles.chips}>
@@ -449,10 +494,27 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
             After you create it: 🛒 Who brings what · 💬 Chat · 📊 Polls · 📨 Invite link
           </Text>
         )}
-        <TouchableOpacity style={styles.button} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
-          {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : 'Create plan'}</Text>}
-        </TouchableOpacity>
+          </>
+        )}
       </ScrollView>
+
+      {/* ⬅️ ➡️ Step buttons */}
+      <View style={styles.nav}>
+        {step > 0 ? (
+          <TouchableOpacity style={styles.navBack} onPress={() => go(step - 1)}>
+            <Text style={styles.navBackText}>‹ Back</Text>
+          </TouchableOpacity>
+        ) : null}
+        {step < STEPS.length - 1 ? (
+          <TouchableOpacity style={[styles.button, styles.navNext]} onPress={next}>
+            <Text style={styles.buttonText}>Next: {STEPS[step + 1].label} ›</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity style={[styles.button, styles.navNext]} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
+            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : '🎉 Create plan'}</Text>}
+          </TouchableOpacity>
+        )}
+      </View>
       <KeyboardDone />
     </KeyboardAvoidingView>
   );
@@ -516,6 +578,16 @@ const styles = StyleSheet.create({
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   after: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 6 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 10, marginBottom: 30 },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 18, alignItems: 'center' },
+  steps: { flexDirection: 'row', marginBottom: 14 },
+  stepItem: { flex: 1, marginRight: 6 },
+  stepBar: { height: 4, borderRadius: 2, backgroundColor: C.border },
+  stepBarOn: { backgroundColor: C.accent },
+  stepText: { color: C.faint, fontSize: 12, fontWeight: '600', marginTop: 6 },
+  stepTextOn: { color: C.text },
+  nav: { flexDirection: 'row', paddingTop: 10, paddingBottom: 30, backgroundColor: C.bg },
+  navBack: { justifyContent: 'center', paddingHorizontal: 18, marginRight: 10, borderRadius: 18, borderWidth: 1, borderColor: C.border },
+  navBackText: { color: C.text, fontSize: 16, fontWeight: '700' },
+  navNext: { flex: 1 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });
