@@ -7,6 +7,8 @@ import LevelCard from './LevelCard';
 import StreakCard from './StreakCard';
 import { C } from '../services/theme';
 
+const HUES = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 const LINES = [
@@ -64,13 +66,13 @@ function PlanCard({ item, index, onPress }) {
           <View style={styles.rowBottom}>
             <View style={styles.avatars}>
               {members.slice(0, 4).map((m, i) => (
-                <View key={m.id || i} style={[styles.avatar, { marginLeft: i ? -6 : 0 }]}>
+                <View key={m.id || i} style={[styles.avatar, { backgroundColor: hue(m.name), marginLeft: i ? -8 : 0 }]}>
                   <Text style={styles.avatarText}>{(show(m.name) || '?')[0].toUpperCase()}</Text>
                 </View>
               ))}
               <Text style={styles.going}>{going} going</Text>
             </View>
-            <View style={styles.status}>
+            <View style={[styles.status, { backgroundColor: color + '22' }]}>
               <View style={[styles.dot, { backgroundColor: color }]} />
               <Text style={styles.statusText}>{status}</Text>
             </View>
@@ -108,35 +110,42 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
 
   return (
     <View style={styles.container}>
-      <View style={styles.headRow}>
-        {onBack ? (
-          <TouchableOpacity onPress={onBack}>
-            <Text style={styles.back}>‹ Back</Text>
-          </TouchableOpacity>
-        ) : <View />}
-        <View style={styles.topBtns}>
-          <TouchableOpacity style={styles.topBtn} onPress={onNearby}>
-            <Text style={styles.topBtnText}>📍 Nearby</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.topBtn, styles.gap]} onPress={onGroups}>
-            <Text style={styles.topBtnText}>👥 Groups</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>Plans</Text>
-        <TouchableOpacity style={styles.newBtn} onPress={onNewParty} activeOpacity={0.8}>
-          <Text style={styles.newText}>＋ New</Text>
-        </TouchableOpacity>
-      </View>
-      <Text style={styles.sub}>{LINES[line]}</Text>
-
       <FlatList
         data={parties}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => <PlanCard item={item} index={index} onPress={() => onOpenParty(item.id)} />}
-        ListHeaderComponent={<><LevelCard refreshKey={tick} /><StreakCard refreshKey={tick} /></>}
+        ListHeaderComponent={
+          <>
+            {onBack ? (
+              <TouchableOpacity onPress={onBack}>
+                <Text style={styles.back}>‹ Back</Text>
+              </TouchableOpacity>
+            ) : null}
+            <View style={styles.header}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.sub}>{LINES[line]}</Text>
+                <Text style={styles.title}>Your plans</Text>
+              </View>
+            </View>
+            <View style={styles.quick}>
+              <TouchableOpacity style={styles.quickBtn} onPress={onNewParty} activeOpacity={0.85}>
+                <Text style={styles.quickEmoji}>🎉</Text>
+                <Text style={styles.quickText}>New plan</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onNearby} activeOpacity={0.85}>
+                <Text style={styles.quickEmoji}>📍</Text>
+                <Text style={styles.quickText}>Places nearby</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onGroups} activeOpacity={0.85}>
+                <Text style={styles.quickEmoji}>👥</Text>
+                <Text style={styles.quickText}>Groups</Text>
+              </TouchableOpacity>
+            </View>
+            <LevelCard refreshKey={tick} />
+            <StreakCard refreshKey={tick} />
+            {parties.length ? <Text style={styles.section}>All plans</Text> : null}
+          </>
+        }
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
           !loading && (
@@ -144,13 +153,14 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
               <Text style={styles.emptyEmoji}>🪩</Text>
               <Text style={styles.emptyText}>No plans yet</Text>
               <Text style={styles.emptySub}>Parties, trips, movies, weddings. Start one and invite the gang.</Text>
-              <TouchableOpacity style={[styles.newBtn, styles.emptyBtn]} onPress={onNewParty}>
+              <TouchableOpacity style={styles.emptyBtn} onPress={onNewParty}>
                 <Text style={styles.newText}>＋ Plan something</Text>
               </TouchableOpacity>
             </View>
           )
         }
         contentContainerStyle={styles.listPad}
+        showsVerticalScrollIndicator={false}
       />
 
     </View>
@@ -158,43 +168,42 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 16 },
-  headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { color: C.accentSoft, fontSize: 17, fontWeight: '400' },
-  topBtns: { flexDirection: 'row' },
-  topBtn: { backgroundColor: 'rgba(255,255,255,0.08)', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 11 },
-  topBtnText: { color: C.text, fontSize: 13, fontWeight: '600' },
+  container: { flex: 1, backgroundColor: C.bg },
+  listPad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
+  back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  sub: { color: C.sub, fontSize: 15, fontWeight: '500' },
+  title: { fontSize: 30, fontWeight: '800', color: C.text, marginTop: 2 },
+  round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  roundIcon: { fontSize: 19 },
   gap: { marginLeft: 8 },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 },
-  title: { fontSize: 34, fontWeight: '700', color: C.text, letterSpacing: 0.4 },
-  newBtn: { backgroundColor: C.accent, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
-  newText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  sub: { color: C.faint, fontSize: 13, marginTop: 2, marginBottom: 14 },
-  listPad: { paddingBottom: 40 },
-  card: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 16, paddingVertical: 12, paddingHorizontal: 12, marginBottom: 8,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.12)',
-  },
-  icon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  quick: { flexDirection: 'row', marginBottom: 14 },
+  quickBtn: { flex: 1, backgroundColor: C.accent, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
+  quickAlt: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, marginLeft: 8 },
+  quickEmoji: { fontSize: 22 },
+  quickText: { color: C.text, fontSize: 13, fontWeight: '700', marginTop: 4 },
+  section: { color: C.text, fontSize: 18, fontWeight: '700', marginTop: 6, marginBottom: 10 },
+  card: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 20, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: C.border },
+  icon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   emoji: { fontSize: 22 },
   flex: { flex: 1 },
   rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' },
-  cardTitle: { flex: 1, fontSize: 16, fontWeight: '600', color: C.text, marginRight: 8 },
-  money: { fontSize: 15, fontWeight: '600', color: C.text },
-  meta: { color: C.faint, fontSize: 13, marginTop: 2 },
-  rowBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
+  cardTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: C.text, marginRight: 8 },
+  money: { fontSize: 16, fontWeight: '800', color: C.text },
+  meta: { color: C.faint, fontSize: 13, marginTop: 3 },
+  rowBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   avatars: { flexDirection: 'row', alignItems: 'center' },
-  avatar: { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.cardHi, borderWidth: 1.5, borderColor: C.bg },
-  avatarText: { color: C.text, fontSize: 9, fontWeight: '700' },
+  avatar: { width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
+  avatarText: { color: '#fff', fontSize: 10, fontWeight: '800' },
   going: { color: C.faint, fontSize: 12, marginLeft: 6 },
-  status: { flexDirection: 'row', alignItems: 'center' },
+  status: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9 },
   dot: { width: 7, height: 7, borderRadius: 4, marginRight: 5 },
-  statusText: { color: C.sub, fontSize: 12, fontWeight: '500' },
-  chev: { color: 'rgba(255,255,255,0.3)', fontSize: 22, marginLeft: 8 },
-  empty: { alignItems: 'center', marginTop: 40 },
-  emptyEmoji: { fontSize: 48 },
-  emptyText: { fontSize: 20, fontWeight: '600', color: C.text, marginTop: 8 },
-  emptySub: { fontSize: 14, color: C.faint, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 },
-  emptyBtn: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 10 },
+  statusText: { color: C.text, fontSize: 12, fontWeight: '600' },
+  chev: { color: C.faint, fontSize: 22, marginLeft: 8 },
+  empty: { alignItems: 'center', marginTop: 30 },
+  emptyEmoji: { fontSize: 46 },
+  emptyText: { fontSize: 19, fontWeight: '700', color: C.text, marginTop: 10 },
+  emptySub: { fontSize: 14, color: C.sub, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 },
+  emptyBtn: { backgroundColor: C.accent, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 22, marginTop: 18 },
+  newText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
