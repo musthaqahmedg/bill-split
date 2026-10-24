@@ -14,8 +14,8 @@ import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 
-const inr = (n) => 'Rs ' + Math.round(n).toLocaleString('en-IN');
-const money = (n) => 'Rs ' + Number(n.toFixed(2)).toLocaleString('en-IN');
+const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
+const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({
   items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
@@ -141,7 +141,7 @@ export default function SplitScreen({
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>The split 🎉</Text>

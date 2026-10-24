@@ -165,7 +165,7 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>{title || '📍 Nearby'}</Text>
 

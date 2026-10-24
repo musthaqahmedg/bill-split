@@ -78,7 +78,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
     if (billTotal < itemsTotal - discount - 1) {
       Alert.alert(
         'Total looks low',
-        `Items add up to Rs ${itemsTotal.toFixed(2)}, but the bill total is Rs ${billTotal.toFixed(2)}. If the bill had a discount, that's fine.`,
+        `Items add up to ₹${itemsTotal.toFixed(2)}, but the bill total is ₹${billTotal.toFixed(2)}. If the bill had a discount, that's fine.`,
         [
           { text: 'Check again', style: 'cancel' },
           { text: 'Continue anyway', onPress: proceed },
@@ -95,7 +95,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Check the bill</Text>
@@ -182,8 +182,8 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
           </View>
           <Text style={styles.extras}>
             {extras >= 0
-              ? `Rs ${extras.toFixed(2)} tax, service & round-off - shared fairly`
-              : `Rs ${Math.abs(extras).toFixed(2)} less than the items (discount or round-off) - shared fairly`}
+              ? `₹${extras.toFixed(2)} tax, service & round-off - shared fairly`
+              : `₹${Math.abs(extras).toFixed(2)} less than the items (discount or round-off) - shared fairly`}
           </Text>
         </View>
       </ScrollView>

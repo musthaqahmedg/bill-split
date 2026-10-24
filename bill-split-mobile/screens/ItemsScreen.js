@@ -75,7 +75,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Who had what?</Text>

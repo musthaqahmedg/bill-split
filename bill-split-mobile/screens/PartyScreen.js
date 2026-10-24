@@ -20,7 +20,7 @@ import { getProfile } from '../services/profile';
 import { kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 
-const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
   const [gamesOpen, setGamesOpen] = useState(false);
@@ -182,7 +182,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.topRow}>
         <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>Back</Text>
+          <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => onEdit(party)}>
           <Text style={styles.edit}>✏️ Edit</Text>

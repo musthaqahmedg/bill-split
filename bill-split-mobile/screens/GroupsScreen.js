@@ -38,7 +38,7 @@ export default function GroupsScreen({ onBack, onOpenGroup }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>Groups 👥</Text>
       <Text style={styles.sub}>Make a group once, then plan anything with them in one tap</Text>

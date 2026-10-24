@@ -85,7 +85,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.title}>{group.emoji} {group.name}</Text>
       <Text style={styles.sub}>{members.length} {members.length === 1 ? 'member' : 'members'} + you (admin)</Text>

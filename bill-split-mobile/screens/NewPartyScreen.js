@@ -90,7 +90,7 @@ const STEPS = [
   { key: 'money', emoji: '💰', label: 'Money' },
 ];
 
-const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null }) {
   const [menuFor, setMenuFor] = useState(null); // 📋 menu of the chosen place
@@ -408,7 +408,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         {step === 3 && (
           <>
         <View onLayout={keep('budget')}>
-          <Text style={styles.label}>Total budget (Rs)</Text>
+          <Text style={styles.label}>Total budget (₹)</Text>
         </View>
         <TextInput
           inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
@@ -480,7 +480,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
                   {mode === 'free' ? `${who} ${who === 'You' ? 'go' : 'goes'} free 🎂, everyone else pays` : 'Each person pays'}
                 </Text>
                 <Text style={styles.previewAmount}>{inr(perHead)}</Text>
-                {uneven ? <Text style={styles.previewNote}>A few pay Rs 1 extra so it adds up exactly</Text> : null}
+                {uneven ? <Text style={styles.previewNote}>A few pay ₹1 extra so it adds up exactly</Text> : null}
               </>
             )}
             <FunLine style={styles.fun} text={funFact(mode === 'treat' ? budget : perHead, idea)} />

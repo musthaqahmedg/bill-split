@@ -126,7 +126,7 @@ export default function PartyChatScreen({ partyId, onBack }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.header}>
         <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>Back</Text>
+          <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
         <Text style={styles.title} numberOfLines={1}>💬 {party ? party.title : 'Party chat'}</Text>
         {(() => {

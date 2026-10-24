@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
 
-const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
 // Fun awards for the night. Rule: never reward drinking.
 function makeAwards(bill) {

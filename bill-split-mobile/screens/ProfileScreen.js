@@ -146,7 +146,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug }) {
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       {onBack ? (
         <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>Back</Text>
+          <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
       ) : null}
 

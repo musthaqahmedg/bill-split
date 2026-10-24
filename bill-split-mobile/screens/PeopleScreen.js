@@ -81,7 +81,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>Who's at the table?</Text>

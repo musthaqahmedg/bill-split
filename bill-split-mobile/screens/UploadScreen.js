@@ -115,7 +115,7 @@ export default function UploadScreen({ title = 'Scan Receipt', onBack, onNext })
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
-        <Text style={styles.back}>Back</Text>
+        <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
 
       <Text style={styles.title}>{title}</Text>

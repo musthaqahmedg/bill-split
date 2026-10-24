@@ -9,8 +9,8 @@ import { C } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 
-const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
-const money = (n) => 'Rs ' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
+const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const money = (n) => '₹' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
 
 export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, onAddRound }) {
   const [bill, setBill] = useState(null);
@@ -218,7 +218,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.topRow}>
         <TouchableOpacity onPress={onBack}>
-          <Text style={styles.back}>Back</Text>
+          <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
         {!archived && (
           <TouchableOpacity onPress={startEdit}>
