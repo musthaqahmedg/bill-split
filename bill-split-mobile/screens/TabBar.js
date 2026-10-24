@@ -72,8 +72,8 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
             >
               <Text style={styles.optEmoji}>🎉</Text>
               <View style={{ flex: 1 }}>
-                <Text style={styles.optTitle}>Plan a night</Text>
-                <Text style={styles.optSub}>Pick a place, invite friends, vote</Text>
+                <Text style={styles.optTitle}>Plan something</Text>
+                <Text style={styles.optSub}>Parties, trips, movies, dinners and more</Text>
               </View>
               <Text style={styles.chev}>›</Text>
             </TouchableOpacity>

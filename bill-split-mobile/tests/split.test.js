@@ -238,7 +238,7 @@ test('💰 budget meter: on track / fast / over', () => {
 });
 
 // ---- 🍺🚬 Habits in My Money ----
-import { habitsSummary, myHabitSplit } from '../services/money.js';
+import { habitsSummary, myHabitSplit, swapsFor } from '../services/money.js';
 
 test('🍺🚬 habits: my share of drinks / smoke, tax included, adds up', () => {
   const bill = {
@@ -260,5 +260,16 @@ test('🍺🚬 habits: my share of drinks / smoke, tax included, adds up', () =>
   assert.equal(s.dry, 1);
   assert.equal(s.pct, 47);
   assert.equal(s.yearly, 7920);
-  assert.ok(s.swaps.length >= 1);
+});
+
+test('💡 motivation swaps rotate, always affordable, max 3', () => {
+  const seen = new Set();
+  for (let seed = 0; seed < 30; seed++) {
+    const sw = swapsFor(7920, seed);
+    assert.ok(sw.length === 3);
+    sw.forEach((x) => assert.ok(x.count >= 1 && x.count * x.price <= 7920));
+    seen.add(sw.map((x) => x.what).join());
+  }
+  assert.ok(seen.size > 5); // it really changes
+  assert.equal(swapsFor(50, 1).length, 0);
 });

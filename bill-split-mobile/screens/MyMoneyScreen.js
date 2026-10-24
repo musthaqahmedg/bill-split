@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { listBills, listBillsDetailed } from '../services/bills';
-import { budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth } from '../services/money';
+import { MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor } from '../services/money';
 import { show } from '../services/names';
 import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
@@ -49,6 +49,18 @@ export default function MyMoneyScreen({ onBack }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  // 💡 the "what else could this be" ideas change every few seconds, so it never feels the same
+  const [tick, setTick] = useState(() => Math.floor(Math.random() * 1000));
+  const swapFade = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    const t = setInterval(() => {
+      Animated.timing(swapFade, { toValue: 0, duration: 250, useNativeDriver: true }).start(() => {
+        setTick((x) => x + 1);
+        Animated.timing(swapFade, { toValue: 1, duration: 350, useNativeDriver: true }).start();
+      });
+    }, 4500);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -236,11 +248,14 @@ export default function MyMoneyScreen({ onBack }) {
                   <View style={{ flex: Math.max(h.total - h.habit, 0.0001), backgroundColor: C.cardHi }} />
                 </View>
                 <Text style={styles.swapTitle}>💡 At this pace that's {inr(h.yearly)} a year. That could be:</Text>
-                {h.swaps.map((sw) => (
-                  <Text key={sw.what} style={styles.swap}>
-                    {sw.emoji} <Text style={styles.b}>{sw.count}</Text> {sw.what}
-                  </Text>
-                ))}
+                <Animated.View style={{ opacity: swapFade }}>
+                  {swapsFor(h.yearly, tick).map((sw) => (
+                    <Text key={sw.what} style={styles.swap}>
+                      {sw.emoji} <Text style={styles.b}>{sw.count}</Text> {sw.what}
+                    </Text>
+                  ))}
+                  <Text style={styles.motivate}>{MOTIVATION[tick % MOTIVATION.length]}</Text>
+                </Animated.View>
                 {h.dry ? <Text style={styles.dry}>🌿 {h.dry} of {h.nights} nights with no drinks or smoke. Nice 💪</Text> : null}
               </>
             ) : (
@@ -349,6 +364,7 @@ const styles = StyleSheet.create({
   habitBar: { flexDirection: 'row', height: 10, borderRadius: 5, overflow: 'hidden', marginTop: 14, backgroundColor: C.cardHi },
   swapTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 14, marginBottom: 4 },
   swap: { color: C.sub, fontSize: 14, lineHeight: 22 },
+  motivate: { color: C.accentSoft, fontSize: 13, fontWeight: '700', marginTop: 8 },
   dry: { color: C.green, fontSize: 13, fontWeight: '600', marginTop: 10 },
   private: { color: C.faint, fontSize: 11, marginTop: 10 },
   foot: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 16 },

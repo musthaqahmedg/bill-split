@@ -103,20 +103,50 @@ export function myHabitSplit(bill) {
   return { drinks, smoke, other: total - drinks - smoke, total };
 }
 
-// What that money could have been instead (gentle motivation, not judgement)
+// What that money could have been instead (gentle motivation, not judgement). Rotates so it stays fresh.
 export const SWAPS = [
   { emoji: '🎬', what: 'movie tickets', one: 'movie ticket', price: 250 },
   { emoji: '🎧', what: 'months of Spotify', one: 'month of Spotify', price: 119 },
   { emoji: '🍕', what: 'pizzas', one: 'pizza', price: 400 },
+  { emoji: '☕', what: 'fancy coffees', one: 'fancy coffee', price: 220 },
+  { emoji: '📚', what: 'books', one: 'book', price: 350 },
+  { emoji: '🏋️', what: 'months of gym', one: 'month of gym', price: 1500 },
+  { emoji: '🎮', what: 'new games', one: 'new game', price: 2500 },
+  { emoji: '🎤', what: 'concert tickets', one: 'concert ticket', price: 2000 },
   { emoji: '👟', what: 'pairs of sneakers', one: 'pair of sneakers', price: 3500 },
+  { emoji: '🎧', what: 'pairs of AirPods', one: 'pair of AirPods', price: 12000 },
   { emoji: '✈️', what: 'flights to Goa', one: 'flight to Goa', price: 5000 },
+  { emoji: '🏝️', what: 'weekend trips', one: 'weekend trip', price: 8000 },
+  { emoji: '🎁', what: 'birthday gifts for friends', one: 'birthday gift for a friend', price: 1000 },
+  { emoji: '👪', what: 'family dinners', one: 'family dinner', price: 2500 },
   { emoji: '📱', what: 'new phones', one: 'new phone', price: 20000 },
+  { emoji: '💻', what: 'laptops', one: 'laptop', price: 50000 },
+  { emoji: '🏍️', what: 'months of bike EMI', one: 'month of bike EMI', price: 4000 },
 ];
-export function swapsFor(amount) {
-  return SWAPS.map((s) => {
+
+export const MOTIVATION = [
+  'Small cuts add up fast 💪',
+  'Skip one round, fund a weekend trip ✈️',
+  'Your future self says thanks 🙏',
+  'Fun nights don’t need to cost more 🌿',
+  'Every dry night is money in your pocket 💸',
+  'Same vibe, smaller bill 😎',
+  'Treat yourself to something that lasts 🎁',
+];
+
+// pick up to 3 swaps you could afford, in a different order each time (seed = any number)
+export function swapsFor(amount, seed = 0) {
+  const fits = SWAPS.filter((s) => Math.floor(amount / s.price) >= 1);
+  const out = [];
+  const pool = fits.slice();
+  let x = (Math.abs(Math.floor(seed)) * 9301 + 49297) % 233280;
+  while (pool.length && out.length < 3) {
+    x = (x * 9301 + 49297) % 233280;
+    const s = pool.splice(x % pool.length, 1)[0];
     const count = Math.floor(amount / s.price);
-    return { ...s, count, what: count === 1 ? s.one : s.what };
-  }).filter((s) => s.count >= 1).slice(-3);
+    out.push({ ...s, count, what: count === 1 ? s.one : s.what });
+  }
+  return out;
 }
 
 export function habitsSummary(detailedBills, key) {
@@ -136,5 +166,5 @@ export function habitsSummary(detailedBills, key) {
     total += h.total;
   }
   const habit = drinks + smoke;
-  return { drinks, smoke, habit, total, nights, dry, pct: total ? Math.round((habit / total) * 100) : 0, yearly: habit * 12, swaps: swapsFor(habit * 12) };
+  return { drinks, smoke, habit, total, nights, dry, pct: total ? Math.round((habit / total) * 100) : 0, yearly: habit * 12 };
 }

@@ -262,7 +262,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
       <TouchableOpacity onPress={() => (step > 0 ? go(step - 1) : leave())}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan a night'} {kindOf(kind).emoji}</Text>
+      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan something'} {kindOf(kind).emoji}</Text>
       <View style={styles.steps}>
         {STEPS.map((st, i) => (
           <TouchableOpacity key={st.key} style={styles.stepItem} onPress={() => (i <= step || ex ? go(i) : next())} activeOpacity={0.7}>
