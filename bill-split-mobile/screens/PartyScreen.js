@@ -7,6 +7,7 @@ import BookingCard from './BookingCard';
 import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
 import NightCheck from './NightCheck';
+import NightMode from './NightMode';
 import PartyPhotos from './PartyPhotos';
 import PartyGames from './PartyGames';
 import PartyBar from './PartyBar';
@@ -21,8 +22,9 @@ import { C } from '../services/theme';
 
 const inr = (n) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut }) {
+export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
   const [gamesOpen, setGamesOpen] = useState(false);
+  const [nightOpen, setNightOpen] = useState(false); // 🌙 Night Mode
   const [barOpen, setBarOpen] = useState(false);
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
@@ -213,6 +215,16 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
       </Modal>
 
       <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.accentSoft} />}>
+        <TouchableOpacity style={styles.nightBtn} onPress={() => setNightOpen(true)} activeOpacity={0.85}>
+          <Text style={styles.nightEmoji}>🌙</Text>
+          <View style={styles.flex}>
+            <Text style={styles.nightTitle}>Start Night Mode</Text>
+            <Text style={styles.nightSub}>Crew · chat · split the bill · ride home · home safe</Text>
+          </View>
+          <Text style={styles.nightChev}>›</Text>
+        </TouchableOpacity>
+        <NightMode party={party} visible={nightOpen} onClose={() => setNightOpen(false)} onChat={onChat} onSplit={onSplit} onChanged={reload} />
+
         <View style={styles.summary}>
           <View style={styles.sumRow}>
             <Text style={styles.sumLabel}>Budget</Text>
@@ -364,6 +376,11 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
 }
 
 const styles = StyleSheet.create({
+  nightBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.accent, borderRadius: 20, padding: 16, marginBottom: 14 },
+  nightEmoji: { fontSize: 28, marginRight: 12 },
+  nightTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  nightSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
+  nightChev: { color: '#fff', fontSize: 26, marginLeft: 8 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },

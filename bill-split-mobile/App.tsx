@@ -569,6 +569,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
+        onSplit={(names: any[]) => {
+          startNewBill(); // 🌙 Night Mode → split the bill with tonight's crew already added
+          setPeople(names && names.length ? names : ['Me']);
+        }}
         onTakeOut={(p: any) => {
           setNearby({ from: 'party', category: 'food', title: '🍽️ Take the group out', bookFor: p });
           setScreen('nearby');
