@@ -188,3 +188,15 @@ test('🏠 a friend paid: I owe my share; old bills (no mode) = I paid', () => {
   assert.deepEqual(homeBalance([a, old, unpaid, arch]), { owed: 250, owe: 300, unpaid: 1 });
   assert.equal(billBalance({ ...a, bill_participants: [{ ...a.bill_participants[0], paid_at: 'x' }, a.bill_participants[1]] }).settled, true);
 });
+
+// ---- 🔒 Contacts are scrambled on the phone, same as the server ----
+import { createHash } from 'node:crypto';
+import { contactHash, sha256 } from '../services/hash.js';
+
+test('🔒 phone SHA-256 matches the server (and node) exactly', () => {
+  assert.equal(contactHash('+91 98765-43210'), '7619ee8cea49187f309616e30ecf54be072259b43760f1f550a644945d5572f2');
+  for (const s of ['', 'a', 'Musthaq@Gmail.com ', 'x'.repeat(200), 'ഹലോ 🎉']) {
+    assert.equal(sha256(s), createHash('sha256').update(s).digest('hex'));
+  }
+  assert.equal(contactHash(' Musthaq@Gmail.com '), createHash('sha256').update('musthaq@gmail.com').digest('hex'));
+});

@@ -1,4 +1,5 @@
 import * as Contacts from 'expo-contacts/legacy';
+import { contactHash } from '../services/hash';
 import { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Text, TextInput,
@@ -316,11 +317,14 @@ function AddSheet({ visible, onClose }) {
         }
         for (const e of c.emails || []) if (e.email) byKey[e.email.trim().toLowerCase()] = c.name;
       }
-      const keys = Object.keys(byKey);
+      // 🔒 Contacts never leave the phone: we send scrambled codes only, and nothing is stored
+      const back = {};
+      for (const k of Object.keys(byKey)) back[contactHash(k)] = k;
+      const hashes = Object.keys(back);
       const seen = {};
-      for (let i = 0; i < keys.length; i += 300) {
-        const { data: rows } = await supabase.rpc('app_users_in', { p_keys: keys.slice(i, i + 300) });
-        for (const r of rows || []) if (!seen[r.user_id]) seen[r.user_id] = { ...r, contactName: byKey[r.key] };
+      for (let i = 0; i < hashes.length; i += 1000) {
+        const { data: rows } = await supabase.rpc('app_users_hashed', { p_hashes: hashes.slice(i, i + 1000) });
+        for (const r of rows || []) if (!seen[r.user_id]) seen[r.user_id] = { ...r, key: back[r.key], contactName: byKey[back[r.key]] };
       }
       setOnApp(Object.values(seen));
     } catch (e) {
@@ -383,6 +387,7 @@ function AddSheet({ visible, onClose }) {
             <TouchableOpacity style={styles.scanBtn} onPress={scanContacts} disabled={scanning}>
               <Text style={styles.scanTitle}>{scanning ? 'Looking…' : '📇 Find friends from contacts'}</Text>
               <Text style={styles.faint}>We check which of your contacts already use Vibe Out.</Text>
+              <Text style={styles.safe}>🔒 Your contacts never leave your phone. We only check scrambled codes, and nothing is saved.</Text>
             </TouchableOpacity>
           ) : onApp.length === 0 ? (
             <Text style={styles.faint}>None of your contacts are on Vibe Out yet. Invite them 👇</Text>
@@ -443,6 +448,7 @@ const styles = StyleSheet.create({
   decline: { color: C.faint, fontSize: 16 },
   cancel: { color: C.faint, fontSize: 13, fontWeight: '600' },
   hint: { color: C.faint, fontSize: 11, marginTop: 10 },
+  safe: { color: C.green, fontSize: 12, marginTop: 6, lineHeight: 17 },
   mt: { marginTop: 12 },
   sheet: { flex: 1, backgroundColor: C.bg, padding: 18 },
   sheetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },

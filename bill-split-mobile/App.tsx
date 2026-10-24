@@ -30,6 +30,7 @@ import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 import GuestGate from './screens/GuestGate';
+import YourDataScreen from './screens/YourDataScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
 import PartyChatScreen from './screens/PartyChatScreen';
@@ -504,7 +505,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen onYourData={() => setScreen('yourData')} guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+  }
+
+  if (screen === 'yourData') {
+    return <YourDataScreen onBack={() => setScreen('profile')} />;
   }
 
   // 🔒 A guest saving their account (everything they made stays)

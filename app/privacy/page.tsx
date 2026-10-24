@@ -24,6 +24,8 @@ export default function Privacy() {
           <li><b>Bug notes</b>: when you shake your phone to report a problem, we save your note, any screenshot you add, the page you were on and your phone model. Only our team can see it.</li>
           <li><b>Crash reports</b>: if the app breaks, an error report is sent to Sentry (stored in the EU) with the error, the page you were on, your phone model and an account ID. No names, numbers, emails or bill contents.</li>
           <li><b>Help chat</b>: messages you send in “Chat with us”, so our team can reply. Only you and our team can see them.</li>
+          <li><b>Your contacts</b>: never uploaded or stored. When you pick friends from contacts, only the people you choose are added. To find friends already on the app, your phone sends scrambled codes (SHA-256), never the numbers, and nothing is saved.</li>
+          <li><b>Guest mode</b>: you can try the app without signing up. Your guest data is kept until you save your account or log out.</li>
           <li><b>Your location</b>, only when you allow it, to show places near you. We don&apos;t store it.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
         </ul>
@@ -32,6 +34,8 @@ export default function Privacy() {
         <ul style={s.ul}>
           <li>Only to run the app: split bills, plan with friends, show who owes what, and help friends pay you.</li>
           <li>We <b>never sell</b> your data, and we show no ads based on it.</li>
+          <li>We <b>never hold your money</b>: payments go straight between friends (UPI).</li>
+          <li>You can <b>download all your data</b> any time: Profile → Your data & privacy.</li>
         </ul>
 
         <h2 style={s.h2}>Shared links</h2>

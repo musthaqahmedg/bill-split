@@ -1,3 +1,4 @@
+import { contactHash } from './hash';
 import { supabase } from './supabaseClient';
 import { track } from './track';
 
@@ -40,9 +41,11 @@ export async function appUsers(people) {
     if (m.email) keys.push(m.email.trim().toLowerCase());
   }
   if (!keys.length) return {};
-  const rows = await rpc('app_users_in', { p_keys: keys });
+  // 🔒 only scrambled codes leave the phone, never the numbers/emails
+  const back = Object.fromEntries(keys.map((k) => [contactHash(k), k]));
+  const rows = await rpc('app_users_hashed', { p_hashes: Object.keys(back) });
   const out = {};
-  for (const r of rows || []) out[r.key] = r;
+  for (const r of rows || []) out[back[r.key]] = { ...r, key: back[r.key] };
   return out;
 }
 export const lookupKeys = (m) => {

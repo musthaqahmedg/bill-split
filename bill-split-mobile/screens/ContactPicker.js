@@ -91,6 +91,8 @@ export default function ContactPicker({ visible, onClose, onPick, already = [] }
           </TouchableOpacity>
         </View>
 
+        <Text style={styles.safe}>🔒 Your contacts stay on your phone. Only the people you pick are added.</Text>
+
         {status === 'loading' && <ActivityIndicator color={C.accentSoft} style={styles.center} />}
 
         {status === 'denied' && (
@@ -156,6 +158,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   cancel: { color: C.sub, fontSize: 16 },
   title: { color: C.text, fontSize: 17, fontWeight: '800' },
+  safe: { color: C.green, fontSize: 12, textAlign: 'center', marginTop: 8, marginBottom: 6, paddingHorizontal: 16 },
   add: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
   addOff: { color: C.faint },
   center: { marginTop: 60, alignItems: 'center' },
