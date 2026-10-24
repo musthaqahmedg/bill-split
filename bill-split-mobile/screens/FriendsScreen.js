@@ -77,17 +77,20 @@ export default function FriendsScreen({ onBack, startAdding = false, onOpenPlan 
 
   return (
     <View style={styles.container}>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack}>
+          <Text style={styles.back}>‹ Back</Text>
+        </TouchableOpacity>
+      ) : null}
       <View style={styles.headRow}>
-        {onBack ? (
-          <TouchableOpacity onPress={onBack}>
-            <Text style={styles.back}>‹ Back</Text>
-          </TouchableOpacity>
-        ) : <View />}
+        <View style={{ flex: 1 }}>
+          <Text style={styles.kicker}>Your people 💜</Text>
+          <Text style={styles.title}>Your circle</Text>
+        </View>
         <TouchableOpacity style={styles.addBtn} onPress={() => (mine === null ? setPicking(true) : setAdding(true))}>
-          <Text style={styles.addText}>＋ Add friends</Text>
+          <Text style={styles.addText}>＋ Add</Text>
         </TouchableOpacity>
       </View>
-      <Text style={styles.title}>Your circle</Text>
 
       <View style={styles.tabs}>
         {TABS.map(([k, label]) => (
@@ -403,27 +406,28 @@ function AddSheet({ visible, onClose }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 16 },
-  headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  back: { color: C.accentSoft, fontSize: 17 },
-  addBtn: { backgroundColor: C.accent, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, alignSelf: 'center' },
-  addText: { color: '#fff', fontSize: 14, fontWeight: '600' },
-  title: { fontSize: 34, fontWeight: '700', color: C.text, marginTop: 14, marginBottom: 12 },
-  tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 3, marginBottom: 14 },
-  tab: { flex: 1, paddingVertical: 7, borderRadius: 8, alignItems: 'center' },
-  tabOn: { backgroundColor: 'rgba(255,255,255,0.14)' },
+  container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
+  headRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
+  kicker: { color: C.sub, fontSize: 15, fontWeight: '500' },
+  addBtn: { backgroundColor: C.accent, borderRadius: 22, height: 44, paddingHorizontal: 18, justifyContent: 'center' },
+  addText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  title: { fontSize: 30, fontWeight: '800', color: C.text, marginTop: 2 },
+  tabs: { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 4, marginBottom: 14 },
+  tab: { flex: 1, paddingVertical: 9, borderRadius: 12, alignItems: 'center' },
+  tabOn: { backgroundColor: C.cardHi },
   tabText: { color: C.sub, fontSize: 13, fontWeight: '600' },
   tabTextOn: { color: C.text },
   pad: { paddingBottom: 40 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tile: { width: '31%', alignItems: 'center', backgroundColor: 'rgba(52,211,153,0.07)', borderRadius: 18, paddingVertical: 18, marginBottom: 10 },
+  tile: { width: '31%', alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 18, marginBottom: 10 },
   tileName: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 10 },
   tileNow: { color: C.green, fontSize: 11, fontWeight: '600', marginTop: 2, textAlign: 'center', paddingHorizontal: 4 },
   emptyBox: { alignItems: 'center', paddingVertical: 40 },
   emptyEmoji: { fontSize: 44 },
   emptyTitle: { color: C.text, fontSize: 17, fontWeight: '600', marginTop: 8 },
-  section: { color: C.faint, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginTop: 20, marginBottom: 4 },
-  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.1)' },
+  section: { color: C.sub, fontSize: 12, fontWeight: '700', letterSpacing: 0.8, marginTop: 20, marginBottom: 6 },
+  row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: C.border },
   rowText: { flex: 1, marginLeft: 12 },
   name: { color: C.text, fontSize: 16, fontWeight: '600' },
   faint: { color: C.faint, fontSize: 13, marginTop: 2, textAlign: 'left' },
