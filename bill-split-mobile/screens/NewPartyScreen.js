@@ -28,7 +28,13 @@ const IDEAS = [
 ];
 
 // Quick budget picks, and a fun line about what the money means
-const BUDGET_PICKS = [1000, 2500, 5000, 10000, 25000];
+// 🎟️ Pick the vibe as a ticket: price is PER PERSON, total = price × people (Gautham's ticket idea)
+const TICKETS = [
+  { key: 'early', name: 'Early Bird', emoji: '🐣', per: 500, note: 'Chill & cheap', color: '#34D399' },
+  { key: 'regular', name: 'Regular', emoji: '🎟️', per: 1000, note: 'The usual', color: '#60A5FA' },
+  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#7C5CFF' },
+  { key: 'vip', name: 'VIP Table', emoji: '👑', per: 5000, note: 'All out', color: '#F59E0B' },
+];
 const FUN = [
   ['plates of biryani 🍗', 200],
   ['cups of chai ☕', 15],
@@ -407,8 +413,29 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
         {step === 3 && (
           <>
+        <Text style={styles.label}>Pick your ticket 🎟️ <Text style={styles.labelSoft}>(per person)</Text></Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tickets} keyboardShouldPersistTaps="handled">
+          {TICKETS.map((t) => {
+            const total = t.per * Math.max(people.length, 1);
+            const on = Number(budget) === total;
+            return (
+              <TouchableOpacity key={t.key} activeOpacity={0.85} onPress={() => { Keyboard.dismiss(); setBudget(String(total)); }}
+                style={[styles.ticket, { borderColor: on ? t.color : C.border }, on && { backgroundColor: t.color + '22' }]}>
+                <View style={[styles.notch, styles.notchL]} />
+                <View style={[styles.notch, styles.notchR]} />
+                <Text style={styles.ticketEmoji}>{t.emoji}</Text>
+                <Text style={[styles.ticketName, on && { color: t.color }]}>{t.name}</Text>
+                <Text style={styles.ticketPer}>{inr(t.per)}</Text>
+                <View style={styles.ticketCut} />
+                <Text style={styles.ticketNote}>{t.note}</Text>
+                <Text style={styles.ticketTotal}>{inr(total)} total</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
         <View onLayout={keep('budget')}>
-          <Text style={styles.label}>Total budget (₹)</Text>
+          <Text style={styles.label}>Or set the total budget (₹)</Text>
         </View>
         <TextInput
           inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => setBudget(t.replace(/[^0-9]/g, ''))}
@@ -429,14 +456,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
           <Text style={styles.scaleText}>{inr(10000)}</Text>
           <Text style={styles.scaleText}>{inr(MAX_B)}+</Text>
         </View>
-        <Text style={styles.scaleHint}>Slide, tap a pick, or type any amount — no limit ♾️</Text>
-        <View style={styles.chips}>
-          {BUDGET_PICKS.map((b) => (
-            <TouchableOpacity key={b} style={[styles.mode, Number(budget) === b && styles.modeOn]} onPress={() => setBudget(String(b))}>
-              <Text style={[styles.modeText, Number(budget) === b && styles.modeTextOn]}>{inr(b)}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+        <Text style={styles.scaleHint}>Tap a ticket, slide, or type any amount — no limit ♾️</Text>
 
         <Text style={styles.label}>Who pays?</Text>
         <View style={styles.chips}>
@@ -521,6 +541,18 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 }
 
 const styles = StyleSheet.create({
+  labelSoft: { color: C.faint, fontSize: 13 },
+  tickets: { marginBottom: 16, marginHorizontal: -4 },
+  ticket: { width: 128, backgroundColor: C.card, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginHorizontal: 4, alignItems: 'center', overflow: 'hidden' },
+  notch: { position: 'absolute', top: 76, width: 18, height: 18, borderRadius: 9, backgroundColor: C.bg },
+  notchL: { left: -10 },
+  notchR: { right: -10 },
+  ticketEmoji: { fontSize: 26 },
+  ticketName: { color: C.text, fontSize: 15, fontWeight: '800', marginTop: 4 },
+  ticketPer: { color: C.sub, fontSize: 13, fontWeight: '600', marginTop: 2 },
+  ticketCut: { alignSelf: 'stretch', borderTopWidth: 1, borderStyle: 'dashed', borderColor: C.border, marginVertical: 10 },
+  ticketNote: { color: C.faint, fontSize: 12 },
+  ticketTotal: { color: C.text, fontSize: 13, fontWeight: '700', marginTop: 2 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   draftBox: { backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginTop: 10 },
   draftTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
