@@ -352,7 +352,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
         {step === 2 && (
           <>
-        <Text style={styles.label}>Who's coming ({people.length})</Text>
+        <Text style={styles.label}>Who's pulling up? ({people.length})</Text>
         <View style={styles.chips}>
           {people.map((p) => (
             <TouchableOpacity key={p} style={styles.chip} onPress={() => p !== 'Me' && removePerson(p)}>

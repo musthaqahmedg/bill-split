@@ -147,6 +147,7 @@ export default function SplitScreen({
 
       <BillSteps at={4} />
       <Text style={styles.title}>The split 🎉</Text>
+      <Text style={styles.tagline}>No awkward maths. Everyone pays for what they had.</Text>
       <Text style={styles.hint}>Tap someone to have a friend cover them 💛</Text>
 
       <View style={styles.summary}>
@@ -380,6 +381,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontSize: 28, fontWeight: '800', color: C.text },
+  tagline: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 2, marginBottom: 4 },
   hint: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },

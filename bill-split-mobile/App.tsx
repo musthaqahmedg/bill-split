@@ -32,6 +32,7 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
+import Celebrate from './screens/Celebrate';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -159,6 +160,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [editingBillId, setEditingBillId] = useState<any>(null);
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
   const [openPartyId, setOpenPartyId] = useState<any>(null);
+  const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
@@ -657,6 +659,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         editing={editPlan}
         onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : 'parties')}
         onCreated={(id: any) => {
+          if (!editPlan) setCelebrate(true);
           setOpenPartyId(id);
           setScreen('party');
         }}
@@ -666,6 +669,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   if (screen === 'party') {
     return (
+      <>
+      <Celebrate visible={celebrate} onDone={() => setCelebrate(false)} />
       <PartyScreen
         partyId={openPartyId}
         onBack={() => setScreen('parties')}
@@ -688,6 +693,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setScreen('newParty');
         }}
       />
+      </>
     );
   }
 
