@@ -6,6 +6,7 @@ import { getProfile } from '../services/profile';
 import { billBalance, homeBalance } from '../services/settle';
 import { C } from '../services/theme';
 import FriendsRow from './FriendsRow';
+import GuestGate from './GuestGate';
 import { useUnread } from '../services/notifications';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -16,7 +17,7 @@ const hello = () => {
 const HUES = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -127,7 +128,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         </View>
       ) : null}
 
-      {!showArchived && onFriends ? <FriendsRow onOpen={() => onFriends(false)} onAdd={() => onFriends(true)} /> : null}
+      {guest && !showArchived ? <GuestGate small onSave={onSaveAccount} /> : null}
+      {!showArchived && onFriends && !guest ? <FriendsRow onOpen={() => onFriends(false)} onAdd={() => onFriends(true)} /> : null}
       {!showArchived && draft ? (
         <TouchableOpacity style={styles.draft} onPress={onResumeDraft} activeOpacity={0.85}>
           <Text style={styles.draftEmoji}>📝</Text>

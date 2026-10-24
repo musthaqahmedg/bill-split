@@ -19,7 +19,9 @@ const toE164 = (raw) => {
 
 const isEmail = (s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
-export default function LoginScreen({ onLoginSuccess }) {
+// linking = a guest saving their account: same screen, but the code is attached to the guest account so nothing is lost
+export default function LoginScreen({ onLoginSuccess, onBack, linking: linkingProp = false }) {
+  const [linking, setLinking] = useState(linkingProp);
   const [method, setMethod] = useState('email'); // 'email' (free code by email) or 'phone' (test numbers)
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -52,10 +54,27 @@ export default function LoginScreen({ onLoginSuccess }) {
     }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp(
-        typeof override === 'string' || method === 'email' ? { email: useEmail } : { phone: toE164(phone) }
-      );
-      if (error) throw error;
+      const target = typeof override === 'string' || method === 'email' ? { email: useEmail } : { phone: toE164(phone) };
+      const { error } = linking ? await supabase.auth.updateUser(target) : await supabase.auth.signInWithOtp(target);
+      if (error) {
+        // That email/number already has an account → sign in to it instead
+        if (linking && /already|registered|exists/i.test(error.message)) {
+          setLoading(false);
+          return Alert.alert('You already have an account', 'Sign in to it instead? Bills you made as a guest stay on the guest account.', [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Sign in',
+              onPress: async () => {
+                setLinking(false);
+                const { error: e2 } = await supabase.auth.signInWithOtp(target);
+                if (e2) Alert.alert("Couldn't send the code", e2.message);
+                else setShowOtp(true);
+              },
+            },
+          ]);
+        }
+        throw error;
+      }
       if (showOtp) Alert.alert('Sent again 📩', 'Check your inbox (and spam) for the new code');
       setShowOtp(true);
     } catch (error) {
@@ -75,8 +94,8 @@ export default function LoginScreen({ onLoginSuccess }) {
     try {
       const { error } = await supabase.auth.verifyOtp(
         method === 'email'
-          ? { email: cleanEmail, token: otp.trim(), type: 'email' }
-          : { phone: toE164(phone), token: otp.trim(), type: 'sms' }
+          ? { email: cleanEmail, token: otp.trim(), type: linking ? 'email_change' : 'email' }
+          : { phone: toE164(phone), token: otp.trim(), type: linking ? 'phone_change' : 'sms' }
       );
       if (error) throw error;
       if (method === 'email') AsyncStorage.setItem('lastEmail', cleanEmail).catch(() => {});
@@ -98,13 +117,18 @@ export default function LoginScreen({ onLoginSuccess }) {
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <Text style={styles.logo}>🌙</Text>
-      <Text style={styles.title}>Vibe Out</Text>
-      <Text style={styles.subtitle}>The night, sorted ✨</Text>
+      {onBack ? (
+        <TouchableOpacity onPress={onBack} style={styles.backBtn} hitSlop={10}>
+          <Text style={styles.back}>‹ Back</Text>
+        </TouchableOpacity>
+      ) : null}
+      <Text style={styles.logo}>{linking ? '🔒' : '🌙'}</Text>
+      <Text style={styles.title}>{linking ? 'Save your account' : 'Vibe Out'}</Text>
+      <Text style={styles.subtitle}>{linking ? 'Keep your bills and plans safe, and add friends' : 'The night, sorted ✨'}</Text>
 
       {!showOtp ? (
         <>
-          {method === 'email' && lastEmail ? (
+          {method === 'email' && lastEmail && !linking ? (
             <TouchableOpacity style={styles.quick} onPress={() => handleSendOtp(lastEmail)} disabled={loading}>
               <Text style={styles.quickTitle}>Continue as</Text>
               <Text style={styles.quickEmail}>{lastEmail}</Text>
@@ -195,6 +219,7 @@ export default function LoginScreen({ onLoginSuccess }) {
           </TouchableOpacity>
         </>
       )}
+      <Text style={styles.trust}>🔒 We only use this to log you in. No spam, no contact syncing.</Text>
       <KeyboardDone />
     </KeyboardAvoidingView>
     </TouchableWithoutFeedback>
@@ -203,6 +228,9 @@ export default function LoginScreen({ onLoginSuccess }) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: C.bg },
+  backBtn: { position: 'absolute', top: 60, left: 24 },
+  back: { color: C.accentSoft, fontSize: 17 },
+  trust: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   logo: { fontSize: 56, textAlign: 'center' },
   title: { fontSize: 38, fontWeight: '800', textAlign: 'center', color: C.text, marginTop: 8 },
   subtitle: { fontSize: 16, color: C.accentSoft, marginTop: 6, marginBottom: 40, textAlign: 'center' },

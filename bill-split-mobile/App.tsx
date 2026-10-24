@@ -28,6 +28,8 @@ import { listenPushTaps, registerPush, unregisterPush } from './services/push';
 import ItemsScreen from './screens/ItemsScreen';
 import LockScreen from './screens/LockScreen';
 import LoginScreen from './screens/LoginScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
+import GuestGate from './screens/GuestGate';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
 import PartyChatScreen from './screens/PartyChatScreen';
@@ -55,6 +57,21 @@ function matchItems(oldItems: any[], newItems: any[]) {
 function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void; registerNav?: (go: (s: string) => void) => void; onBug?: () => void }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
+  const [welcomed, setWelcomed] = useState(true); // seen the welcome slides on this phone?
+  const [guest, setGuest] = useState(false); // 👤 trying the app without an account
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_e, session) => setGuest(!!(session && session.user && (session.user as any).is_anonymous)));
+    return () => data.subscription.unsubscribe();
+  }, []);
+  // 👋 Try first, sign up later: start as a guest straight from the welcome slides
+  const startAsGuest = async () => {
+    const { error } = await supabase.auth.signInAnonymously();
+    if (error) return Alert.alert("Couldn't start", error.message);
+    AsyncStorage.setItem('vibeout.welcomed', '1').catch(() => {});
+    setWelcomed(true);
+    setGuest(true);
+    setLoggedIn(true);
+  };
   const [locked, setLocked] = useState(false); // saved login found, waiting for Face ID
   const [screen, setScreen] = useState('home');
   // tell Root the page changed, so it can slide the new page in
@@ -265,8 +282,16 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   useEffect(() => {
     supabase.auth
       .getSession()
-      .then(({ data }) => {
-        if (data.session) setLocked(true);
+      .then(async ({ data }) => {
+        const anon = !!(data.session && (data.session.user as any).is_anonymous);
+        if (anon) {
+          setGuest(true);
+          setLoggedIn(true); // guests skip Face ID (nothing personal to protect yet)
+        } else if (data.session) setLocked(true);
+        else {
+          const seen = await AsyncStorage.getItem('vibeout.welcomed').catch(() => null);
+          setWelcomed(!!seen);
+        }
       })
       .finally(() => setChecking(false));
   }, []);
@@ -278,6 +303,16 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   // Log out properly (ends the Supabase session too)
   const logout = async () => {
+    if (guest) {
+      const ok = await new Promise((res) =>
+        Alert.alert('Leave guest mode?', "Your bills and plans are only saved to this guest account. Save your account first so you don't lose them.", [
+          { text: 'Save account', onPress: () => { setScreen('saveAccount'); res(false); } },
+          { text: 'Log out anyway', style: 'destructive', onPress: () => res(true) },
+          { text: 'Cancel', style: 'cancel', onPress: () => res(false) },
+        ])
+      );
+      if (!ok) return;
+    }
     await unregisterPush();
     try {
       await supabase.auth.signOut();
@@ -308,7 +343,18 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (!loggedIn) {
-    return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} />;
+    if (!welcomed) {
+      return (
+        <WelcomeScreen
+          onGuest={startAsGuest}
+          onSignIn={() => {
+            AsyncStorage.setItem('vibeout.welcomed', '1').catch(() => {});
+            setWelcomed(true);
+          }}
+        />
+      );
+    }
+    return <LoginScreen onLoginSuccess={() => setLoggedIn(true)} onBack={() => setWelcomed(false)} />;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
@@ -458,7 +504,22 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+  }
+
+  // 🔒 A guest saving their account (everything they made stays)
+  if (screen === 'saveAccount') {
+    return (
+      <LoginScreen
+        linking
+        onBack={() => setScreen('home')}
+        onLoginSuccess={() => {
+          setGuest(false);
+          setScreen('home');
+          Alert.alert('Account saved 🎉', 'Your bills and plans are safe. You can add friends now.');
+        }}
+      />
+    );
   }
 
   if (screen === 'help') {
@@ -606,6 +667,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'friends') {
+    if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} />;
     return (
       <FriendsScreen
         startAdding={friendsAdd}
@@ -642,6 +704,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   return (
     <HomeScreen
+      guest={guest}
+      onSaveAccount={() => setScreen('saveAccount')}
       draft={draft}
       onResumeDraft={resumeDraft}
       onDiscardDraft={clearDraft}

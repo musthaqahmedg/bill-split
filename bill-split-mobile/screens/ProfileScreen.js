@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { avatarUrl, deleteAccount, getProfile, isValidUpi, pickAvatar, saveProfile } from '../services/profile';
 import Pulse from './Pulse';
+import GuestGate from './GuestGate';
 import BirthdayPicker from './BirthdayPicker';
 import { bdayText, myBirthday } from '../services/birthday';
 import { levelOf, myXp } from '../services/xp';
@@ -13,7 +14,7 @@ import { getPushPreview, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
-export default function ProfileScreen({ onBack, onLogout, onHelp, onBug }) {
+export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount }) {
   const [showActive, setShowActiveState] = useState(true);
   const [preview, setPreview] = useState(true);
   useEffect(() => {
@@ -151,6 +152,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug }) {
       ) : null}
 
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
+        {guest ? <GuestGate small body="Save it to add friends and keep your bills safe" onSave={onSaveAccount} /> : null}
         <View style={styles.hero}>
           <TouchableOpacity onPress={changePhoto} disabled={uploading}>
             <Pulse name={name || '?'} uri={avatarUrl(avatar)} size={96} />
