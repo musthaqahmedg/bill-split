@@ -200,3 +200,39 @@ test('🔒 phone SHA-256 matches the server (and node) exactly', () => {
   }
   assert.equal(contactHash(' Musthaq@Gmail.com '), createHash('sha256').update('musthaq@gmail.com').digest('hex'));
 });
+
+// ---- 💰 My Money ----
+import { budgetStatus, moneySummary, shiftMonth } from '../services/money.js';
+
+test('💰 My Money: only MY share, per month, with last month compare', () => {
+  const B = (title, date, me, others = []) => ({ title, created_at: date + 'T20:00:00', bill_participants: [{ name: 'Me', amount_due: me }, ...others.map((n) => ({ name: n, amount_due: 100 }))] });
+  const bills = [
+    B('Toddy Shop', '2026-10-03', 600, ['Arun', 'Bibin']),
+    B('Toddy Shop', '2026-10-18', 400, ['Arun']),
+    B('Paragon', '2026-10-20', 1000, ['Gautham']),
+    B('Cafe', '2026-09-10', 1600, ['Arun']),
+    { title: 'Not mine', created_at: '2026-10-05T20:00:00', bill_participants: [{ name: 'X', amount_due: 999 }] },
+    { title: 'Dated bill', bill_date: '2026-09-30', created_at: '2026-10-02T10:00:00', bill_participants: [{ name: 'Me', amount_due: 400 }] },
+  ];
+  const s = moneySummary(bills, '2026-10', new Date('2026-10-21T12:00:00'));
+  assert.equal(s.spent, 2000);
+  assert.equal(s.nights, 3);
+  assert.equal(s.avg, 667);
+  assert.equal(s.prevSpent, 2000); // 1600 + the bill dated 30 Sep (saved in Oct)
+  assert.equal(s.change, 0);
+  assert.deepEqual(s.biggest, { title: 'Paragon', amount: 1000 });
+  assert.deepEqual(s.topSpot, { name: 'Toddy Shop', count: 2 });
+  assert.equal(s.topFriends[0].name, 'Arun');
+  assert.equal(s.months.length, 6);
+  assert.equal(s.months[5].spent, 2000);
+  assert.deepEqual(s.week, { spent: 1000, nights: 1 }); // week = Mon 19 → Wed 21 Oct: only the 20 Oct bill (18th was a Sunday)
+});
+
+test('💰 budget meter: on track / fast / over', () => {
+  const mid = new Date('2026-10-15T12:00:00');
+  assert.equal(budgetStatus(0, 0), null);
+  assert.equal(budgetStatus(2000, 5000, mid).mood.text, 'On track');
+  assert.equal(budgetStatus(4500, 5000, mid).mood.text, 'Spending fast this month');
+  assert.equal(budgetStatus(6000, 5000, mid).mood.text, 'Over by ₹1,000');
+  assert.equal(shiftMonth('2026-01', -1), '2025-12');
+});

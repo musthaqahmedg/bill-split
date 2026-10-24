@@ -4,6 +4,7 @@ import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { billBalance, homeBalance } from '../services/settle';
+import { monthKey, monthLabel, moneySummary } from '../services/money';
 import { C } from '../services/theme';
 import FriendsRow from './FriendsRow';
 import GuestGate from './GuestGate';
@@ -17,7 +18,7 @@ const hello = () => {
 const HUES = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -114,7 +115,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         ) : null}
       </View>
 
-      {!showArchived && active.length ? (
+      {!showArchived && (active.length || onMoney) ? (
+        <TouchableOpacity style={styles.summaryWrap} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
         <View style={styles.summary}>
           <View style={styles.sumBox}>
             <Text style={styles.sumLabel}>You'll get back</Text>
@@ -126,6 +128,13 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
             <Text style={[styles.sumValue, { color: sum.owe ? C.pink : C.text }]}>{inr(sum.owe)}</Text>
           </View>
         </View>
+          {onMoney ? (
+            <View style={styles.moneyRow}>
+              <Text style={styles.moneyText}>💰 My Money · {inr(moneySummary(bills, monthKey(new Date())).spent)} spent in {monthLabel(monthKey(new Date()))}</Text>
+              <Text style={styles.moneyGo}>›</Text>
+            </View>
+          ) : null}
+        </TouchableOpacity>
       ) : null}
 
       {guest && !showArchived ? <GuestGate small onSave={onSaveAccount} /> : null}
@@ -198,7 +207,11 @@ const styles = StyleSheet.create({
   bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 
-  summary: { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 16, marginBottom: 14 },
+  summaryWrap: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, marginBottom: 14, overflow: 'hidden' },
+  summary: { flexDirection: 'row', paddingVertical: 16 },
+  moneyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingVertical: 11, paddingHorizontal: 16 },
+  moneyText: { color: C.text, fontSize: 14, fontWeight: '600' },
+  moneyGo: { color: C.faint, fontSize: 20 },
   sumBox: { flex: 1, alignItems: 'center' },
   sumLine: { width: 1, backgroundColor: C.border },
   sumLabel: { color: C.sub, fontSize: 13, fontWeight: '600' },

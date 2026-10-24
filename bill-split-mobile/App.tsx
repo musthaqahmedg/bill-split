@@ -31,6 +31,7 @@ import LoginScreen from './screens/LoginScreen';
 import WelcomeScreen from './screens/WelcomeScreen';
 import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
+import MyMoneyScreen from './screens/MyMoneyScreen';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -536,7 +537,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onYourData={() => setScreen('yourData')} guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen onMoney={() => setScreen('money')} onYourData={() => setScreen('yourData')} guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+  }
+
+  if (screen === 'money') {
+    return <MyMoneyScreen onBack={() => setScreen('home')} />;
   }
 
   if (screen === 'yourData') {
@@ -742,6 +747,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     <HomeScreen
       guest={guest}
       onSaveAccount={() => setScreen('saveAccount')}
+      onMoney={() => setScreen('money')}
       draft={draft}
       onResumeDraft={resumeDraft}
       onDiscardDraft={clearDraft}
