@@ -137,6 +137,7 @@ export default function PartyChatScreen({ partyId, onBack }) {
             <Text style={styles.sub}>Friends join from your invite link. No app needed.</Text>
           );
         })()}
+        <Text style={styles.vanish}>🔒 Only people in this plan can read it · 🔥 disappears 30 days after the last message</Text>
       </View>
 
       {messages === null ? (
@@ -195,6 +196,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60 },
   header: { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 8 },
+  vanish: { color: C.faint, fontSize: 11, marginTop: 4 },
   title: { color: C.text, fontSize: 22, fontWeight: '800' },
   sub: { color: C.faint, fontSize: 12, marginTop: 2 },
   loading: { marginTop: 40 },

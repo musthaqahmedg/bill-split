@@ -23,6 +23,7 @@ export default function Privacy() {
           <li><b>Notifications</b>: a push token for your phone, so we can send alerts like friend requests and chat messages. You can hide message previews in Profile, or turn notifications off in your phone’s settings.</li>
           <li><b>Bug notes</b>: when you shake your phone to report a problem, we save your note, any screenshot you add, the page you were on and your phone model. Only our team can see it.</li>
           <li><b>Crash reports</b>: if the app breaks, an error report is sent to Sentry (stored in the EU) with the error, the page you were on, your phone model and an account ID. No names, numbers, emails or bill contents.</li>
+          <li><b>Plan chats</b>: only people in the plan can read them. A chat disappears from the app 30 days after its last message, is kept locked away for 1 year as Indian data-protection rules require, and is then permanently deleted.</li>
           <li><b>Help chat</b>: messages you send in “Chat with us”, so our team can reply. Only you and our team can see them.</li>
           <li><b>Your contacts</b>: never uploaded or stored. When you pick friends from contacts, only the people you choose are added. To find friends already on the app, your phone sends scrambled codes (SHA-256), never the numbers, and nothing is saved.</li>
           <li><b>Guest mode</b>: you can try the app without signing up. Your guest data is kept until you save your account or log out.</li>
