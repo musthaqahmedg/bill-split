@@ -103,8 +103,6 @@ export const NEARBY = [
   { key: 'cafes', label: '☕ Cafés' },
   { key: 'food', label: '🍽️ Restaurants' },
   { key: 'supermarkets', label: '🛒 Supermarkets' },
-  { key: 'beverages', label: '🍾 Beverage shops', adult: true },
-  { key: 'pan', label: '🌿 Pan shops' },
 ];
 Object.assign(EMOJI, {
   supermarket: '🛒', convenience: '🏪', department_store: '🏬', general: '🏪', grocery: '🛒',

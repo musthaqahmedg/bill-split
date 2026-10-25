@@ -14,7 +14,7 @@ import { C } from '../services/theme';
 
 const AGE_KEY = 'vibeout.ageOk';
 
-// 📍 Nearby: restobars, pubs, cafés, restaurants, supermarkets, beverage shops, pan shops
+// 📍 Nearby: restobars, pubs, cafés, restaurants, supermarkets (no alcohol/tobacco shops: Play Store policy)
 export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked }) {
   const [category, setCategory] = useState(initialCategory);
   const [q, setQ] = useState('');
