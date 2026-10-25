@@ -89,3 +89,38 @@ export const pick = (list, not) => {
   while (x === not);
   return x;
 };
+
+// 👉 Who's most likely to… (everyone points, then tap the winner)
+export const MOST_LIKELY = [
+  'Who is most likely to be late to their own wedding?',
+  'Who is most likely to become famous on Instagram?',
+  'Who is most likely to forget whose birthday it is?',
+  'Who is most likely to start a business that actually works?',
+  'Who is most likely to cry at a movie?',
+  'Who is most likely to get lost with Google Maps open?',
+  'Who is most likely to plan the next trip (and cancel it)?',
+  'Who is most likely to adopt five dogs?',
+  'Who is most likely to reply "on the way" from bed?',
+  'Who is most likely to win a dance-off?',
+  'Who is most likely to order biryani at 2 AM?',
+  'Who is most likely to become a motivational speaker?',
+  'Who is most likely to still be on the dance floor at closing?',
+  'Who is most likely to remember everyone’s bill share?',
+  'Who is most likely to say "last one" and never mean it?',
+];
+
+// 🤔 Would you rather (clean, funny)
+export const WOULD_RATHER = [
+  'Would you rather only eat biryani forever, or never eat biryani again?',
+  'Would you rather always be 10 minutes late, or always 2 hours early?',
+  'Would you rather have no phone for a month, or no friends for a week?',
+  'Would you rather sing every word you say, or dance every time you walk?',
+  'Would you rather travel the world alone, or stay home with your best friends?',
+  'Would you rather know every language, or play every instrument?',
+  'Would you rather be the funniest person in the room, or the smartest?',
+  'Would you rather live in Goa, or live in the mountains?',
+  'Would you rather have a rewind button, or a pause button for life?',
+  'Would you rather give up chai, or give up coffee?',
+  'Would you rather be famous for 1 day, or rich for 1 year?',
+  'Would you rather always have to share your food, or never be allowed to share?',
+];

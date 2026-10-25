@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { sendMessage } from '../services/chat';
-import { CHARADES, DARES, NEVER, TRUTHS, WHEEL_REASONS, pick } from '../services/games';
+import { CHARADES, DARES, MOST_LIKELY, NEVER, TRUTHS, WHEEL_REASONS, WOULD_RATHER, pick } from '../services/games';
 import { getProfile } from '../services/profile';
 import { C } from '../services/theme';
 
@@ -36,6 +36,8 @@ export default function PartyGames({ visible, onClose, party }) {
     { key: 'never', emoji: '🙋', name: 'Never have I ever', sub: 'Clean, funny confessions', color: '#EC4899' },
     { key: 'tod', emoji: '🎭', name: 'Truth or dare', sub: 'Pass the phone around', color: '#F59E0B' },
     { key: 'charades', emoji: '🤫', name: 'Charades', sub: 'Act it out, 60 seconds', color: '#22D3EE' },
+    { key: 'likely', emoji: '👉', name: 'Most likely to…', sub: 'Point at the friend', color: '#A855F7' },
+    { key: 'rather', emoji: '🤔', name: 'Would you rather', sub: 'Pick a side, defend it', color: '#34D399' },
   ];
 
   return (
@@ -57,16 +59,18 @@ export default function PartyGames({ visible, onClose, party }) {
         {!game && (
           <ScrollView>
             <Text style={styles.sub}>{players.length} players · no drinking games, just good vibes 😎</Text>
-            {GAMES.map((g) => (
-              <TouchableOpacity key={g.key} style={[styles.card, { backgroundColor: g.color + '22', borderColor: g.color + '66' }]} onPress={() => setGame(g.key)}>
-                <Text style={styles.cardEmoji}>{g.emoji}</Text>
-                <View style={styles.flex}>
-                  <Text style={styles.cardName}>{g.name}</Text>
-                  <Text style={styles.cardSub}>{g.sub}</Text>
-                </View>
-                <Text style={styles.chev}>›</Text>
-              </TouchableOpacity>
-            ))}
+            <View style={styles.grid}>
+              {GAMES.map((g) => (
+                <TouchableOpacity key={g.key} style={[styles.tile, { backgroundColor: g.color + '26', borderColor: g.color + '88' }]} onPress={() => setGame(g.key)} activeOpacity={0.85}>
+                  <Text style={styles.tileEmoji}>{g.emoji}</Text>
+                  <Text style={styles.tileName}>{g.name}</Text>
+                  <Text style={styles.tileSub}>{g.sub}</Text>
+                  <View style={[styles.tilePlay, { backgroundColor: g.color }]}>
+                    <Text style={styles.tilePlayText}>Play ›</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
           </ScrollView>
         )}
 
@@ -74,6 +78,8 @@ export default function PartyGames({ visible, onClose, party }) {
         {game === 'never' && <Deck title="🙋 Never have I ever" cards={NEVER} color="#EC4899" hint="Put a finger down if you have 😅" />}
         {game === 'tod' && <TruthOrDare players={players} />}
         {game === 'charades' && <Charades />}
+        {game === 'likely' && <MostLikely players={players} onPost={post} />}
+        {game === 'rather' && <Deck title="🤔 Would you rather" cards={WOULD_RATHER} color="#34D399" hint="Everyone picks a side. Losers explain why 😄" />}
       </View>
     </Modal>
   );
@@ -190,6 +196,40 @@ function Deck({ title, cards, color, hint }) {
   );
 }
 
+// 👉 Most likely to…: read it out, everyone points, tap who won, post it to the chat
+function MostLikely({ players, onPost }) {
+  const [card, setCard] = useState(() => pick(MOST_LIKELY));
+  const [winner, setWinner] = useState(null);
+  const next = () => {
+    setWinner(null);
+    setCard((c) => pick(MOST_LIKELY, c));
+  };
+  return (
+    <ScrollView contentContainerStyle={styles.center}>
+      <Text style={styles.gameTitle}>👉 Most likely to…</Text>
+      <Text style={styles.sub}>3, 2, 1… everyone point!</Text>
+      <View style={[styles.bigCard, { backgroundColor: '#A855F7' }]}>
+        <Text style={styles.bigCardText}>{card}</Text>
+      </View>
+      <View style={styles.names}>
+        {players.map((n) => (
+          <TouchableOpacity key={n} style={[styles.nameChip, winner === n && styles.nameOn]} onPress={() => setWinner(n)}>
+            <Text style={[styles.nameText, winner === n && styles.nameTextOn]}>{n}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      {winner ? (
+        <TouchableOpacity style={[styles.bigBtn, { backgroundColor: '#A855F7' }]} onPress={() => onPost(`👉 ${card.replace('Who is most likely to', 'Most likely to')} → ${winner} 😂`)}>
+          <Text style={styles.bigBtnText}>Post to chat 💬</Text>
+        </TouchableOpacity>
+      ) : null}
+      <TouchableOpacity style={styles.bigBtn} onPress={next}>
+        <Text style={styles.bigBtnText}>Next card ›</Text>
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
 // 🎭 Truth or dare: random player, then they choose
 function TruthOrDare({ players }) {
   const [who, setWho] = useState(() => pick(players));
@@ -298,6 +338,18 @@ function Charades() {
 }
 
 const styles = StyleSheet.create({
+  grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
+  tile: { width: '48.5%', borderWidth: 1, borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170 },
+  tileEmoji: { fontSize: 34 },
+  tileName: { color: C.text, fontSize: 16, fontWeight: '800', marginTop: 8 },
+  tileSub: { color: C.sub, fontSize: 12, marginTop: 3, flex: 1 },
+  tilePlay: { alignSelf: 'flex-start', borderRadius: 12, paddingVertical: 5, paddingHorizontal: 12, marginTop: 10 },
+  tilePlayText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  names: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 14 },
+  nameChip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, margin: 4 },
+  nameOn: { backgroundColor: '#A855F7', borderColor: '#A855F7' },
+  nameText: { color: C.text, fontSize: 14, fontWeight: '700' },
+  nameTextOn: { color: '#fff' },
   page: { flex: 1, backgroundColor: C.bg, padding: 18 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { color: C.text, fontSize: 24, fontWeight: '700' },
