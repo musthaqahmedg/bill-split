@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C } from '../services/theme';
+import QuickAdd from './QuickAdd';
 
 // 📱 Bottom tabs (like Instagram / Swiggy): Home · Plans · ➕ · Friends · Profile
 const TABS = [
@@ -21,6 +22,7 @@ const tap = () => {
 
 export default function TabBar({ current, onTab, onPlan, onBill }) {
   const [menu, setMenu] = useState(false);
+  const [spend, setSpend] = useState(false); // 💸 quick add
   const bottom = Math.max((initialWindowMetrics && initialWindowMetrics.insets.bottom) || 0, Platform.OS === 'ios' ? 20 : 10);
 
   return (
@@ -92,9 +94,25 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
               </View>
               <Text style={styles.chev}>›</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.option}
+              activeOpacity={0.85}
+              onPress={() => {
+                setMenu(false);
+                setTimeout(() => setSpend(true), 250);
+              }}
+            >
+              <Text style={styles.optEmoji}>💸</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.optTitle}>Add a spend</Text>
+                <Text style={styles.optSub}>Cab, snacks, entry… goes into My Money</Text>
+              </View>
+              <Text style={styles.chev}>›</Text>
+            </TouchableOpacity>
           </View>
         </Pressable>
       </Modal>
+      <QuickAdd visible={spend} onClose={() => setSpend(false)} />
     </View>
   );
 }

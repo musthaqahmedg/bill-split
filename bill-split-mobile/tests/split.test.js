@@ -281,3 +281,22 @@ test('📍 distance between friends', async () => {
   assert.equal(distText(0.153), '150 m away');
   assert.equal(distText(2.46), '2.5 km away');
 });
+
+// ---- 💸 Quick-add expenses in My Money ----
+test('💸 quick-add expenses count in spend, week and habits (not as nights)', () => {
+  const bills = [{ title: 'Toddy', created_at: '2026-10-20T21:00:00', bill_participants: [{ name: 'Me', amount_due: 1000 }] }];
+  const ex = [
+    { category: 'cab', amount: 250, spent_at: '2026-10-20T23:40:00' },
+    { category: 'smoke', amount: 150, spent_at: '2026-10-20T22:00:00' },
+    { category: 'snacks', amount: 99, spent_at: '2026-09-30T20:00:00' },
+  ];
+  const s = moneySummary(bills, '2026-10', new Date('2026-10-21T12:00:00'), ex);
+  assert.equal(s.spent, 1400);
+  assert.equal(s.nights, 1);
+  assert.equal(s.prevSpent, 99);
+  assert.deepEqual(s.extras, [{ category: 'cab', amount: 250 }, { category: 'smoke', amount: 150 }]);
+  assert.equal(s.week.spent, 1400);
+  const h = habitsSummary([], '2026-10', ex);
+  assert.equal(h.smoke, 150);
+  assert.equal(h.total, 400);
+});

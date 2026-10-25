@@ -13,6 +13,7 @@ import NightCheck from './NightCheck';
 import PartyGames from './PartyGames';
 import PartyPhotos from './PartyPhotos';
 import NightRecap from './NightRecap';
+import QuickAdd from './QuickAdd';
 
 // 🌙 Night Mode: everything you need DURING the night on one dark, simple screen.
 // Crew status · chat · photos · games · split the bill · ride home · share location · I'm home safe
@@ -31,6 +32,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
   const [stopTime, setStopTime] = useState('');
   const [homeSheet, setHomeSheet] = useState(false); // 🏠 Get me home safe
   const [recapOpen, setRecapOpen] = useState(false); // 🎬 story of the night
+  const [spendOpen, setSpendOpen] = useState(false); // 💸 quick add a spend
   useEffect(() => {
     if (!visible || !party) return;
     billsForParty(party.id)
@@ -346,6 +348,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
             />
             <Tile emoji="🎮" title="Games" sub="Wheel · dares" onPress={() => setGames(true)} />
             <Tile emoji="🎬" title="Night recap" sub="The story of tonight" tint="#A855F7" onPress={() => setRecapOpen(true)} />
+            <Tile emoji="💸" title="Add a spend" sub="Cab · snacks · entry" onPress={() => setSpendOpen(true)} />
             <Tile emoji="🚕" title="Ride home" sub="Uber · Ola · Rapido" tint={C.amber} onPress={ride} />
             <Tile emoji="📍" title={sharing ? 'Finding you…' : 'Share location'} sub="Send where you are" tint={C.green} onPress={shareLocation} />
             <Tile emoji="🆘" title="Emergency" sub="Call 112" tint={C.red} onPress={() => Alert.alert('Call 112?', 'India emergency number', [{ text: 'Cancel', style: 'cancel' }, { text: 'Call', style: 'destructive', onPress: () => Linking.openURL('tel:112') }])} />
@@ -365,6 +368,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
         </ScrollView>
       </View>
       <PartyGames visible={games} onClose={() => setGames(false)} party={party} />
+      <QuickAdd visible={spendOpen} onClose={() => setSpendOpen(false)} partyId={party.id} />
       <NightRecap visible={recapOpen} onClose={() => setRecapOpen(false)} party={party} photos={[]} />
 
       {/* ➕ Add a stop */}

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { listBills, listBillsDetailed } from '../services/bills';
-import { MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor } from '../services/money';
+import { listExpenses, removeExpense } from '../services/expenses';
+import QuickAdd from './QuickAdd';
+import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor } from '../services/money';
 import { show } from '../services/names';
 import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
@@ -44,6 +46,8 @@ function Ring({ pct, color, size = 190, children }) {
 export default function MyMoneyScreen({ onBack }) {
   const [bills, setBills] = useState(null);
   const [detailed, setDetailed] = useState([]); // items + claims, for the habits card
+  const [expenses, setExpenses] = useState([]); // 💸 quick-add spends
+  const [adding, setAdding] = useState(false);
   const [budget, setBudget] = useState(0);
   const [month, setMonth] = useState(monthKey(new Date()));
   const [editing, setEditing] = useState(false);
@@ -67,6 +71,7 @@ export default function MyMoneyScreen({ onBack }) {
       const [b, u] = await Promise.all([listBills(), supabase.auth.getUser()]);
       setBills(b || []);
       listBillsDetailed().then(setDetailed).catch(() => setDetailed([]));
+      listExpenses().then(setExpenses).catch(() => setExpenses([]));
       const id = u && u.data && u.data.user ? u.data.user.id : null;
       if (id) {
         const { data } = await supabase.from('profiles').select('monthly_budget').eq('id', id).maybeSingle();
@@ -103,12 +108,13 @@ export default function MyMoneyScreen({ onBack }) {
 
   const thisMonth = monthKey(new Date());
   const isNow = month === thisMonth;
-  const s = moneySummary(bills, month);
+  const s = moneySummary(bills, month, new Date(), expenses);
   const bal = homeBalance(bills);
   const st = isNow ? budgetStatus(s.spent, budget) : null;
   const ringColor = !st ? C.accent : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.green;
   const maxBar = Math.max(1, ...s.months.map((m) => m.spent));
-  const h = habitsSummary(detailed, month);
+  const h = habitsSummary(detailed, month, expenses);
+  const monthSpends = expenses.filter((e) => monthKey(new Date(e.spent_at)) === month);
 
   return (
     <View style={styles.page}>
@@ -223,7 +229,49 @@ export default function MyMoneyScreen({ onBack }) {
         )}
 
         {/* 🍺🚬 Habits: private, gentle, motivating */}
-        {h.nights ? (
+        {/* 💸 Quick-add spends */}
+        <View style={styles.card}>
+          <View style={styles.spendHead}>
+            <Text style={styles.cardTitle}>💸 Other spends</Text>
+            <TouchableOpacity onPress={() => setAdding(true)} hitSlop={8}>
+              <Text style={styles.spendAdd}>＋ Add</Text>
+            </TouchableOpacity>
+          </View>
+          {monthSpends.length ? (
+            <>
+              <View style={styles.spendCats}>
+                {s.extras.map((x) => (
+                  <View key={x.category} style={styles.spendCat}>
+                    <Text style={styles.spendCatText}>{EXPENSE_CATS[x.category].emoji} {inr(x.amount)}</Text>
+                  </View>
+                ))}
+              </View>
+              {monthSpends.slice(0, 6).map((e) => (
+                <TouchableOpacity
+                  key={e.id}
+                  style={styles.spendRow}
+                  onLongPress={() =>
+                    Alert.alert('Remove this spend?', `${EXPENSE_CATS[e.category].label} · ${inr(e.amount)}`, [
+                      { text: 'Cancel', style: 'cancel' },
+                      { text: 'Remove', style: 'destructive', onPress: async () => { try { await removeExpense(e.id); load(); } catch (er) {} } },
+                    ])
+                  }
+                >
+                  <Text style={styles.spendEmoji}>{EXPENSE_CATS[e.category].emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.spendName} numberOfLines={1}>{e.note || EXPENSE_CATS[e.category].label}</Text>
+                    <Text style={styles.spendWhen}>{new Date(e.spent_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} · hold to remove</Text>
+                  </View>
+                  <Text style={styles.spendAmt}>{inr(e.amount)}</Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          ) : (
+            <Text style={styles.body}>Cabs, snacks, entry fees… log them in 2 taps so your Night Budget is real.</Text>
+          )}
+        </View>
+
+        {h.nights || h.total ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>🍺 Drinks & 🚬 smoke</Text>
             {h.habit ? (
@@ -280,6 +328,8 @@ export default function MyMoneyScreen({ onBack }) {
 
         <Text style={styles.foot}>🔒 Built only from bills in the app. We never read your bank or SMS.</Text>
       </ScrollView>
+
+      <QuickAdd visible={adding} onClose={() => setAdding(false)} onSaved={load} />
 
       {/* 🎯 Set budget */}
       <Modal visible={editing} transparent animationType="fade" onRequestClose={() => setEditing(false)}>
@@ -367,6 +417,16 @@ const styles = StyleSheet.create({
   motivate: { color: C.accentSoft, fontSize: 13, fontWeight: '700', marginTop: 8 },
   dry: { color: C.green, fontSize: 13, fontWeight: '600', marginTop: 10 },
   private: { color: C.faint, fontSize: 11, marginTop: 10 },
+  spendHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  spendAdd: { color: C.accentSoft, fontSize: 14, fontWeight: '800' },
+  spendCats: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
+  spendCat: { backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 9, marginRight: 6, marginBottom: 6 },
+  spendCatText: { color: C.text, fontSize: 13, fontWeight: '600' },
+  spendRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.border },
+  spendEmoji: { fontSize: 20, width: 32 },
+  spendName: { color: C.text, fontSize: 14, fontWeight: '600' },
+  spendWhen: { color: C.faint, fontSize: 11, marginTop: 1 },
+  spendAmt: { color: C.text, fontSize: 14, fontWeight: '800', marginLeft: 8 },
   foot: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 16 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },

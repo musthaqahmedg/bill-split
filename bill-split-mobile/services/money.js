@@ -24,12 +24,32 @@ export const myShare = (b) => {
   return me ? Math.round(Number(me.amount_due) || 0) : 0;
 };
 
-export function moneySummary(bills, key, now = new Date()) {
-  const rows = (bills || []).map((b) => ({ b, d: billDate(b), amt: myShare(b) })).filter((r) => r.amt > 0);
+// 💸 Quick-add expense categories
+export const EXPENSE_CATS = {
+  cab: { emoji: '🚕', label: 'Cab' },
+  snacks: { emoji: '🍿', label: 'Snacks' },
+  entry: { emoji: '🎟️', label: 'Entry' },
+  drinks: { emoji: '🍹', label: 'Drinks' },
+  smoke: { emoji: '🚬', label: 'Smoke' },
+  gift: { emoji: '🎁', label: 'Gift' },
+  parking: { emoji: '🅿️', label: 'Parking' },
+  other: { emoji: '➕', label: 'Other' },
+};
+
+export function moneySummary(bills, key, now = new Date(), expenses = []) {
+  const billRows = (bills || []).map((b) => ({ b, d: billDate(b), amt: myShare(b) })).filter((r) => r.amt > 0);
+  // quick-add expenses count towards spend (but not as "nights out")
+  const extraRows = (expenses || []).map((e) => ({ e, d: new Date(e.spent_at), amt: Math.round(Number(e.amount) || 0) })).filter((r) => r.amt > 0);
+  const rows = billRows;
   const inMonth = (k) => rows.filter((r) => monthKey(r.d) === k);
   const mine = inMonth(key);
-  const spent = mine.reduce((s, r) => s + r.amt, 0);
-  const prevSpent = inMonth(shiftMonth(key, -1)).reduce((s, r) => s + r.amt, 0);
+  const extrasIn = (k) => extraRows.filter((r) => monthKey(r.d) === k);
+  const sumIn = (k) => inMonth(k).reduce((s, r) => s + r.amt, 0) + extrasIn(k).reduce((s, r) => s + r.amt, 0);
+  const spent = sumIn(key);
+  const prevSpent = sumIn(shiftMonth(key, -1));
+  const byCat = {};
+  extrasIn(key).forEach((r) => { byCat[r.e.category] = (byCat[r.e.category] || 0) + r.amt; });
+  const extras = Object.entries(byCat).sort((a, b) => b[1] - a[1]).map(([category, amount]) => ({ category, amount }));
   const nights = mine.length;
 
   const biggest = mine.reduce((top, r) => (!top || r.amt > top.amount ? { title: r.b.title || 'Night out', amount: r.amt } : top), null);
@@ -41,7 +61,7 @@ export function moneySummary(bills, key, now = new Date()) {
   const months = [];
   for (let i = 5; i >= 0; i--) {
     const k = shiftMonth(key, -i);
-    months.push({ key: k, label: monthLabel(k), spent: inMonth(k).reduce((s, r) => s + r.amt, 0) });
+    months.push({ key: k, label: monthLabel(k), spent: sumIn(k) });
   }
 
   // this week (Mon–today) for the weekly check-in, only for the current month view
@@ -49,18 +69,20 @@ export function moneySummary(bills, key, now = new Date()) {
   monday.setHours(0, 0, 0, 0);
   monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
   const week = rows.filter((r) => r.d >= monday && r.d <= now);
+  const weekExtra = extraRows.filter((r) => r.d >= monday && r.d <= now).reduce((s, r) => s + r.amt, 0);
 
   return {
     spent,
     nights,
     avg: nights ? Math.round(spent / nights) : 0,
+    extras,
     prevSpent,
     change: prevSpent ? Math.round(((spent - prevSpent) / prevSpent) * 100) : null,
     biggest,
     topSpot: spots[0] ? { name: spots[0][0], count: spots[0][1] } : null,
     topFriends: friends.slice(0, 3).map(([name, n]) => ({ name, count: n })),
     months,
-    week: { spent: week.reduce((s, r) => s + r.amt, 0), nights: week.length },
+    week: { spent: week.reduce((s, r) => s + r.amt, 0) + weekExtra, nights: week.length },
   };
 }
 
@@ -149,7 +171,7 @@ export function swapsFor(amount, seed = 0) {
   return out;
 }
 
-export function habitsSummary(detailedBills, key) {
+export function habitsSummary(detailedBills, key, expenses = []) {
   let drinks = 0;
   let smoke = 0;
   let total = 0;
@@ -164,6 +186,13 @@ export function habitsSummary(detailedBills, key) {
     drinks += h.drinks;
     smoke += h.smoke;
     total += h.total;
+  }
+  for (const e of expenses || []) {
+    if (monthKey(new Date(e.spent_at)) !== key) continue;
+    const a = Math.round(Number(e.amount) || 0);
+    if (e.category === 'drinks') drinks += a;
+    if (e.category === 'smoke') smoke += a;
+    total += a;
   }
   const habit = drinks + smoke;
   return { drinks, smoke, habit, total, nights, dry, pct: total ? Math.round((habit / total) * 100) : 0, yearly: habit * 12 };
