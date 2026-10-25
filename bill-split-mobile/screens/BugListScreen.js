@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, Modal, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 const ago = (t) => {
   const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
@@ -134,7 +134,7 @@ export default function BugListScreen({ onBack }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 6 },
-  title: { color: C.text, fontSize: 28, fontWeight: '700', marginBottom: 12 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 22, marginBottom: 12 },
   blockers: { color: '#F87171', fontSize: 14, fontWeight: '700', marginTop: -6, marginBottom: 10 },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 3, marginBottom: 12 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10 },

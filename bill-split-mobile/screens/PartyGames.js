@@ -3,9 +3,9 @@ import { Alert, Animated, Easing, Modal, ScrollView, StyleSheet, Text, Touchable
 import { sendMessage } from '../services/chat';
 import { CHARADES, DARES, MOST_LIKELY, NEVER, TRUTHS, WHEEL_REASONS, WOULD_RATHER, pick } from '../services/games';
 import { getProfile } from '../services/profile';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
-const COLORS = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA', '#F87171', '#A3E635'];
+const COLORS = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA', '#F87171', '#A3E635'];
 
 // 🎮 Party games: spin the wheel, never have I ever, truth or dare, charades
 export default function PartyGames({ visible, onClose, party }) {
@@ -32,7 +32,7 @@ export default function PartyGames({ visible, onClose, party }) {
   };
 
   const GAMES = [
-    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#4C5BD4' },
+    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#9B5CFF' },
     { key: 'never', emoji: '🙋', name: 'Never have I ever', sub: 'Clean, funny confessions', color: '#EC4899' },
     { key: 'tod', emoji: '🎭', name: 'Truth or dare', sub: 'Pass the phone around', color: '#F59E0B' },
     { key: 'charades', emoji: '🤫', name: 'Charades', sub: 'Act it out, 60 seconds', color: '#22D3EE' },
@@ -341,7 +341,7 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   tile: { width: '48.5%', borderWidth: 1, borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170 },
   tileEmoji: { fontSize: 34 },
-  tileName: { color: C.text, fontSize: 16, fontWeight: '800', marginTop: 8 },
+  tileName: { fontFamily: F.bold, color: C.text, fontSize: 14, marginTop: 8 },
   tileSub: { color: C.sub, fontSize: 12, marginTop: 3, flex: 1 },
   tilePlay: { alignSelf: 'flex-start', borderRadius: 12, paddingVertical: 5, paddingHorizontal: 12, marginTop: 10 },
   tilePlayText: { color: '#fff', fontSize: 13, fontWeight: '800' },
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   nameTextOn: { color: '#fff' },
   page: { flex: 1, backgroundColor: C.bg, padding: 18 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  title: { color: C.text, fontSize: 24, fontWeight: '700' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 19 },
   link: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   sub: { color: C.faint, fontSize: 13, marginBottom: 14, textAlign: 'center' },
   flex: { flex: 1 },
@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   cardSub: { color: C.sub, fontSize: 13, marginTop: 2 },
   chev: { color: 'rgba(255,255,255,0.4)', fontSize: 24 },
   center: { alignItems: 'center', paddingBottom: 40 },
-  gameTitle: { color: C.text, fontSize: 22, fontWeight: '800', marginBottom: 8 },
+  gameTitle: { fontFamily: F.bold, color: C.text, fontSize: 20, marginBottom: 8 },
   reasons: { maxHeight: 44, marginBottom: 10 },
   chip: { borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.08)' },
   chipOn: { backgroundColor: C.accent },
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
   bigBtnText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.5 },
   dim: { opacity: 0.6 },
   bigCard: { width: '100%', minHeight: 230, borderRadius: 24, padding: 26, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-  bigCardText: { color: '#fff', fontSize: 24, fontWeight: '800', textAlign: 'center', lineHeight: 32 },
+  bigCardText: { fontFamily: F.bold, color: '#fff', fontSize: 22, textAlign: 'center', lineHeight: 29 },
   cardKind: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '800', letterSpacing: 2, marginBottom: 10 },
   turn: { color: C.sub, fontSize: 16, marginBottom: 6 },
   turnName: { color: C.text, fontWeight: '800' },

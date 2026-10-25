@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { findDuplicate } from '../services/bills';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
 // Shrink the photo before sending: smaller = faster upload and faster reading
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   checkBad: { color: C.red },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: 4, color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, marginBottom: 4, color: C.text },
   restaurant: { fontSize: 15, color: C.sub, marginBottom: 12 },
   preview: { flex: 1, borderRadius: 16, marginBottom: 15, marginTop: 12, resizeMode: 'contain' },
   placeholder: { flex: 1, borderWidth: 2, borderColor: C.border, borderStyle: 'dashed', borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginBottom: 15, marginTop: 12 },

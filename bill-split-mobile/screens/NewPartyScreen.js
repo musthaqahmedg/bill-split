@@ -1,3 +1,4 @@
+import { LinearGradient } from '../components/SafeGradient';
 import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -13,7 +14,7 @@ import MenuSheet, { MenuButton } from './MenuSheet';
 import { createParty, sharesFor, updateParty } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 
 // Party name ideas that change every few seconds in the empty box
 const IDEAS = [
@@ -32,7 +33,7 @@ const IDEAS = [
 const TICKETS = [
   { key: 'early', name: 'Early Bird', emoji: '🐣', per: 500, note: 'Chill & cheap', color: '#34D399' },
   { key: 'regular', name: 'Regular', emoji: '🎟️', per: 1000, note: 'The usual', color: '#60A5FA' },
-  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#4C5BD4' },
+  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#9B5CFF' },
   { key: 'vip', name: 'VIP Table', emoji: '👑', per: 5000, note: 'All out', color: '#F59E0B' },
 ];
 const FUN = [
@@ -527,10 +528,12 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         ) : null}
         {step < STEPS.length - 1 ? (
           <TouchableOpacity style={[styles.button, styles.navNext]} onPress={next}>
+            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             <Text style={styles.buttonText}>Next: {STEPS[step + 1].label} ›</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={[styles.button, styles.navNext]} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
+            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : '🎉 Create plan'}</Text>}
           </TouchableOpacity>
         )}
@@ -563,7 +566,7 @@ const styles = StyleSheet.create({
   draftNo: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14 },
   draftNoText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text, marginBottom: 12 },
   list: { flex: 1 },
   scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
   groupTag: { alignSelf: 'flex-start', color: C.accentSoft, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, fontSize: 13, fontWeight: '700', marginBottom: 10, overflow: 'hidden' },
@@ -610,7 +613,7 @@ const styles = StyleSheet.create({
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   after: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 6 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 18, alignItems: 'center' },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
   steps: { flexDirection: 'row', marginBottom: 14 },
   stepItem: { flex: 1, marginRight: 6 },
   stepBar: { height: 4, borderRadius: 2, backgroundColor: C.border },

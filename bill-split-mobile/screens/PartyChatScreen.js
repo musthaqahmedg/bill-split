@@ -8,13 +8,13 @@ import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
 import { getParty } from '../services/parties';
 import { getProfile } from '../services/profile';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import { useFriendsActive } from '../services/active';
 
 const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
 // Colour for each friend's name, so the chat is easy to follow
-const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#E8C98B', '#FB923C', '#2DD4BF'];
+const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#C6FF3D', '#FB923C', '#2DD4BF'];
 const colorFor = (name) => NAME_COLORS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % NAME_COLORS.length];
 
 export default function PartyChatScreen({ partyId, onBack }) {
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 8 },
   vanish: { color: C.faint, fontSize: 11, marginTop: 4 },
-  title: { color: C.text, fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   sub: { color: C.faint, fontSize: 12, marginTop: 2 },
   loading: { marginTop: 40 },
   list: { padding: 14, paddingBottom: 8 },

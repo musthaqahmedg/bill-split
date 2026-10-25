@@ -1,8 +1,9 @@
+import { LinearGradient } from '../components/SafeGradient';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { initialWindowMetrics } from 'react-native-safe-area-context';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 import QuickAdd from './QuickAdd';
 
 // 📱 Bottom tabs (like Instagram / Swiggy): Home · Plans · ➕ · Friends · Profile
@@ -38,6 +39,7 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
                 setMenu(true);
               }}
             >
+              <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
               <Text style={styles.plusText}>＋</Text>
             </TouchableOpacity>
           </View>
@@ -125,12 +127,12 @@ const styles = StyleSheet.create({
   label: { color: C.faint, fontSize: 11, fontWeight: '600', marginTop: 2 },
   labelOn: { color: C.text },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.accent, marginTop: 3 },
-  plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg },
+  plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },
   plusText: { color: '#fff', fontSize: 26, fontWeight: '600', marginTop: -2 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 14 },
-  sheetTitle: { color: C.text, fontSize: 20, fontWeight: '800', marginBottom: 12 },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 18, marginBottom: 12 },
   option: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderRadius: 16, padding: 14, marginBottom: 10 },
   optEmoji: { fontSize: 26, marginRight: 12 },
   optTitle: { color: C.text, fontSize: 16, fontWeight: '700' },

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { clearBadge } from '../services/push';
 import { ICON, listNotifications, markAllRead, onNotification, openNotification } from '../services/notifications';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 const ago = (t) => {
   const s = Math.max(0, Math.round((Date.now() - new Date(t).getTime()) / 1000));
@@ -64,7 +64,7 @@ export default function NotificationsScreen({ onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 16 },
   back: { color: C.accentSoft, fontSize: 17 },
-  title: { fontSize: 34, fontWeight: '700', color: C.text, marginTop: 14, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 27, color: C.text, marginTop: 14, marginBottom: 12 },
   pad: { paddingBottom: 40 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 14, marginBottom: 4 },
   unread: { backgroundColor: 'rgba(139,92,246,0.12)' },

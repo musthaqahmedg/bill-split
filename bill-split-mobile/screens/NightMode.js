@@ -1,3 +1,4 @@
+import { LinearGradient } from '../components/SafeGradient';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -8,7 +9,7 @@ import { supabase } from '../services/supabaseClient';
 import { kindOf } from '../services/partyKinds';
 import { BADGES, LIVE, badgeOf, liveOf, setBadge, setLiveStatus } from '../services/parties';
 import { show } from '../services/names';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 import NightCheck from './NightCheck';
 import PartyGames from './PartyGames';
 import PartyPhotos from './PartyPhotos';
@@ -17,7 +18,7 @@ import QuickAdd from './QuickAdd';
 
 // 🌙 Night Mode: everything you need DURING the night on one dark, simple screen.
 // Crew status · chat · photos · games · split the bill · ride home · share location · I'm home safe
-const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const clock = () => new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
@@ -356,6 +357,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 
           {/* 🏠 The big one: always one tap away */}
           <TouchableOpacity style={styles.homeBtn} onPress={() => setHomeSheet(true)} activeOpacity={0.85}>
+            <LinearGradient colors={G.sunset} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             <Text style={styles.homeText}>🏠 Get me home safe</Text>
             <Text style={styles.homeSub}>Ride · share location · I'm home</Text>
           </TouchableOpacity>
@@ -461,7 +463,7 @@ const styles = StyleSheet.create({
   stopDone: { color: C.faint, textDecorationLine: 'line-through' },
   stopMeta: { color: C.faint, fontSize: 12, marginTop: 2 },
   empty: { color: C.faint, fontSize: 13, lineHeight: 19 },
-  homeBtn: { backgroundColor: '#F97316', borderRadius: 22, paddingVertical: 18, alignItems: 'center', marginTop: 4, marginBottom: 12 },
+  homeBtn: { backgroundColor: '#F97316', borderRadius: 22, paddingVertical: 18, alignItems: 'center', marginTop: 4, marginBottom: 12, overflow: 'hidden' },
   homeText: { color: '#fff', fontSize: 20, fontWeight: '900' },
   homeSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 3, fontWeight: '600' },
   input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, color: C.text, fontSize: 16, marginBottom: 10 },
@@ -477,7 +479,7 @@ const styles = StyleSheet.create({
   liveText: { color: C.text, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
   pad: { paddingHorizontal: 20, paddingBottom: 50 },
   kicker: { color: C.accentSoft, fontSize: 14, fontWeight: '700', marginTop: 6 },
-  title: { color: C.text, fontSize: 30, fontWeight: '800', marginTop: 4 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 24, marginTop: 4 },
   place: { color: C.sub, fontSize: 14, marginTop: 6 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 14, marginTop: 18 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -488,7 +490,7 @@ const styles = StyleSheet.create({
   cardHint: { color: C.faint, fontSize: 12, fontWeight: '500' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },
-  sheetTitle: { color: C.text, fontSize: 20, fontWeight: '800', marginBottom: 14 },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 18, marginBottom: 14 },
   badges: { flexDirection: 'row', flexWrap: 'wrap' },
   badgeChip: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
   badgeOn: { backgroundColor: C.accent },

@@ -34,6 +34,7 @@ import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
+import { useFonts, Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -802,6 +803,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
 // Whole app + the notification banner that slides over any screen
 function Root() {
+  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold }); // 🔤 chunky display font
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUid(data.session ? data.session.user.id : null));
@@ -906,6 +908,7 @@ function Root() {
     })
   ).current;
 
+  if (!fontsOk && !fontErr) return <View style={{ flex: 1, backgroundColor: C.bg }} />; // fonts load in a blink
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <Animated.View style={{ flex: 1, opacity: fade, transform: [{ translateX: x }] }}>

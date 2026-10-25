@@ -14,7 +14,7 @@ import { activeLabel } from '../services/active';
 import { findUser, friendsAtParties, myFriends, removeFriend, respond } from '../services/friends';
 import { avatarUrl } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 const INVITE = 'Join me on Vibe Out 🎉 Plan parties, split bills, no fights → https://bill-split-flax.vercel.app';
 
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   kicker: { color: C.sub, fontSize: 15, fontWeight: '500' },
   addBtn: { backgroundColor: C.accent, borderRadius: 22, height: 44, paddingHorizontal: 18, justifyContent: 'center' },
   addText: { color: '#fff', fontSize: 15, fontWeight: '700' },
-  title: { fontSize: 30, fontWeight: '800', color: C.text, marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginTop: 2 },
   tabs: { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 4, marginBottom: 14 },
   tab: { flex: 1, paddingVertical: 9, borderRadius: 12, alignItems: 'center' },
   tabOn: { backgroundColor: C.cardHi },
@@ -452,7 +452,7 @@ const styles = StyleSheet.create({
   mt: { marginTop: 12 },
   sheet: { flex: 1, backgroundColor: C.bg, padding: 18 },
   sheetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  sheetTitle: { color: C.text, fontSize: 24, fontWeight: '700' },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 22 },
   done: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   searchRow: { flexDirection: 'row' },
   search: { flex: 1, backgroundColor: 'rgba(255,255,255,0.07)', borderRadius: 12, padding: 12, fontSize: 16, color: C.text },

@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef } from 'react';
 import { Animated, Dimensions, Easing, Modal, StyleSheet, Text, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // 🎉 Party burst: emojis fly up + a big "GO!" when a plan is locked in (Gautham's idea). Respects quick tap-away.
 const EMOJI = ['🎉', '🪩', '🔥', '💃', '🥳', '✨', '🎊', '🕺'];
@@ -77,6 +77,6 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(7,7,10,0.82)', alignItems: 'center', justifyContent: 'center' },
   center: { alignItems: 'center' },
   sticker: { backgroundColor: C.accent, borderRadius: 32, paddingHorizontal: 34, paddingVertical: 10, transform: [{ rotate: '-4deg' }], shadowColor: C.accent, shadowOpacity: 0.6, shadowRadius: 20, elevation: 10 },
-  go: { color: '#fff', fontSize: 72, fontWeight: '900', letterSpacing: 2 },
+  go: { fontFamily: F.display, color: '#fff', fontSize: 58, letterSpacing: 2 },
   sub: { color: C.text, fontSize: 18, fontWeight: '700', marginTop: 18 },
 });

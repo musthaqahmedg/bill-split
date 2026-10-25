@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // ✍️ Privacy notice + consent (India DPDP Act 2023 / Rules 2025).
 // Shown once to everyone (guests too) before we use their data, and again if the notice changes.
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
   pad: { paddingTop: 64, paddingHorizontal: 22, paddingBottom: 24 },
   kicker: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
-  title: { color: C.text, fontSize: 30, fontWeight: '800', marginTop: 2 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 24, marginTop: 2 },
   lead: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 6 },
   section: { color: C.text, fontSize: 16, fontWeight: '800', marginTop: 20, marginBottom: 8 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingHorizontal: 14 },

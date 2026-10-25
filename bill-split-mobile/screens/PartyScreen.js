@@ -1,3 +1,4 @@
+import { LinearGradient } from '../components/SafeGradient';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
@@ -18,7 +19,7 @@ import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { kindOf } from '../services/partyKinds';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -216,6 +217,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
 
       <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.accentSoft} />}>
         <TouchableOpacity style={styles.nightBtn} onPress={() => setNightOpen(true)} activeOpacity={0.85}>
+          <LinearGradient colors={G.night} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           <Text style={styles.nightEmoji}>🌙</Text>
           <View style={styles.flex}>
             <Text style={styles.nightTitle}>Start Night Mode</Text>
@@ -376,7 +378,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
 }
 
 const styles = StyleSheet.create({
-  nightBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.accent, borderRadius: 20, padding: 16, marginBottom: 14 },
+  nightBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.accent, borderRadius: 20, padding: 16, marginBottom: 14, overflow: 'hidden' },
   nightEmoji: { fontSize: 28, marginRight: 12 },
   nightTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
   nightSub: { color: 'rgba(255,255,255,0.8)', fontSize: 12, marginTop: 2 },
@@ -386,7 +388,7 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   edit: { color: C.accentSoft, fontSize: 16, fontWeight: '800', marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   meta: { color: C.faint, fontSize: 14, marginTop: 4 },
   list: { flex: 1, marginTop: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
@@ -431,7 +433,7 @@ const styles = StyleSheet.create({
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
   chatText: { color: '#2A0A1F', fontSize: 16, fontWeight: '800' },
   chatHint: { color: '#4A1035', fontSize: 12, marginTop: 3 },
-  shareHint: { color: '#F3E6C8', fontSize: 12, marginTop: 4, textAlign: 'center' },
+  shareHint: { color: '#E9FFC2', fontSize: 12, marginTop: 4, textAlign: 'center' },
   going: { color: C.green, fontSize: 14, fontWeight: '700' },
   rsvpRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   rsvp: { color: C.faint, fontSize: 13, fontWeight: '700' },

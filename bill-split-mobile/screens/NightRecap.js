@@ -47,7 +47,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       if (brought.length) out.push({ bg: '#22D3EE', emoji: '🛒', big: 'Who brought what', lines: brought.slice(0, 6).map((x) => `${x.name.split(' · ')[0]} — ${x.claimed_name === 'Me' ? 'host' : x.claimed_name}`) });
       const msgs = chat.filter((m) => m.kind === 'text' && !m.poll_id).length;
       const polls = chat.filter((m) => m.poll_id).length;
-      if (msgs || polls) out.push({ bg: '#4C5BD4', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
+      if (msgs || polls) out.push({ bg: '#9B5CFF', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
       const budget = Number(party.budget) || 0;
       // 🧾 The real bill (split from Night Mode)
       if (bills.length) {

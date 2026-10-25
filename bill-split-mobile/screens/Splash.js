@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // ✨ Opening moment: glowing moon, VibeOut wordmark and a fun loading line (from Gautham's loading-screen designs)
 const LINES = [
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   moonWrap: { width: 140, height: 140, alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: C.accent, shadowColor: C.accentSoft, shadowOpacity: 0.9, shadowRadius: 40 },
   moon: { fontSize: 72 },
-  word: { color: C.text, fontSize: 44, fontWeight: '900', letterSpacing: 0.5, marginTop: 14 },
+  word: { fontFamily: F.display, color: C.text, fontSize: 35, letterSpacing: 0.5, marginTop: 14 },
   wordGold: { color: C.accentSoft },
   tag: { color: C.sub, fontSize: 15, fontWeight: '600', marginTop: 6 },
   line: { position: 'absolute', bottom: 70, color: C.faint, fontSize: 13, fontWeight: '600' },

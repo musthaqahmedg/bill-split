@@ -1,3 +1,4 @@
+import { LinearGradient } from '../components/SafeGradient';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -12,10 +13,10 @@ import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 import BillSteps from './BillSteps';
 
-const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
@@ -353,6 +354,7 @@ export default function SplitScreen({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={save} disabled={saving}>
+        <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         {saving
           ? <ActivityIndicator color="#fff" />
           : <Text style={styles.buttonText}>{editingBillId ? 'Save changes' : 'Save bill'}</Text>}
@@ -450,16 +452,16 @@ export default function SplitScreen({
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   tagline: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 2, marginBottom: 4 },
   hint: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
   hero: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 22, padding: 16, marginBottom: 10 },
   heroLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  heroBig: { color: '#fff', fontSize: 34, fontWeight: '900', marginTop: 2 },
+  heroBig: { fontFamily: F.bold, color: '#fff', fontSize: 31, marginTop: 2 },
   heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600', marginTop: 2 },
   heroRight: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 10 },
-  heroTotal: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 2 },
+  heroTotal: { fontFamily: F.bold, color: '#fff', fontSize: 16, marginTop: 2 },
   how: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
   howTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   howTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
@@ -506,12 +508,12 @@ const styles = StyleSheet.create({
   owes: { color: C.amber, fontSize: 14, fontWeight: '700', marginBottom: 6 },
   wholeBtn: { borderWidth: 1, borderColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 },
   wholeText: { color: C.pink, fontSize: 16, fontWeight: '800' },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
+  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', overflow: 'hidden' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
-  sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 14, color: C.text },
+  sheetTitle: { fontFamily: F.bold, fontSize: 18, marginBottom: 14, color: C.text },
   sheetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, marginBottom: 6 },
   sheetSub: { fontSize: 15, fontWeight: '700', color: C.sub },
   link: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },

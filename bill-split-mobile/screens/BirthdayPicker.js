@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { MONTHS, daysIn, saveBirthday } from '../services/birthday';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // 🎂 Pick day + month (no year)
 export default function BirthdayPicker({ visible, onClose, onSaved, initial, required }) {
@@ -82,7 +82,7 @@ export default function BirthdayPicker({ visible, onClose, onSaved, initial, req
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, padding: 20 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { color: C.text, fontSize: 24, fontWeight: '700' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 19 },
   link: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   sub: { color: C.sub, fontSize: 14, marginTop: 8, lineHeight: 20 },
   label: { color: C.faint, fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginTop: 20, marginBottom: 8 },

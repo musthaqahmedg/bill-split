@@ -5,7 +5,7 @@ import {
 import { waNumber } from '../services/parties';
 import { baseName, canPlan, planFor } from '../services/planner';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // Quick ideas by plan type
 const IDEAS = {
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 36 },
   handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 14 },
-  sheetTitle: { color: C.text, fontSize: 19, fontWeight: '800' },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 17 },
   sheetSub: { color: C.faint, fontSize: 13, marginTop: 2, marginBottom: 10 },
   person: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   avatar: { width: 36, height: 36, borderRadius: 18, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 12 },

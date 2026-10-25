@@ -3,7 +3,7 @@ import NumberWheel from './NumberWheel';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
 import { show } from '../services/names';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
 export default function ItemsScreen({ items, people, initialClaims, initialNonDrinkers, onBack, onNext }) {
@@ -214,7 +214,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   sub: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 12 },
   dryBox: { backgroundColor: C.greenBg, borderRadius: 16, padding: 12, marginBottom: 12 },
   dryLabel: { fontSize: 14, fontWeight: '700', color: C.green, marginBottom: 8 },

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { NOTE_CHIPS, bookingMessage, createBooking, isBar } from '../services/bookings';
 import { waNumber } from '../services/parties';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 const AGE_KEY = 'vibeout.ageOk';
 const TIMES = ['12:30 PM', '1:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 34, maxHeight: '88%' },
   handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 12 },
-  title: { color: C.text, fontSize: 22, fontWeight: '700' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   place: { color: C.sub, fontSize: 15, marginTop: 2 },
   label: { color: C.faint, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginTop: 16, marginBottom: 8, textTransform: 'uppercase' },
   chip: { borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, backgroundColor: 'rgba(255,255,255,0.07)' },

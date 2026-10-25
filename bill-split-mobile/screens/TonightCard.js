@@ -1,9 +1,10 @@
+import { LinearGradient } from '../components/SafeGradient';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getPolls, votePoll } from '../services/chat';
 import { LIVE, listParties, liveOf } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 import PollCard from './PollCard';
 import NightRecap from './NightRecap';
 import { getParty } from '../services/parties';
@@ -67,6 +68,7 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
       {/* ⏭️ Next up */}
       {next ? (
         <TouchableOpacity style={[styles.next, { borderColor: (k.color || C.accent) + '88' }]} onPress={() => onOpenPlan(next.id)} activeOpacity={0.85}>
+          <LinearGradient colors={['#2A1640', '#15151D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           <View style={styles.nextTop}>
             <Text style={[styles.nextKicker, { color: k.color || C.accentSoft }]}>⏭️ NEXT UP</Text>
             <Text style={styles.nextGoing}>
@@ -111,17 +113,17 @@ const styles = StyleSheet.create({
   chips: { marginBottom: 14, marginHorizontal: -2 },
   chip: { backgroundColor: C.card, borderWidth: 1, borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13, marginHorizontal: 3 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '600' },
-  next: { backgroundColor: C.card, borderWidth: 1.5, borderRadius: 22, padding: 16, marginBottom: 14 },
+  next: { backgroundColor: C.card, borderWidth: 1.5, borderRadius: 22, padding: 16, marginBottom: 14, overflow: 'hidden', shadowColor: '#9B5CFF', shadowOpacity: 0.5, shadowRadius: 16, elevation: 6 },
   nextTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nextKicker: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   nextGoing: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  nextTitle: { color: C.text, fontSize: 22, fontWeight: '800', marginTop: 6 },
+  nextTitle: { fontFamily: F.display, color: C.text, fontSize: 18, marginTop: 6 },
   nextMeta: { color: C.sub, fontSize: 14, marginTop: 4 },
   nextBtns: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-  nextBtn: { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
+  nextBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
   recapBtn: { backgroundColor: '#A855F7', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 12, marginLeft: 8 },
   recapText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  nextBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  nextBtnText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   pollWrap: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 14, marginBottom: 14 },
   pollKicker: { color: C.red, fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 6 },
 });

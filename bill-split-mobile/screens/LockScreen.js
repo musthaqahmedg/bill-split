@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // Shown when the app opens and you're already logged in: unlock with Face ID
 export default function LockScreen({ onUnlock, onUseAnother }) {
@@ -21,7 +21,7 @@ export default function LockScreen({ onUnlock, onUseAnother }) {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 24, justifyContent: 'center', backgroundColor: C.bg },
   logo: { fontSize: 56, textAlign: 'center' },
-  title: { fontSize: 38, fontWeight: '800', textAlign: 'center', color: C.text, marginTop: 8 },
+  title: { fontFamily: F.display, fontSize: 30, textAlign: 'center', color: C.text, marginTop: 8 },
   subtitle: { fontSize: 16, color: C.accentSoft, marginTop: 6, marginBottom: 40, textAlign: 'center' },
   button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
   buttonText: { color: '#fff', fontSize: 17, fontWeight: '800' },

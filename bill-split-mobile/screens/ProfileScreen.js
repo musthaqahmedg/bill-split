@@ -12,7 +12,7 @@ import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
 import { getFunNotifs, getPushPreview, setFunNotifs, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount, onYourData, onMoney }) {
   const [showActive, setShowActiveState] = useState(true);
@@ -353,7 +353,7 @@ const styles = StyleSheet.create({
   hero: { alignItems: 'center', marginTop: 6, marginBottom: 6 },
   camera: { position: 'absolute', right: -2, bottom: -2, width: 32, height: 32, borderRadius: 16, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg },
   cameraText: { fontSize: 14 },
-  heroName: { color: C.text, fontSize: 26, fontWeight: '800', marginTop: 12 },
+  heroName: { fontFamily: F.display, color: C.text, fontSize: 21, marginTop: 12 },
   level: { color: C.amber, fontSize: 13, fontWeight: '700', marginTop: 4 },
   bio: { minHeight: 70, textAlignVertical: 'top' },
   hintSmall: { color: C.faint, fontSize: 12, marginTop: 6 },
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   phone: { color: C.faint, fontSize: 15, marginTop: 4, marginBottom: 24 },
   label: { color: C.sub, fontSize: 14, fontWeight: '700', marginBottom: 8 },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, fontSize: 16, color: C.text, marginBottom: 16 },

@@ -5,7 +5,7 @@ import { savedPaidMap, transfers } from '../services/settle';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 
@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   back: { color: C.accentSoft, fontSize: 16 },
   edit: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   meta: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },

@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { guessKind, KINDS, nextKind } from '../services/kinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
 const DONE_BAR = 'recheckDone';
@@ -208,7 +208,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   sub: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 12, marginBottom: 10 },

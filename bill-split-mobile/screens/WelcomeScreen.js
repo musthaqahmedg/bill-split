@@ -1,7 +1,8 @@
+import { LinearGradient } from '../components/SafeGradient';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 
 // 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
@@ -159,6 +160,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
           })}
         </View>
         <TouchableOpacity style={styles.button} onPress={last ? go : next} disabled={busy} activeOpacity={0.85}>
+          <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{last ? "Let's go — start the night →" : 'Next →'}</Text>}
         </TouchableOpacity>
         <Text style={styles.note}>{last ? 'No sign-up needed. Save your account later.' : ' '}</Text>
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
   sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   stickerEmoji: { fontSize: 28 },
   headline: { marginTop: 4 },
-  line: { color: C.text, fontSize: 46, fontWeight: '900', lineHeight: 50, letterSpacing: -0.5 },
+  line: { fontFamily: F.display, color: C.text, fontSize: 37, lineHeight: 40, letterSpacing: -0.5 },
   lineGold: { color: C.accentSoft },
   body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
   bottom: { paddingHorizontal: 22, paddingBottom: 36 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
   dot: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginHorizontal: 4 },
-  button: { backgroundColor: C.accent, padding: 17, borderRadius: 18, alignItems: 'center' },
+  button: { backgroundColor: C.accent, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
   note: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 12 },
 });

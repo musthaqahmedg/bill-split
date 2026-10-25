@@ -4,7 +4,7 @@ import ContactPicker from './ContactPicker';
 import KeyboardDone from './KeyboardDone';
 import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../services/groups';
 import { kindOf } from '../services/partyKinds';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import ActiveTag from './ActiveTag';
 import FriendButton from './FriendButton';
 import { appUsers, lookupKeys } from '../services/friends';
@@ -181,12 +181,12 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   sub: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 12 },
   list: { flex: 1 },
   planBtn: { backgroundColor: C.accent, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16 },
   planText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  planSub: { color: '#F3E6C8', fontSize: 12, marginTop: 3 },
+  planSub: { color: '#E9FFC2', fontSize: 12, marginTop: 3 },
   off: { opacity: 0.45 },
   label: { color: C.sub, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 4 },
   memberCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingHorizontal: 14, marginBottom: 16 },

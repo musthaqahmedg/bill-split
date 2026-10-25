@@ -3,7 +3,7 @@ import { KeyboardAvoidingView, Modal, Platform, ScrollView, StyleSheet, Text, Te
 import { recentFriends } from '../services/bills';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
 export default function PeopleScreen({ initialPeople, initialNonDrinkers, initialPairs, onBack, onNext }) {
@@ -238,7 +238,7 @@ export default function PeopleScreen({ initialPeople, initialNonDrinkers, initia
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontSize: 28, fontWeight: '800', marginBottom: 20, color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, marginBottom: 20, color: C.text },
   inputRow: { flexDirection: 'row', marginBottom: 15 },
   input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 14, fontSize: 16, marginRight: 10, color: C.text },
   addBtn: { backgroundColor: C.accent, borderRadius: 14, paddingHorizontal: 20, justifyContent: 'center' },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
 
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },
-  sheetTitle: { fontSize: 20, fontWeight: '800', marginBottom: 10, color: C.text },
+  sheetTitle: { fontFamily: F.bold, fontSize: 18, marginBottom: 10, color: C.text },
   sheetSub: { fontSize: 15, fontWeight: '700', color: C.sub, marginTop: 10, marginBottom: 8 },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderColor: C.pink, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },

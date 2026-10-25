@@ -5,7 +5,7 @@ import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { billBalance, homeBalance } from '../services/settle';
 import { monthKey, monthLabel, moneySummary } from '../services/money';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 import FriendsRow from './FriendsRow';
 import GuestGate from './GuestGate';
 import TonightCard from './TonightCard';
@@ -16,7 +16,7 @@ const hello = () => {
   const h = new Date().getHours();
   return h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 };
-const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
 export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan }) {
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   hello: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontSize: 30, fontWeight: '800', color: C.text, marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginTop: 2 },
   bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   bellIcon: { fontSize: 20 },
   bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   sumBox: { flex: 1, alignItems: 'center' },
   sumLine: { width: 1, backgroundColor: C.border },
   sumLabel: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  sumValue: { fontSize: 24, fontWeight: '800', marginTop: 4 },
+  sumValue: { fontFamily: F.bold, fontSize: 22, marginTop: 4 },
 
   draft: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginBottom: 14 },
   draftEmoji: { fontSize: 22, marginRight: 10 },

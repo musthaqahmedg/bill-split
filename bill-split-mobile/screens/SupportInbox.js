@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Pulse from './Pulse';
 import { supportThreads } from '../services/support';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 const ago = (t) => {
   const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
@@ -57,7 +57,7 @@ export default function SupportInbox({ onBack, onOpen }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 6 },
-  title: { color: C.text, fontSize: 28, fontWeight: '700', marginBottom: 12 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 22, marginBottom: 12 },
   pad: { paddingBottom: 40 },
   empty: { color: C.faint, fontSize: 15, textAlign: 'center', marginTop: 40 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.1)' },

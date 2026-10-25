@@ -1,9 +1,10 @@
+import { LinearGradient } from '../components/SafeGradient';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { addExpense } from '../services/expenses';
 import { EXPENSE_CATS } from '../services/money';
-import { C } from '../services/theme';
+import { C, F, G } from '../services/theme';
 
 // 💸 Log a spend in 2 taps: pick what, tap an amount (or type), done. Goes into My Money.
 const QUICK = [50, 100, 200, 500];
@@ -74,6 +75,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved }) 
           </View>
           <TextInput style={styles.note} value={note} onChangeText={setNote} placeholder="Note (optional), e.g. Auto to Toddy shop" placeholderTextColor={C.faint} keyboardAppearance="dark" maxLength={80} />
           <TouchableOpacity style={styles.save} onPress={save} disabled={saving} activeOpacity={0.85}>
+            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Add {amount ? `₹${Number(amount).toLocaleString('en-IN')}` : ''} {EXPENSE_CATS[cat].emoji}</Text>}
           </TouchableOpacity>
         </Pressable>
@@ -86,7 +88,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 12 },
-  title: { color: C.text, fontSize: 22, fontWeight: '800' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   sub: { color: C.sub, fontSize: 13, marginTop: 4, marginBottom: 14 },
   cats: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   cat: { width: '23.5%', alignItems: 'center', backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginBottom: 8 },
@@ -101,6 +103,6 @@ const styles = StyleSheet.create({
   quickBtn: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14, marginHorizontal: 4 },
   quickText: { color: C.text, fontSize: 14, fontWeight: '700' },
   note: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, color: C.text, fontSize: 14, marginTop: 14 },
-  save: { backgroundColor: C.accent, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12 },
+  save: { backgroundColor: C.accent, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12, overflow: 'hidden' },
   saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

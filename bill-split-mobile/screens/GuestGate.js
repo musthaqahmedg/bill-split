@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // 👤 Guests: a friendly "save your account" card (full page, or a small banner with `small`)
 export default function GuestGate({ emoji = '🔒', title = 'Save your account', body, onSave, small = false }) {
@@ -31,7 +31,7 @@ export default function GuestGate({ emoji = '🔒', title = 'Save your account',
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emoji: { fontSize: 56 },
-  title: { color: C.text, fontSize: 26, fontWeight: '800', marginTop: 14, textAlign: 'center' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 21, marginTop: 14, textAlign: 'center' },
   body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 10, textAlign: 'center' },
   button: { backgroundColor: C.accent, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 26, marginTop: 24 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
