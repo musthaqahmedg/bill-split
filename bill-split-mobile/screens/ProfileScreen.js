@@ -10,17 +10,28 @@ import BirthdayPicker from './BirthdayPicker';
 import { bdayText, myBirthday } from '../services/birthday';
 import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
-import { getPushPreview, setPushPreview } from '../services/push';
+import { getFunNotifs, getPushPreview, setFunNotifs, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C } from '../services/theme';
 
 export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount, onYourData, onMoney }) {
   const [showActive, setShowActiveState] = useState(true);
   const [preview, setPreview] = useState(true);
+  const [fun, setFun] = useState(true);
   useEffect(() => {
+    getFunNotifs().then(setFun).catch(() => {});
     getShowActive().then(setShowActiveState).catch(() => {});
     getPushPreview().then(setPreview).catch(() => {});
   }, []);
+  const toggleFun = async (on) => {
+    setFun(on);
+    try {
+      await setFunNotifs(on);
+    } catch (e) {
+      setFun(!on);
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
   const togglePreview = async (on) => {
     setPreview(on);
     try {
@@ -192,6 +203,14 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
             <Text style={styles.activeSub}>Show the text of notifications on your lock screen. Turn off and it just says "Open the app to see it".</Text>
           </View>
           <Switch value={preview} onValueChange={togglePreview} trackColor={{ true: C.green }} />
+        </View>
+
+        <View style={[styles.activeRow, { marginBottom: 16, marginTop: -4 }]}>
+          <View style={styles.activeText}>
+            <Text style={styles.activeTitle}>😂 Fun notifications</Text>
+            <Text style={styles.activeSub}>Cheeky nudges about your plans, polls and bills. Max 3 a week, never late at night.</Text>
+          </View>
+          <Switch value={fun} onValueChange={toggleFun} trackColor={{ true: C.green }} />
         </View>
 
         <Text style={styles.label}>Birthday</Text>

@@ -90,3 +90,16 @@ export async function setPushPreview(on) {
   const { error } = await supabase.from('profiles').update({ push_preview: on }).eq('id', user.id);
   if (error) throw error;
 }
+
+// 😂 Fun notifications (the VibeOut voice): on by default, switch off any time
+export async function getFunNotifs() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return true;
+  const { data } = await supabase.from('profiles').select('fun_notifs').eq('id', user.id).maybeSingle();
+  return data ? data.fun_notifs !== false : true;
+}
+export async function setFunNotifs(on) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('profiles').update({ fun_notifs: on }).eq('id', user.id);
+  if (error) throw error;
+}

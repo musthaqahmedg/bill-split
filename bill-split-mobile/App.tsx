@@ -121,6 +121,12 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       } else if (d.party_id) {
         setOpenPartyId(d.party_id);
         setScreen(d.chat ? 'partyChat' : 'party');
+      } else if (d.money) {
+        setScreen('money'); // 😂 VibeOut voice: money check-ins
+      } else if (d.plan) {
+        setPlanGroup(null); // 😂 VibeOut voice: "plan something" nudges
+        setEditPlan(null);
+        setScreen('newParty');
       } else setScreen('notifications');
   };
   useEffect(() => {
