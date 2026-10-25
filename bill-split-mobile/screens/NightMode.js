@@ -11,7 +11,7 @@ import PartyPhotos from './PartyPhotos';
 
 // 🌙 Night Mode: everything you need DURING the night on one dark, simple screen.
 // Crew status · chat · photos · games · split the bill · ride home · share location · I'm home safe
-const HUES = ['#7C5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const clock = () => new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 

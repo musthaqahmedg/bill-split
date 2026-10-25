@@ -129,7 +129,7 @@ export default function RecapCard({ bill, visible, onClose }) {
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
   card: { width: 330, backgroundColor: '#18181F', borderRadius: 24, padding: 24, borderWidth: 1, borderColor: '#2B2B36' },
-  kicker: { color: '#B3A1FF', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 },
+  kicker: { color: '#E8C98B', fontSize: 12, fontWeight: '700', letterSpacing: 1.5 },
   place: { color: '#fff', fontSize: 26, fontWeight: '800', marginTop: 8 },
   date: { color: '#A6A6B4', fontSize: 14, marginTop: 4 },
   stats: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, backgroundColor: '#22222B', borderRadius: 16, padding: 14 },
@@ -141,12 +141,12 @@ const styles = StyleSheet.create({
   award: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#22222B', borderRadius: 14, padding: 10, marginBottom: 8 },
   awardEmoji: { fontSize: 26, marginRight: 12 },
   awardText: { flex: 1 },
-  awardTitle: { color: '#B3A1FF', fontSize: 12, fontWeight: '700' },
+  awardTitle: { color: '#E8C98B', fontSize: 12, fontWeight: '700' },
   awardName: { color: '#fff', fontSize: 16, fontWeight: '700', marginTop: 2 },
   footer: { color: '#73737F', fontSize: 11, textAlign: 'center', marginTop: 14 },
   buttons: { flexDirection: 'row', width: 330, marginTop: 16 },
   closeBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#fff', marginRight: 10 },
   closeText: { color: '#333', fontSize: 16, fontWeight: '600' },
-  shareBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#7C5CFF' },
+  shareBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#4C5BD4' },
   shareText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });

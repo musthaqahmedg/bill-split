@@ -32,7 +32,7 @@ const IDEAS = [
 const TICKETS = [
   { key: 'early', name: 'Early Bird', emoji: '🐣', per: 500, note: 'Chill & cheap', color: '#34D399' },
   { key: 'regular', name: 'Regular', emoji: '🎟️', per: 1000, note: 'The usual', color: '#60A5FA' },
-  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#7C5CFF' },
+  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#4C5BD4' },
   { key: 'vip', name: 'VIP Table', emoji: '👑', per: 5000, note: 'All out', color: '#F59E0B' },
 ];
 const FUN = [

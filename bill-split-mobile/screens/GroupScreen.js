@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   list: { flex: 1 },
   planBtn: { backgroundColor: C.accent, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16 },
   planText: { color: '#fff', fontSize: 16, fontWeight: '800' },
-  planSub: { color: '#E4DEFF', fontSize: 12, marginTop: 3 },
+  planSub: { color: '#F3E6C8', fontSize: 12, marginTop: 3 },
   off: { opacity: 0.45 },
   label: { color: C.sub, fontSize: 14, fontWeight: '700', marginBottom: 8, marginTop: 4 },
   memberCard: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingHorizontal: 14, marginBottom: 16 },

@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   chatBtn: { backgroundColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 12 },
   chatText: { color: '#2A0A1F', fontSize: 16, fontWeight: '800' },
   chatHint: { color: '#4A1035', fontSize: 12, marginTop: 3 },
-  shareHint: { color: '#E4DEFF', fontSize: 12, marginTop: 4, textAlign: 'center' },
+  shareHint: { color: '#F3E6C8', fontSize: 12, marginTop: 4, textAlign: 'center' },
   going: { color: C.green, fontSize: 14, fontWeight: '700' },
   rsvpRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
   rsvp: { color: C.faint, fontSize: 13, fontWeight: '700' },
