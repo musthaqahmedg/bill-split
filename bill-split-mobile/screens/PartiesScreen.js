@@ -7,6 +7,7 @@ import LevelCard from './LevelCard';
 import StreakCard from './StreakCard';
 import { C, F } from '../services/theme';
 import NightSky from '../components/NightSky';
+import { countdown, planBucket, sortPlans } from '../services/when';
 
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
@@ -21,13 +22,15 @@ const LINES = [
 ];
 
 // One plan card: neon colour per plan type, slides in when the list opens
-function PlanCard({ item, index, onPress }) {
+function PlanCard({ item, index, onPress, bucket }) {
   const k = kindOf(item.kind);
   const color = k.color || C.accent;
   const members = item.party_members || [];
   const owing = members.filter((m) => m.name !== 'Me' && Number(m.share) > 0);
   const paid = owing.filter((m) => m.paid_at).length;
   const going = members.filter((m) => m.rsvp === 'in' || m.name === 'Me').length;
+  const out = members.filter((m) => m.live_status === 'omw' || m.live_status === 'here').length;
+  const when = countdown(item);
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -52,7 +55,7 @@ function PlanCard({ item, index, onPress }) {
         transform: [{ translateY: anim.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
       }}
     >
-      <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={styles.card}>
+      <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={[styles.card, bucket === 'live' && { borderColor: C.lime }]}>
         <View style={[styles.icon, { backgroundColor: color + '26' }]}>
           <Text style={styles.emoji}>{k.emoji}</Text>
         </View>
@@ -60,6 +63,18 @@ function PlanCard({ item, index, onPress }) {
           <View style={styles.rowTop}>
             <Text style={styles.cardTitle} numberOfLines={1}>{item.title}</Text>
             {Number(item.budget) > 0 ? <Text style={styles.money}>{inr(item.budget)}</Text> : null}
+          </View>
+          <View style={styles.whenRow}>
+            {bucket === 'live' ? (
+              <View style={styles.livePill}>
+                <View style={styles.liveDot} />
+                <Text style={styles.liveText}>{out ? `LIVE · ${out} out` : 'LIVE TONIGHT'}</Text>
+              </View>
+            ) : (
+              <View style={[styles.whenPill, bucket === 'past' && styles.whenPast]}>
+                <Text style={[styles.whenText, bucket === 'past' && { color: C.faint }]}>{bucket === 'upcoming' && when !== 'Date TBD' ? '⏳ ' : ''}{when}</Text>
+              </View>
+            )}
           </View>
           <Text style={styles.meta} numberOfLines={1}>
             {[item.party_date || 'No date', item.place ? item.place.replace(/^My place 🏠 · .*/, 'My place') : null].filter(Boolean).join('  ·  ')}
@@ -90,6 +105,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
   const [line, setLine] = useState(0);
+  const [tab, setTab] = useState(null); // live · upcoming · past (picked automatically first time)
   const load = useCallback(async () => {
     setLoading(true);
     setTick((t) => t + 1);
@@ -109,13 +125,28 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
     return () => clearInterval(t);
   }, []);
 
+  const groups = { live: [], upcoming: [], past: [] };
+  parties.forEach((p) => groups[planBucket(p)].push(p));
+  const current = tab || (groups.live.length ? 'live' : groups.upcoming.length || !groups.past.length ? 'upcoming' : 'past');
+  const shown = sortPlans(groups[current], current);
+  const TABS = [
+    { key: 'live', label: 'Live' },
+    { key: 'upcoming', label: 'Upcoming' },
+    { key: 'past', label: 'Past' },
+  ];
+  const EMPTY = {
+    live: { e: '🌙', t: 'Nothing live tonight', s: 'When a plan is on today, it shows up here.' },
+    upcoming: { e: '🪩', t: 'Nothing coming up', s: 'Parties, trips, movies, weddings. Start one and invite the gang.' },
+    past: { e: '🎞️', t: 'No past nights yet', s: 'Your finished plans land here.' },
+  }[current];
+
   return (
     <View style={styles.container}>
       <NightSky height={260} />
       <FlatList
-        data={parties}
+        data={shown}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => <PlanCard item={item} index={index} onPress={() => onOpenParty(item.id)} />}
+        renderItem={({ item, index }) => <PlanCard item={item} index={index} bucket={current} onPress={() => onOpenParty(item.id)} />}
         ListHeaderComponent={
           <>
             {onBack ? (
@@ -126,7 +157,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
             <View style={styles.header}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.sub}>{LINES[line]}</Text>
-                <Text style={styles.title}>Your plans</Text>
+                <Text style={styles.title}>Your <Text style={styles.titleItalic}>rooms</Text></Text>
               </View>
             </View>
             <View style={styles.quick}>
@@ -143,23 +174,37 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
                 <Text style={styles.quickText}>Groups</Text>
               </TouchableOpacity>
             </View>
-            <LevelCard refreshKey={tick} />
-            <StreakCard refreshKey={tick} />
-            {parties.length ? <Text style={styles.section}>All plans</Text> : null}
+            <View style={styles.tabs}>
+              {TABS.map((t) => (
+                <TouchableOpacity key={t.key} style={[styles.tab, current === t.key && styles.tabOn]} onPress={() => setTab(t.key)} activeOpacity={0.85}>
+                  {t.key === 'live' && groups.live.length ? <View style={[styles.liveDot, { marginRight: 6 }]} /> : null}
+                  <Text style={[styles.tabText, current === t.key && styles.tabTextOn]}>{t.label}</Text>
+                  {groups[t.key].length ? <Text style={[styles.tabCount, current === t.key && styles.tabTextOn]}> {groups[t.key].length}</Text> : null}
+                </TouchableOpacity>
+              ))}
+            </View>
           </>
         }
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
           !loading && (
             <View style={styles.empty}>
-              <Text style={styles.emptyEmoji}>🪩</Text>
-              <Text style={styles.emptyText}>No plans yet</Text>
-              <Text style={styles.emptySub}>Parties, trips, movies, weddings. Start one and invite the gang.</Text>
-              <TouchableOpacity style={styles.emptyBtn} onPress={onNewParty}>
-                <Text style={styles.newText}>＋ Plan something</Text>
-              </TouchableOpacity>
+              <Text style={styles.emptyEmoji}>{EMPTY.e}</Text>
+              <Text style={styles.emptyText}>{EMPTY.t}</Text>
+              <Text style={styles.emptySub}>{EMPTY.s}</Text>
+              {current !== 'past' ? (
+                <TouchableOpacity style={styles.emptyBtn} onPress={onNewParty}>
+                  <Text style={styles.newText}>＋ Plan something</Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
           )
+        }
+        ListFooterComponent={
+          <View style={{ marginTop: 10 }}>
+            <LevelCard refreshKey={tick} />
+            <StreakCard refreshKey={tick} />
+          </View>
         }
         contentContainerStyle={styles.listPad}
         showsVerticalScrollIndicator={false}
@@ -175,7 +220,21 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   sub: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontFamily: F.display, fontSize: 29, color: C.text, marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 34, color: C.text, marginTop: 2 },
+  titleItalic: { fontFamily: F.italic, color: C.accentSoft },
+  tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, marginBottom: 14 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 12 },
+  tabOn: { backgroundColor: C.lime },
+  tabText: { color: C.sub, fontSize: 14, fontWeight: '700' },
+  tabTextOn: { color: C.onLime },
+  tabCount: { color: C.faint, fontSize: 13, fontWeight: '800' },
+  whenRow: { flexDirection: 'row', marginTop: 5 },
+  whenPill: { backgroundColor: C.accent + '33', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  whenPast: { backgroundColor: C.cardHi },
+  whenText: { color: C.accentSoft, fontSize: 11, fontWeight: '800' },
+  livePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.lime + '22', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime, marginRight: 5 },
+  liveText: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   roundIcon: { fontSize: 19 },
   gap: { marginLeft: 8 },

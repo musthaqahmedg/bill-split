@@ -300,3 +300,22 @@ test('💸 quick-add expenses count in spend, week and habits (not as nights)', 
   assert.equal(h.smoke, 150);
   assert.equal(h.total, 400);
 });
+
+test('plan dates: read "Sat, 18 Oct", sort into live / upcoming / past, countdown', async () => {
+  const { planDay, planBucket, countdown } = await import('../services/when.js');
+  const now = new Date(2026, 9, 25, 18, 0); // 25 Oct 2026, 6 PM
+  const made = new Date(2026, 9, 20).toISOString();
+  assert.equal(+planDay('Sun, 25 Oct', made, now), +new Date(2026, 9, 25));
+  assert.equal(+planDay('2026-11-02', made, now), +new Date(2026, 10, 2));
+  assert.equal(+planDay('Fri, 2 Jan', made, now), +new Date(2027, 0, 2)); // made in Oct → next January
+  assert.equal(planDay('this weekend', made, now), null);
+  assert.equal(planBucket({ party_date: 'Sun, 25 Oct', created_at: made }, now), 'live');
+  assert.equal(planBucket({ party_date: 'Tue, 27 Oct', created_at: made }, now), 'upcoming');
+  assert.equal(planBucket({ party_date: 'Wed, 21 Oct', created_at: made }, now), 'past');
+  assert.equal(planBucket({ party_date: null, created_at: made }, now), 'upcoming');
+  assert.equal(planBucket({ party_date: 'Sat, 24 Oct', created_at: made, party_members: [{ live_status: 'here' }] }, now), 'live');
+  assert.equal(countdown({ party_date: 'Sun, 25 Oct', created_at: made }, now), 'Tonight');
+  assert.equal(countdown({ party_date: 'Mon, 26 Oct', created_at: made }, now), 'Tomorrow');
+  assert.equal(countdown({ party_date: 'Thu, 29 Oct', created_at: made }, now), 'In 4 days');
+  assert.equal(countdown({ party_date: null, created_at: made }, now), 'Date TBD');
+});
