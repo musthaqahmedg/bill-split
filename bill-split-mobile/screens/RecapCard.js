@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   date: { color: '#A6A6B4', fontSize: 14, marginTop: 4 },
   stats: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, backgroundColor: '#22222B', borderRadius: 16, padding: 14 },
   stat: { alignItems: 'center', flex: 1 },
-  statBig: { fontFamily: F.bold, color: '#fff', fontSize: 16 },
+  statBig: { fontFamily: F.bold, color: '#fff', fontSize: 17 },
   statLabel: { color: '#A6A6B4', fontSize: 12, marginTop: 2 },
   crew: { color: '#E6DAFF', fontSize: 14, marginTop: 16, lineHeight: 20 },
   awards: { marginTop: 16 },

@@ -6,6 +6,7 @@ import { show } from '../services/names';
 import LevelCard from './LevelCard';
 import StreakCard from './StreakCard';
 import { C, F } from '../services/theme';
+import NightSky from '../components/NightSky';
 
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
@@ -110,6 +111,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
 
   return (
     <View style={styles.container}>
+      <NightSky height={260} />
       <FlatList
         data={parties}
         keyExtractor={(item) => item.id}
@@ -173,7 +175,7 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   sub: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 29, color: C.text, marginTop: 2 },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   roundIcon: { fontSize: 19 },
   gap: { marginLeft: 8 },

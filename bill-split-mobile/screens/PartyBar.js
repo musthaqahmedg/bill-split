@@ -168,7 +168,7 @@ export default function PartyBar({ visible, onClose, party }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, padding: 18 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontFamily: F.display, color: C.text, fontSize: 19 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 23 },
   link: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 10, padding: 3, marginTop: 14 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: 'center' },

@@ -566,7 +566,7 @@ const styles = StyleSheet.create({
   draftNo: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14 },
   draftNoText: { color: C.sub, fontSize: 14, fontWeight: '600' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 22, color: C.text, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 26, color: C.text, marginBottom: 12 },
   list: { flex: 1 },
   scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
   groupTag: { alignSelf: 'flex-start', color: C.accentSoft, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, fontSize: 13, fontWeight: '700', marginBottom: 10, overflow: 'hidden' },

@@ -37,7 +37,7 @@ export default function ItemInfo({ item, onClose }) {
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 28 },
   card: { backgroundColor: C.card, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: C.border },
-  title: { fontFamily: F.display, fontSize: 16, marginBottom: 12, color: C.text },
+  title: { fontFamily: F.display, fontSize: 19, marginBottom: 12, color: C.text },
   tag: { alignSelf: 'flex-start', borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginBottom: 14 },
   tagAlcohol: { backgroundColor: C.amberBg },
   tagSoft: { backgroundColor: C.greenBg },

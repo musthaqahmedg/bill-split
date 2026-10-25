@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   moonWrap: { width: 140, height: 140, alignItems: 'center', justifyContent: 'center' },
   halo: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: C.accent, shadowColor: C.accentSoft, shadowOpacity: 0.9, shadowRadius: 40 },
   moon: { fontSize: 72 },
-  word: { fontFamily: F.display, color: C.text, fontSize: 35, letterSpacing: 0.5, marginTop: 14 },
+  word: { fontFamily: F.logo, color: C.text, fontSize: 34, letterSpacing: 0.5, marginTop: 14 },
   wordGold: { color: C.accentSoft },
   tag: { color: C.sub, fontSize: 15, fontWeight: '600', marginTop: 6 },
   line: { position: 'absolute', bottom: 70, color: C.faint, fontSize: 13, fontWeight: '600' },

@@ -281,7 +281,7 @@ function distance(a, b) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 29, color: C.text, marginBottom: 12 },
   chips: { marginBottom: 10 },
   chip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8 },
   chipOn: { backgroundColor: C.accent, borderColor: C.accent },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
   posterTags: { position: 'absolute', left: 12, top: 12, flexDirection: 'row' },
   tag: { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, marginRight: 6 },
   tagText: { color: C.text, fontSize: 11, fontWeight: '800' },
-  posterName: { fontFamily: F.display, color: '#fff', fontSize: 18, marginTop: 34, marginRight: 60 },
+  posterName: { fontFamily: F.display, color: '#fff', fontSize: 22, marginTop: 34, marginRight: 60 },
   posterArea: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', marginTop: 2 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   name: { color: C.text, fontSize: 16, fontWeight: '800', flex: 1, marginRight: 8 },

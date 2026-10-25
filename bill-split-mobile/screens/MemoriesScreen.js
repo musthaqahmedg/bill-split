@@ -1,0 +1,119 @@
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import NightSky from '../components/NightSky';
+import { LinearGradient } from '../components/SafeGradient';
+import { getParty, listParties } from '../services/parties';
+import { kindOf } from '../services/partyKinds';
+import { C, F } from '../services/theme';
+import NightRecap from './NightRecap';
+
+// 📸 Memories (v12): every night you've had, as a highlight reel. Tap one to replay its story.
+export default function MemoriesScreen({ onOpenPlan }) {
+  const [plans, setPlans] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recap, setRecap] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      setPlans(await listParties());
+    } catch (e) {
+      setPlans([]);
+    }
+  }, []);
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const play = async (id) => {
+    try {
+      setRecap(await getParty(id));
+    } catch (e) {}
+  };
+
+  if (plans === null) {
+    return (
+      <View style={[styles.page, styles.center]}>
+        <ActivityIndicator color={C.accentSoft} />
+      </View>
+    );
+  }
+
+  const [top, ...rest] = plans;
+  const people = (p) => (p.party_members || []).filter((m) => m.rsvp === 'in' || m.name === 'Me').length;
+
+  const Poster = ({ p, big }) => {
+    const k = kindOf(p.kind);
+    return (
+      <TouchableOpacity activeOpacity={0.85} onPress={() => play(p.id)} onLongPress={() => onOpenPlan && onOpenPlan(p.id)} style={[big ? styles.reel : styles.tile]}>
+        <LinearGradient colors={[k.color || C.accent, '#1A0B30']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+        <Text style={big ? styles.reelEmoji : styles.tileEmoji}>{k.emoji}</Text>
+        {big ? <Text style={styles.reelKicker}>HIGHLIGHT REEL</Text> : null}
+        <Text style={big ? styles.reelTitle : styles.tileTitle} numberOfLines={2}>{p.title}</Text>
+        <Text style={styles.meta} numberOfLines={1}>{[p.party_date, `${people(p)} ${people(p) === 1 ? "person" : "people"}`].filter(Boolean).join(' · ')}</Text>
+        {big ? (
+          <View style={styles.play}>
+            <Text style={styles.playText}>▶ Play the night</Text>
+          </View>
+        ) : null}
+      </TouchableOpacity>
+    );
+  };
+
+  return (
+    <View style={styles.page}>
+      <NightSky height={260} />
+      <FlatList
+        data={rest}
+        keyExtractor={(p) => p.id}
+        numColumns={2}
+        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        refreshControl={<RefreshControl refreshing={refreshing} tintColor={C.accentSoft} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
+        ListHeaderComponent={
+          <View>
+            <Text style={styles.logo}>VIBE OUT</Text>
+            <Text style={styles.title}>
+              <Text style={styles.titleItalic}>Memories</Text>
+            </Text>
+            <Text style={styles.lead}>Every night, saved. Tap to replay the story.</Text>
+            {top ? <Poster p={top} big /> : (
+              <View style={styles.empty}>
+                <Text style={styles.emptyEmoji}>📸</Text>
+                <Text style={styles.emptyText}>No nights yet</Text>
+                <Text style={styles.lead}>Plan something, and the night's story lands here.</Text>
+              </View>
+            )}
+            {rest.length ? <Text style={styles.section}>All nights</Text> : null}
+          </View>
+        }
+        renderItem={({ item }) => <Poster p={item} />}
+        contentContainerStyle={styles.pad}
+        showsVerticalScrollIndicator={false}
+      />
+      {recap ? <NightRecap visible onClose={() => setRecap(null)} party={recap} photos={[]} /> : null}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  page: { flex: 1, backgroundColor: C.bg },
+  center: { alignItems: 'center', justifyContent: 'center' },
+  pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
+  logo: { fontFamily: F.logo, color: C.text, fontSize: 16, letterSpacing: 2 },
+  title: { marginTop: 14 },
+  titleItalic: { fontFamily: F.italic, color: C.text, fontSize: 38 },
+  lead: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 14 },
+  reel: { height: 220, borderRadius: 24, padding: 18, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: 6 },
+  reelEmoji: { position: 'absolute', right: 16, top: 12, fontSize: 70 },
+  reelKicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  reelTitle: { fontFamily: F.italic, color: '#fff', fontSize: 30, marginTop: 4 },
+  meta: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', marginTop: 4 },
+  play: { alignSelf: 'flex-start', backgroundColor: 'rgba(255,255,255,0.18)', borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginTop: 10 },
+  playText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  section: { fontFamily: F.display, color: C.text, fontSize: 20, marginTop: 16, marginBottom: 10 },
+  tile: { width: '48.5%', height: 170, borderRadius: 20, padding: 12, justifyContent: 'flex-end', overflow: 'hidden', marginBottom: 10 },
+  tileEmoji: { position: 'absolute', right: 10, top: 8, fontSize: 40 },
+  tileTitle: { fontFamily: F.display, color: '#fff', fontSize: 17 },
+  empty: { alignItems: 'center', paddingVertical: 40 },
+  emptyEmoji: { fontSize: 46 },
+  emptyText: { fontFamily: F.display, color: C.text, fontSize: 22, marginTop: 8 },
+});

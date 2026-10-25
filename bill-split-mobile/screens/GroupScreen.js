@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 22, color: C.text },
+  title: { fontFamily: F.display, fontSize: 26, color: C.text },
   sub: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 12 },
   list: { flex: 1 },
   planBtn: { backgroundColor: C.accent, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16 },

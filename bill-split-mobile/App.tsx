@@ -32,9 +32,12 @@ import WelcomeScreen from './screens/WelcomeScreen';
 import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
+import MemoriesScreen from './screens/MemoriesScreen';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
-import { useFonts, Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
+import { useFonts } from 'expo-font';
+import { Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
+import { PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -399,7 +402,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
-  const TAB_PAGES = ['home', 'parties', 'friends', 'profile'];
+  const TAB_PAGES = ['home', 'parties', 'money', 'memories'];
   const page = renderPage();
   if (!TAB_PAGES.includes(screen)) return page;
   return (
@@ -553,11 +556,22 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'profile') {
-    return <ProfileScreen onMoney={() => setScreen('money')} onYourData={() => setScreen('yourData')} guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
+    return <ProfileScreen onBack={() => setScreen('home')} onMoney={() => setScreen('money')} onYourData={() => setScreen('yourData')} guest={guest} onSaveAccount={() => setScreen('saveAccount')} onBug={onBug} onLogout={logout} onHelp={() => setScreen('help')} />;
   }
 
   if (screen === 'money') {
-    return <MyMoneyScreen onBack={() => setScreen('home')} />;
+    return <MyMoneyScreen />;
+  }
+
+  if (screen === 'memories') {
+    return (
+      <MemoriesScreen
+        onOpenPlan={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
   }
 
   if (screen === 'yourData') {
@@ -730,9 +744,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'friends') {
-    if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} />;
+    if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} onBack={() => setScreen('home')} />;
     return (
       <FriendsScreen
+        onBack={() => setScreen('home')}
         startAdding={friendsAdd}
         onOpenPlan={(id: any) => {
           setOpenPartyId(id);
@@ -803,7 +818,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
 // Whole app + the notification banner that slides over any screen
 function Root() {
-  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold }); // 🔤 chunky display font
+  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold, PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic }); // 🔤 chunky display font
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUid(data.session ? data.session.user.id : null));

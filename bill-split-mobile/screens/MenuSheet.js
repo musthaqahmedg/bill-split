@@ -31,7 +31,7 @@ export function MenuButton({ onPress, label = '📋 See the menu', style }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, padding: 18 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { fontFamily: F.display, color: C.text, fontSize: 19 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 23 },
   link: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   pill: { alignSelf: 'flex-start', backgroundColor: 'rgba(139,92,246,0.18)', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14, marginBottom: 14 },
   pillText: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },

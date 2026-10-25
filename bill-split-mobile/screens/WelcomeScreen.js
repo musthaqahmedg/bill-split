@@ -3,14 +3,15 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { C, F, G } from '../services/theme';
+import NightSky from '../components/NightSky';
 
 // 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
   {
     hero: '🪩',
     stickers: ['🎉', '🎶', '✨', '🍕'],
-    kicker: 'YOUR NIGHT, SORTED',
-    lines: ['PULL UP.', 'LINK UP.', 'VIBE OUT.'],
+    kicker: 'YOUR NIGHT. SORTED.',
+    lines: ['Where the night', 'comes alive.'],
     body: 'Plan the night, move as a squad, split the damage and get home safe. All with your people.',
     chips: ['💬 no group chat chaos', '🧾 bills split in seconds', '🏠 get home safe'],
   },
@@ -18,7 +19,7 @@ const SLIDES = [
     hero: '🧾',
     stickers: ['📸', '👆', '💸', '🧮'],
     kicker: 'NO AWKWARD MATHS',
-    lines: ['SNAP IT.', 'TAP IT.', 'SPLIT IT.'],
+    lines: ['Snap it. Tap it.', 'Split it fairly.'],
     body: 'Scan the bill, everyone taps what they had, tax and service shared fairly. To the rupee.',
     chips: ['📸 scan any bill', '👆 tap your items', '💸 settle by UPI'],
   },
@@ -26,7 +27,7 @@ const SLIDES = [
     hero: '🔒',
     stickers: ['🙅', '💳', '🗑️', '🛡️'],
     kicker: 'PRIVATE BY DESIGN',
-    lines: ['YOUR NIGHT.', 'YOUR DATA.', 'NO DRAMA.'],
+    lines: ['Your night.', 'Your data.'],
     body: 'Try it with no sign-up. We never sync your contacts, never hold your money, and you can delete everything anytime.',
     chips: ['🙅 no contact sync', '💳 no wallet', '🗑️ delete anytime'],
   },
@@ -108,6 +109,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 
   return (
     <View style={styles.page}>
+      <NightSky height={420} />
       <View style={styles.topRow}>
         <View style={styles.pill}>
           <Text style={styles.pillText}>⚡ {SLIDES[page].kicker}</Text>
@@ -172,8 +174,8 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 58, paddingHorizontal: 22 },
-  pill: { backgroundColor: C.accentSoft, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
-  pillText: { color: '#1A1406', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  pill: { borderWidth: 1, borderColor: C.accentSoft + '66', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  pillText: { color: C.accentSoft, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
   skipText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
   slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   cluster: { height: 190, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
@@ -183,8 +185,8 @@ const styles = StyleSheet.create({
   sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   stickerEmoji: { fontSize: 28 },
   headline: { marginTop: 4 },
-  line: { fontFamily: F.display, color: C.text, fontSize: 37, lineHeight: 40, letterSpacing: -0.5 },
-  lineGold: { color: C.accentSoft },
+  line: { fontFamily: F.display, color: C.text, fontSize: 42, lineHeight: 50 },
+  lineGold: { fontFamily: F.italic, color: C.accentSoft },
   body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
   chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 11, marginRight: 8, marginBottom: 8 },

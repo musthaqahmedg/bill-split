@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
   nextTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   nextKicker: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
   nextGoing: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  nextTitle: { fontFamily: F.display, color: C.text, fontSize: 18, marginTop: 6 },
+  nextTitle: { fontFamily: F.display, color: C.text, fontSize: 22, marginTop: 6 },
   nextMeta: { color: C.sub, fontSize: 14, marginTop: 4 },
   nextBtns: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
   nextBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },

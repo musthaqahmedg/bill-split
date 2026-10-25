@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 36, maxHeight: '85%' },
   handle: { alignSelf: 'center', width: 44, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 14 },
-  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 18 },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 19 },
   sheetSub: { color: C.faint, fontSize: 13, marginTop: 2, marginBottom: 12 },
   group: { color: C.faint, fontSize: 12, fontWeight: '800', marginTop: 10, marginBottom: 2 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },

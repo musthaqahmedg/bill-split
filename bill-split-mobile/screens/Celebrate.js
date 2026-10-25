@@ -77,6 +77,6 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(7,7,10,0.82)', alignItems: 'center', justifyContent: 'center' },
   center: { alignItems: 'center' },
   sticker: { backgroundColor: C.accent, borderRadius: 32, paddingHorizontal: 34, paddingVertical: 10, transform: [{ rotate: '-4deg' }], shadowColor: C.accent, shadowOpacity: 0.6, shadowRadius: 20, elevation: 10 },
-  go: { fontFamily: F.display, color: '#fff', fontSize: 58, letterSpacing: 2 },
+  go: { fontFamily: F.display, color: '#fff', fontSize: 70, letterSpacing: 2 },
   sub: { color: C.text, fontSize: 18, fontWeight: '700', marginTop: 18 },
 });
