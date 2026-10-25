@@ -20,7 +20,7 @@ const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
 export default function SplitScreen({
   items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
-  payment = { mode: 'me' }, onPaymentChange = () => {},
+  payment = { mode: 'me' }, onPaymentChange = () => {}, partyId = null,
 }) {
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
@@ -120,7 +120,7 @@ export default function SplitScreen({
     try {
       const payload = {
         bill: { ...bill, total: billTotal }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
-        paidMode: payment.mode || 'me', paid,
+        paidMode: payment.mode || 'me', paid, partyId,
       };
       if (editingBillId) {
         await updateBill(editingBillId, payload);

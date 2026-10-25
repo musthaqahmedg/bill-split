@@ -24,7 +24,7 @@ export async function findDuplicate(bill) {
 
 // payers: one object per item, e.g. { Shajaaz: 'Shafil' } = Shafil pays for Shajaaz's part of this item
 // nonDrinkers: names of people marked "Not drinking"
-export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt, paidMode, paid }) {
+export async function saveBill({ bill, items, people, claims, payers, nonDrinkers, amounts, createdAt, paidAt, paidMode, paid, partyId }) {
   track('upload', 'saved a bill');
   // 1. The bill itself
   const { data: saved, error: e1 } = await supabase
@@ -42,6 +42,7 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
       authenticity: bill.check || null,
       status: 'split',
       paid_mode: paidMode || 'me', // 💳 who paid the restaurant
+      ...(partyId ? { party_id: partyId } : {}), // 🌙 split from Night Mode → shows in that plan's "Bill so far"
       ...(createdAt ? { created_at: createdAt } : {}),
     })
     .select()
@@ -288,6 +289,16 @@ export async function listBillsDetailed() {
     .select('id, title, bill_date, created_at, bill_items(name, price, kind, item_claims(participant_id, units)), bill_participants(id, name, amount_due)')
     .order('created_at', { ascending: false })
     .limit(400);
+  if (error) throw error;
+  return data || [];
+}
+
+// 🌙 Night Mode "Bill so far": bills split for this plan
+export async function billsForParty(partyId) {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('id, total, created_at, bill_participants(name, amount_due)')
+    .eq('party_id', partyId);
   if (error) throw error;
   return data || [];
 }

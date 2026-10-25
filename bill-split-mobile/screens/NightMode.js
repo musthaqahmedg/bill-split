@@ -1,6 +1,9 @@
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { billsForParty } from '../services/bills';
+import { saveNight } from '../services/safety';
+import { supabase } from '../services/supabaseClient';
 import { kindOf } from '../services/partyKinds';
 import { BADGES, badgeOf, setBadge } from '../services/parties';
 import { show } from '../services/names';
@@ -20,6 +23,65 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
   const [games, setGames] = useState(false);
   const [sharing, setSharing] = useState(false);
   const [badgeFor, setBadgeFor] = useState(null); // 😎 giving someone a fun badge
+  const [billSoFar, setBillSoFar] = useState(null); // 🧾 { total, mine, count } for bills split in this plan
+  const [stopEdit, setStopEdit] = useState(false); // ➕ adding a stop
+  const [stopName, setStopName] = useState('');
+  const [stopTime, setStopTime] = useState('');
+  const [homeSheet, setHomeSheet] = useState(false); // 🏠 Get me home safe
+  useEffect(() => {
+    if (!visible || !party) return;
+    billsForParty(party.id)
+      .then((list) => {
+        let total = 0;
+        let mine = 0;
+        list.forEach((b) => {
+          total += Number(b.total) || 0;
+          const me = (b.bill_participants || []).find((p) => p.name === 'Me');
+          mine += me ? Number(me.amount_due) || 0 : 0;
+        });
+        setBillSoFar({ total: Math.round(total), mine: Math.round(mine), count: list.length });
+      })
+      .catch(() => setBillSoFar(null));
+  }, [visible, party && party.id]);
+
+  // 🗺️ Tonight's stops (timeline). First stop = the plan's place until you add more.
+  const stops = party && Array.isArray(party.stops) && party.stops.length
+    ? party.stops
+    : party && party.place ? [{ name: party.place.split(',')[0].replace(/^My place 🏠 · .*/, 'My place 🏠'), time: '' }] : [];
+  const saveStops = async (list) => {
+    try {
+      const { error } = await supabase.from('parties').update({ stops: list }).eq('id', party.id);
+      if (error) throw error;
+      onChanged && onChanged();
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
+  const toggleStop = (i) => saveStops(stops.map((st, k) => (k === i ? { ...st, done: !st.done } : st)));
+  const removeStop = (i) =>
+    Alert.alert('Remove this stop?', stops[i].name, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => saveStops(stops.filter((_, k) => k !== i)) },
+    ]);
+  const addStop = () => {
+    const name = stopName.trim();
+    if (!name) return;
+    saveStops([...stops, { name: name.slice(0, 60), time: stopTime.trim().slice(0, 12) }]);
+    setStopName('');
+    setStopTime('');
+    setStopEdit(false);
+  };
+  const imHome = async () => {
+    setHomeSheet(false);
+    try {
+      const me = (party.party_members || []).find((m) => m.name === 'Me');
+      await saveNight(party, me, { home_safe: true });
+      onChanged && onChanged();
+      Alert.alert('Home safe 🏠', 'Your crew can see you made it. Sleep well 😴');
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
   const giveBadge = async (b) => {
     const m = badgeFor;
     setBadgeFor(null);
@@ -91,6 +153,39 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           <Text style={styles.title} numberOfLines={2}>{kindOf(party.kind).emoji} {party.title}</Text>
           {party.place ? <Text style={styles.place} numberOfLines={1}>📍 {party.place.replace(/^My place 🏠 · .*/, 'My place 🏠')}</Text> : null}
 
+          {/* 🗺️ Tonight's stops */}
+          <View style={styles.card}>
+            <View style={styles.cardHead}>
+              <Text style={styles.cardTitle}>Tonight's stops <Text style={styles.cardHint}>· tap when done</Text></Text>
+              <TouchableOpacity onPress={() => setStopEdit(true)} hitSlop={8}>
+                <Text style={styles.addStop}>＋ Add stop</Text>
+              </TouchableOpacity>
+            </View>
+            {stops.length ? (
+              stops.map((st, i) => {
+                const current = !st.done && stops.slice(0, i).every((x) => x.done);
+                return (
+                  <TouchableOpacity key={i} style={styles.stop} onPress={() => toggleStop(i)} onLongPress={() => removeStop(i)} activeOpacity={0.7}>
+                    <View style={styles.rail}>
+                      <View style={[styles.dot, st.done && styles.dotDone, current && styles.dotNow]}>
+                        {st.done ? <Text style={styles.dotTick}>✓</Text> : null}
+                      </View>
+                      {i < stops.length - 1 ? <View style={[styles.line, st.done && styles.lineDone]} /> : null}
+                    </View>
+                    <View style={{ flex: 1, paddingBottom: i < stops.length - 1 ? 14 : 0 }}>
+                      <Text style={[styles.stopName, st.done && styles.stopDone]} numberOfLines={1}>{st.name}</Text>
+                      <Text style={[styles.stopMeta, current && { color: C.green }]}>
+                        {current ? '● Now' : st.done ? 'Done' : 'Next'}{st.time ? ` · ${st.time}` : ''}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })
+            ) : (
+              <Text style={styles.empty}>Add where you're going tonight: pre-drinks, dinner, the club, after-party…</Text>
+            )}
+          </View>
+
           {/* 👥 The crew tonight */}
           <View style={styles.card}>
             <View style={styles.cardHead}>
@@ -114,12 +209,24 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           {/* 🔲 Quick actions */}
           <View style={styles.grid}>
             <Tile emoji="💬" title="Chat" sub="Group chat" onPress={() => { onClose(); onChat && onChat(); }} />
-            <Tile emoji="🧾" title="Split the bill" sub="Scan the receipt" tint={C.accent} onPress={() => { onClose(); onSplit && onSplit(crew.map((m) => m.name)); }} />
+            <Tile
+              emoji="🧾"
+              title={billSoFar && billSoFar.count ? `₹${billSoFar.total.toLocaleString('en-IN')} so far` : 'Split the bill'}
+              sub={billSoFar && billSoFar.count ? `Your share ₹${billSoFar.mine.toLocaleString('en-IN')} · add a round` : 'Scan the receipt'}
+              tint={C.accent}
+              onPress={() => { onClose(); onSplit && onSplit(crew.map((m) => m.name), party.id); }}
+            />
             <Tile emoji="🎮" title="Games" sub="Wheel · dares" onPress={() => setGames(true)} />
             <Tile emoji="🚕" title="Ride home" sub="Uber · Ola · Rapido" tint={C.amber} onPress={ride} />
             <Tile emoji="📍" title={sharing ? 'Finding you…' : 'Share location'} sub="Send where you are" tint={C.green} onPress={shareLocation} />
             <Tile emoji="🆘" title="Emergency" sub="Call 112" tint={C.red} onPress={() => Alert.alert('Call 112?', 'India emergency number', [{ text: 'Cancel', style: 'cancel' }, { text: 'Call', style: 'destructive', onPress: () => Linking.openURL('tel:112') }])} />
           </View>
+
+          {/* 🏠 The big one: always one tap away */}
+          <TouchableOpacity style={styles.homeBtn} onPress={() => setHomeSheet(true)} activeOpacity={0.85}>
+            <Text style={styles.homeText}>🏠 Get me home safe</Text>
+            <Text style={styles.homeSub}>Ride · share location · I'm home</Text>
+          </TouchableOpacity>
 
           {/* 🏠 Home safe check-in (and safe-night streak) */}
           <NightCheck party={party} onChanged={onChanged} />
@@ -129,6 +236,41 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
         </ScrollView>
       </View>
       <PartyGames visible={games} onClose={() => setGames(false)} party={party} />
+
+      {/* ➕ Add a stop */}
+      <Modal visible={stopEdit} transparent animationType="fade" onRequestClose={() => setStopEdit(false)}>
+        <Pressable style={styles.overlay} onPress={() => setStopEdit(false)}>
+          <Pressable style={styles.sheet}>
+            <Text style={styles.sheetTitle}>➕ Add a stop</Text>
+            <TextInput style={styles.input} value={stopName} onChangeText={setStopName} placeholder="Where? e.g. Rooftop bar, Biryani place" placeholderTextColor={C.faint} keyboardAppearance="dark" autoFocus />
+            <TextInput style={styles.input} value={stopTime} onChangeText={setStopTime} placeholder="When? e.g. 10:30 PM (optional)" placeholderTextColor={C.faint} keyboardAppearance="dark" />
+            <TouchableOpacity style={styles.saveBtn} onPress={addStop}>
+              <Text style={styles.saveText}>Add to tonight</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* 🏠 Get me home safe */}
+      <Modal visible={homeSheet} transparent animationType="fade" onRequestClose={() => setHomeSheet(false)}>
+        <Pressable style={styles.overlay} onPress={() => setHomeSheet(false)}>
+          <Pressable style={styles.sheet}>
+            <Text style={styles.sheetTitle}>🏠 Get me home safe</Text>
+            <TouchableOpacity style={styles.option} onPress={() => { setHomeSheet(false); ride(); }}>
+              <Text style={styles.optionText}>🚕 Book a ride home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.option} onPress={() => { setHomeSheet(false); shareLocation(); }}>
+              <Text style={styles.optionText}>📍 Send my live location</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.option, { borderColor: C.green }]} onPress={imHome}>
+              <Text style={[styles.optionText, { color: C.green }]}>✅ I'm home safe</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.option, { borderColor: C.red }]} onPress={() => { setHomeSheet(false); Linking.openURL('tel:112'); }}>
+              <Text style={[styles.optionText, { color: C.red }]}>🆘 Call 112</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       {/* 😎 Pick a fun badge */}
       <Modal visible={!!badgeFor} transparent animationType="fade" onRequestClose={() => setBadgeFor(null)}>
@@ -155,6 +297,27 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 }
 
 const styles = StyleSheet.create({
+  addStop: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
+  stop: { flexDirection: 'row' },
+  rail: { width: 26, alignItems: 'center' },
+  dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: C.faint, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  dotDone: { backgroundColor: C.green, borderColor: C.green },
+  dotNow: { borderColor: C.green, backgroundColor: C.green + '33' },
+  dotTick: { color: '#06281C', fontSize: 10, fontWeight: '900' },
+  line: { width: 2, flex: 1, backgroundColor: C.border, marginVertical: 2 },
+  lineDone: { backgroundColor: C.green },
+  stopName: { color: C.text, fontSize: 16, fontWeight: '700' },
+  stopDone: { color: C.faint, textDecorationLine: 'line-through' },
+  stopMeta: { color: C.faint, fontSize: 12, marginTop: 2 },
+  empty: { color: C.faint, fontSize: 13, lineHeight: 19 },
+  homeBtn: { backgroundColor: '#F97316', borderRadius: 22, paddingVertical: 18, alignItems: 'center', marginTop: 4, marginBottom: 12 },
+  homeText: { color: '#fff', fontSize: 20, fontWeight: '900' },
+  homeSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 3, fontWeight: '600' },
+  input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, color: C.text, fontSize: 16, marginBottom: 10 },
+  saveBtn: { backgroundColor: C.accent, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 4 },
+  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  option: { borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 15, marginBottom: 10 },
+  optionText: { color: C.text, fontSize: 16, fontWeight: '700' },
   page: { flex: 1, backgroundColor: '#07070A', paddingTop: 56 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 8 },
   close: { color: C.sub, fontSize: 16, fontWeight: '600' },

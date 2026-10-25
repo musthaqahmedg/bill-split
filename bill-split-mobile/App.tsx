@@ -167,6 +167,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
   const [openPartyId, setOpenPartyId] = useState<any>(null);
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
+  const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
@@ -184,6 +185,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     setPayment({ mode: 'me' });
     setEditingBillId(null);
     setAddingRound(false);
+    setBillPartyId(null);
     setScreen('upload');
   };
 
@@ -536,10 +538,17 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onPaymentChange={setPayment}
         bill={bill}
         editingBillId={editingBillId}
+        partyId={billPartyId}
         onBack={() => setScreen('items')}
         onDone={() => {
           setEditingBillId(null);
           clearDraft();
+          if (billPartyId) {
+            setOpenPartyId(billPartyId); // back to the plan the bill belongs to
+            setBillPartyId(null);
+            setScreen('party');
+            return;
+          }
           setScreen('home');
         }}
       />
@@ -685,9 +694,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
-        onSplit={(names: any[]) => {
+        onSplit={(names: any[], partyId: any) => {
           startNewBill(); // 🌙 Night Mode → split the bill with tonight's crew already added
           setPeople(names && names.length ? names : ['Me']);
+          setBillPartyId(partyId || null);
         }}
         onTakeOut={(p: any) => {
           setNearby({ from: 'party', category: 'food', title: '🍽️ Take the group out', bookFor: p });
