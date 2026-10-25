@@ -65,3 +65,16 @@ export async function postPayRequest(partyId) {
   const { error } = await supabase.rpc('post_pay_request', { p_party: partyId });
   if (error) throw error;
 }
+
+// 😂 Emoji reactions on chat messages
+export const REACTIONS = ['😂', '🔥', '❤️', '👀', '🙌', '😮'];
+export async function getReactions(token) {
+  const { data, error } = await supabase.rpc('get_reactions', { p_token: token });
+  if (error) throw error;
+  return data || [];
+}
+export async function react({ token, memberId, messageId, emoji }) {
+  const { data, error } = await supabase.rpc('react_message', { p_token: token, p_member: memberId, p_message: messageId, p_emoji: emoji });
+  if (error) throw error;
+  return data; // true = added, false = removed
+}

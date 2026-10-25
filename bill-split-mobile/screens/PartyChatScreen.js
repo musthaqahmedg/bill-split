@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { createPoll, getPolls, listMessages, onNewMessage, sendMessage, votePoll, postPayRequest } from '../services/chat';
+import { REACTIONS, createPoll, getPolls, getReactions, listMessages, onNewMessage, react, sendMessage, votePoll, postPayRequest } from '../services/chat';
+import FloatUp from './FloatUp';
 import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
 import { getParty } from '../services/parties';
@@ -46,6 +47,28 @@ export default function PartyChatScreen({ partyId, onBack }) {
     try {
       const list = await getPolls(token);
       setPolls(Object.fromEntries(list.map((p) => [p.id, p])));
+    } catch (e) {}
+    try {
+      const rs = await getReactions(token);
+      const byMsg = {};
+      rs.forEach((r) => {
+        (byMsg[r.message_id] = byMsg[r.message_id] || []).push(r);
+      });
+      setReactions(byMsg);
+    } catch (e) {}
+  };
+
+  // 😂 Long-press a message → pick a reaction → emojis float up
+  const [reactions, setReactions] = useState({});
+  const [picker, setPicker] = useState(null); // message id showing the reaction bar
+  const floater = useRef(null);
+  const doReact = async (messageId, emoji) => {
+    setPicker(null);
+    if (!me) return;
+    try {
+      const added = await react({ token, memberId: me.id, messageId, emoji });
+      if (added && floater.current) floater.current.burst(emoji);
+      loadPolls();
     } catch (e) {}
   };
 
@@ -113,11 +136,34 @@ export default function PartyChatScreen({ partyId, onBack }) {
       return <PollCard poll={polls[item.poll_id]} myId={me && me.id} sender={isMine(item) ? 'You' : item.sender_name} onVote={vote} />;
     }
     const mine = isMine(item);
+    const rs = reactions[item.id] || [];
+    const counts = REACTIONS.map((e) => [e, rs.filter((r) => r.emoji === e).length]).filter(([, n]) => n);
+    const myR = me && rs.find((r) => r.member_id === me.id);
     return (
-      <View style={[styles.bubble, mine ? styles.mine : styles.theirs]}>
-        {!mine && <Text style={[styles.sender, { color: colorFor(item.sender_name) }]}>{item.sender_name}</Text>}
-        <Text style={styles.body}>{item.body}</Text>
-        <Text style={styles.time}>{time(item.created_at)}</Text>
+      <View style={{ alignSelf: mine ? 'flex-end' : 'flex-start', maxWidth: '82%' }}>
+        {picker === item.id ? (
+          <View style={[styles.picker, mine ? { alignSelf: 'flex-end' } : null]}>
+            {REACTIONS.map((e) => (
+              <TouchableOpacity key={e} onPress={() => doReact(item.id, e)} style={[styles.pickBtn, myR && myR.emoji === e && styles.pickOn]} hitSlop={4}>
+                <Text style={styles.pickEmoji}>{e}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
+        <TouchableOpacity activeOpacity={0.85} onLongPress={() => setPicker(picker === item.id ? null : item.id)} delayLongPress={250} style={[styles.bubble, mine ? styles.mine : styles.theirs, { maxWidth: '100%', alignSelf: 'auto' }]}>
+          {!mine && <Text style={[styles.sender, { color: colorFor(item.sender_name) }]}>{item.sender_name}</Text>}
+          <Text style={styles.body}>{item.body}</Text>
+          <Text style={styles.time}>{time(item.created_at)}</Text>
+        </TouchableOpacity>
+        {counts.length ? (
+          <View style={[styles.reacts, mine ? { alignSelf: 'flex-end' } : null]}>
+            {counts.map(([e, n]) => (
+              <TouchableOpacity key={e} style={[styles.reactChip, myR && myR.emoji === e && styles.reactMine]} onPress={() => doReact(item.id, e)}>
+                <Text style={styles.reactText}>{e}{n > 1 ? ` ${n}` : ''}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
       </View>
     );
   };
@@ -188,11 +234,20 @@ export default function PartyChatScreen({ partyId, onBack }) {
           <Text style={styles.sendText}>➤</Text>
         </TouchableOpacity>
       </View>
+      <FloatUp ref={floater} />
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  picker: { flexDirection: 'row', backgroundColor: C.cardHi, borderRadius: 22, paddingHorizontal: 6, paddingVertical: 4, marginBottom: 4, borderWidth: 1, borderColor: C.border },
+  pickBtn: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 14 },
+  pickOn: { backgroundColor: C.accent + '55' },
+  pickEmoji: { fontSize: 24 },
+  reacts: { flexDirection: 'row', flexWrap: 'wrap', marginTop: -2, marginBottom: 6 },
+  reactChip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, paddingHorizontal: 7, paddingVertical: 2, marginRight: 4 },
+  reactMine: { borderColor: C.accentSoft },
+  reactText: { color: C.text, fontSize: 12 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60 },
   header: { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 8 },
