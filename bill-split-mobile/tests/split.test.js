@@ -273,3 +273,11 @@ test('💡 motivation swaps rotate, always affordable, max 3', () => {
   assert.ok(seen.size > 5); // it really changes
   assert.equal(swapsFor(50, 1).length, 0);
 });
+
+// ---- 📍 Live location distance ----
+test('📍 distance between friends', async () => {
+  const { km, distText } = await import('../services/distance.js');
+  assert.ok(Math.abs(km({ lat: 0, lng: 0 }, { lat: 0, lng: 1 }) - 111.19) < 0.1);
+  assert.equal(distText(0.153), '150 m away');
+  assert.equal(distText(2.46), '2.5 km away');
+});

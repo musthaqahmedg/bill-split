@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { billsForParty } from '../services/bills';
 import { saveNight } from '../services/safety';
+import { crewLocations, distText, km, sharingFor, startLive, stopLive } from '../services/liveLocation';
 import { supabase } from '../services/supabaseClient';
 import { kindOf } from '../services/partyKinds';
 import { BADGES, LIVE, badgeOf, liveOf, setBadge, setLiveStatus } from '../services/parties';
@@ -71,6 +72,45 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
     setStopTime('');
     setStopEdit(false);
   };
+  // 📍 Live location (like WhatsApp): crew positions refresh every 15s while Night Mode is open
+  const [locs, setLocs] = useState([]);
+  const [liveBusy, setLiveBusy] = useState(false);
+  const [, setTickLive] = useState(0);
+  useEffect(() => {
+    if (!visible || !party || !party.share_token) return;
+    const load = () => crewLocations(party).then(setLocs).catch(() => {});
+    load();
+    const t = setInterval(() => {
+      load();
+      setTickLive((x) => x + 1);
+    }, 15000);
+    return () => clearInterval(t);
+  }, [visible, party && party.id]);
+  const goLive = async (minutes) => {
+    const me = (party.party_members || []).find((m) => m.name === 'Me');
+    if (!me) return;
+    setLiveBusy(true);
+    try {
+      await startLive(party, me.id, minutes);
+      setLocs(await crewLocations(party));
+    } catch (e) {
+      Alert.alert("Couldn't share location", e.message);
+    } finally {
+      setLiveBusy(false);
+    }
+  };
+  const endLive = async () => {
+    const me = (party.party_members || []).find((m) => m.name === 'Me');
+    try {
+      await stopLive(party, me.id);
+      setLocs(await crewLocations(party));
+    } catch (e) {}
+  };
+  const ago = (t) => {
+    const m = Math.round((Date.now() - new Date(t).getTime()) / 60000);
+    return m < 1 ? 'just now' : `${m} min ago`;
+  };
+
   // 👥 My live status: on my way → here → home
   const meMember = party && (party.party_members || []).find((m) => m.name === 'Me');
   const myLive = meMember ? liveOf(meMember) : null;
@@ -177,6 +217,60 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
               ))}
             </View>
           ) : null}
+
+          {/* 📍 Live location */}
+          {(() => {
+            const me = (party.party_members || []).find((m) => m.name === 'Me');
+            const mine = me && locs.find((l) => l.member_id === me.id);
+            const local = sharingFor(party.id);
+            const others = locs.filter((l) => !me || l.member_id !== me.id);
+            return (
+              <View style={styles.card}>
+                <View style={styles.cardHead}>
+                  <Text style={styles.cardTitle}>📍 Live location</Text>
+                  {mine ? <Text style={[styles.cardSub, { color: C.green }]}>● Sharing</Text> : null}
+                </View>
+                {mine ? (
+                  <View style={styles.liveMine}>
+                    <Text style={styles.liveMineText}>
+                      You're sharing until {new Date(mine.until).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}
+                      {!local ? ' (open the app to keep it updating)' : ''}
+                    </Text>
+                    <TouchableOpacity onPress={endLive} hitSlop={8}>
+                      <Text style={styles.liveStop}>Stop</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.liveBtns}>
+                    {[[15, '15 min'], [60, '1 hour'], [480, '8 hours']].map(([m, label]) => (
+                      <TouchableOpacity key={m} style={styles.liveBtn} onPress={() => goLive(m)} disabled={liveBusy} activeOpacity={0.8}>
+                        <Text style={styles.liveBtnText}>{liveBusy ? '…' : `Share ${label}`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+                {others.length ? (
+                  others.map((l) => (
+                    <TouchableOpacity key={l.member_id} style={styles.liveRow} onPress={() => Linking.openURL(`https://maps.google.com/?q=${l.lat},${l.lng}`)} activeOpacity={0.7}>
+                      <View style={[styles.liveFace, { backgroundColor: hue(l.name) }]}>
+                        <Text style={styles.liveFaceText}>{show(l.name).charAt(0).toUpperCase()}</Text>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.liveName}>{show(l.name)}</Text>
+                        <Text style={styles.liveMeta}>
+                          {mine ? distText(km({ lat: mine.lat, lng: mine.lng }, l)) + ' · ' : ''}updated {ago(l.updated_at)}
+                        </Text>
+                      </View>
+                      <Text style={styles.liveMap}>Map ›</Text>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <Text style={styles.empty}>Nobody else is sharing yet. Share yours and the crew can follow you home 🏠</Text>
+                )}
+                <Text style={styles.livePrivacy}>🔒 Only this plan's crew sees it, only for the time you pick, and it's deleted when sharing ends.</Text>
+              </View>
+            );
+          })()}
 
           {/* 🗺️ Tonight's stops */}
           <View style={styles.card}>
@@ -329,6 +423,19 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 }
 
 const styles = StyleSheet.create({
+  liveBtns: { flexDirection: 'row', marginBottom: 6 },
+  liveBtn: { flex: 1, backgroundColor: C.accent, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginHorizontal: 3 },
+  liveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  liveMine: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.green + '1F', borderRadius: 14, padding: 10, marginBottom: 6 },
+  liveMineText: { color: C.text, fontSize: 13, fontWeight: '600', flex: 1 },
+  liveStop: { color: C.red, fontSize: 14, fontWeight: '800', marginLeft: 10 },
+  liveRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: 1, borderTopColor: C.border },
+  liveFace: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', marginRight: 10 },
+  liveFaceText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  liveName: { color: C.text, fontSize: 15, fontWeight: '700' },
+  liveMeta: { color: C.faint, fontSize: 12, marginTop: 2 },
+  liveMap: { color: C.accentSoft, fontSize: 13, fontWeight: '700' },
+  livePrivacy: { color: C.faint, fontSize: 11, marginTop: 8 },
   statusRow: { flexDirection: 'row', marginTop: 16 },
   statusBtn: { flex: 1, alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginHorizontal: 3 },
   statusEmoji: { fontSize: 20 },

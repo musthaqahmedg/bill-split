@@ -6,7 +6,7 @@ import { C } from '../services/theme';
 
 // ✍️ Privacy notice + consent (India DPDP Act 2023 / Rules 2025).
 // Shown once to everyone (guests too) before we use their data, and again if the notice changes.
-export const CONSENT_VERSION = '2026-10-24';
+export const CONSENT_VERSION = '2026-10-25'; // bumped: live location sharing added
 export const GRIEVANCE_EMAIL = 'maginfosystems@gmail.com';
 
 const DATA = [
@@ -15,7 +15,7 @@ const DATA = [
   ['🎉', 'Plans, who’s coming, chat and photos', 'To run your plans with your group'],
   ['📸', 'Bill photos you scan', 'To read the items (sent to Google Gemini, not kept)'],
   ['🎂', 'Birthday (optional)', 'For friend birthday reminders'],
-  ['📍', 'Location (only when you allow it)', 'To show places near you. Not stored'],
+  ['📍', 'Location (only when you allow it)', 'To show places near you, and to share live location with your plan’s crew when YOU turn it on. Deleted when sharing ends'],
   ['📱', 'Phone model, crash and bug reports', 'To fix problems'],
 ];
 
