@@ -33,6 +33,7 @@ import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
 import Celebrate from './screens/Celebrate';
+import Splash from './screens/Splash';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -307,6 +308,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   // When the app opens: already logged in on this phone? Ask for Face ID instead of a code.
   useEffect(() => {
+    const openedAt = Date.now(); // keep the splash up ~1s so it never flashes
     supabase.auth
       .getSession()
       .then(async ({ data }) => {
@@ -320,7 +322,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setWelcomed(!!seen);
         }
       })
-      .finally(() => setChecking(false));
+      .finally(() => setTimeout(() => setChecking(false), Math.max(0, 1100 - (Date.now() - openedAt))));
   }, []);
 
   // Ask for Face ID straight away when the lock screen appears
@@ -348,13 +350,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     setScreen('home');
   };
 
-  if (checking) {
-    return (
-      <View style={{ flex: 1, backgroundColor: C.bg, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color={C.accentSoft} />
-      </View>
-    );
-  }
+  if (checking) return <Splash />; // ✨ branded opening moment
 
   if (locked) {
     return (
