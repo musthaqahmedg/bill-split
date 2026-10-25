@@ -119,17 +119,35 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
     });
   }
 
+  // 🎨 poster colour per kind of place (Gautham's "Trending" cards, without photos)
+  const POSTER = {
+    restaurant: '#EF4444', fast_food: '#F97316', food_court: '#F97316', bar: '#F59E0B', pub: '#D97706', nightclub: '#A855F7',
+    cafe: '#B45309', hotel: '#3B82F6', cinema: '#E11D48', resort: '#14B8A6', guest_house: '#0EA5E9', attraction: '#22C55E',
+    viewpoint: '#16A34A', beach: '#06B6D4', waterfall: '#0891B2', park: '#22C55E', museum: '#6366F1', fort: '#78716C',
+  };
   const renderPlace = ({ item: p }) => {
     const d = details[p.id] || {};
     const st = openStatus(d.hours);
     const isSaved = saved.some((s) => s.id === p.id);
     return (
       <View style={styles.card}>
-        <View style={styles.cardTop}>
-          <Text style={styles.name} numberOfLines={2}>{p.emoji || EMOJI[p.kind] || '📍'} {p.name}</Text>
-          {p.km != null && <Text style={styles.km}>{showKm(p.km)}</Text>}
+        <View style={[styles.poster, { backgroundColor: (POSTER[p.kind] || C.accent) + '33' }]}>
+          <Text style={styles.posterEmoji}>{p.emoji || EMOJI[p.kind] || '📍'}</Text>
+          <View style={styles.posterTags}>
+            {p.km != null ? (
+              <View style={styles.tag}>
+                <Text style={styles.tagText}>📍 {showKm(p.km)}</Text>
+              </View>
+            ) : null}
+            {st ? (
+              <View style={[styles.tag, { backgroundColor: st.soon ? '#F59E0B' : st.open ? '#16A34A' : '#7F1D1D' }]}>
+                <Text style={[styles.tagText, { color: '#fff' }]}>{st.soon ? 'Closing soon' : st.open ? 'Open now' : 'Closed'}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={styles.posterName} numberOfLines={2}>{p.name}</Text>
+          {p.area ? <Text style={styles.posterArea} numberOfLines={1}>{p.area}</Text> : null}
         </View>
-        {p.area ? <Text style={styles.area} numberOfLines={1}>{p.area}</Text> : null}
         {st ? (
           <Text style={[styles.status, st.soon ? styles.soon : st.open ? styles.open : styles.closed]}>
             {st.soon ? '🟠' : st.open ? '🟢' : '🔴'} {st.label}
@@ -278,7 +296,14 @@ const styles = StyleSheet.create({
   locSub: { color: C.sub, fontSize: 12, marginTop: 2 },
   loading: { marginVertical: 16 },
   listPad: { paddingBottom: 40 },
-  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginBottom: 10 },
+  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 10, marginBottom: 12 },
+  poster: { borderRadius: 16, padding: 14, minHeight: 120, justifyContent: 'flex-end', overflow: 'hidden' },
+  posterEmoji: { position: 'absolute', right: 10, top: 6, fontSize: 64, opacity: 0.9 },
+  posterTags: { position: 'absolute', left: 12, top: 12, flexDirection: 'row' },
+  tag: { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, marginRight: 6 },
+  tagText: { color: C.text, fontSize: 11, fontWeight: '800' },
+  posterName: { color: '#fff', fontSize: 22, fontWeight: '900', marginTop: 34, marginRight: 60 },
+  posterArea: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', marginTop: 2 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   name: { color: C.text, fontSize: 16, fontWeight: '800', flex: 1, marginRight: 8 },
   km: { color: C.accentSoft, fontSize: 13, fontWeight: '800' },
