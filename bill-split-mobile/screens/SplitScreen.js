@@ -15,6 +15,7 @@ import { show } from '../services/names';
 import { C } from '../services/theme';
 import BillSteps from './BillSteps';
 
+const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
@@ -27,6 +28,8 @@ export default function SplitScreen({
   const [sponsor, setSponsor] = useState(null);   // who is covering them
   const [picked, setPicked] = useState([]);       // which of their items (by index)
   const [wholeOpen, setWholeOpen] = useState(false);
+  const [howOpen, setHowOpen] = useState(false); // ℹ️ how tax & service were split
+  const [itemsOpen, setItemsOpen] = useState(false); // 🧾 who had what, item by item
 
   // Pairs: who is this person paired with?
   const partnerOf = (name) => {
@@ -150,22 +153,89 @@ export default function SplitScreen({
       <Text style={styles.tagline}>No awkward maths. Everyone pays for what they had.</Text>
       <Text style={styles.hint}>Tap someone to have a friend cover them 💛</Text>
 
-      <View style={styles.summary}>
-        <View style={styles.sumRow}>
-          <Text style={styles.sumLabel}>Items</Text>
-          <Text style={styles.sumValue}>{money(itemsTotal)}</Text>
-        </View>
-        <View style={styles.sumRow}>
-          <Text style={styles.sumLabel}>Tax, service & round-off</Text>
-          <Text style={styles.sumValue}>{money(extras)}</Text>
-        </View>
-        <View style={[styles.sumRow, styles.sumTotal]}>
-          <Text style={styles.sumBold}>Bill total</Text>
-          <Text style={styles.sumBold}>{money(billTotal)}</Text>
-        </View>
-      </View>
-
       <ScrollView style={styles.list}>
+        {/* 💜 Your share, big and clear */}
+        {people.includes('Me') ? (
+          <View style={styles.hero}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.heroLabel}>YOUR SHARE</Text>
+              <Text style={styles.heroBig}>{inr(finalOf.Me || 0)}</Text>
+              <Text style={styles.heroSub}>
+                {inOf('Me').length
+                  ? `You get back ${inr(inOf('Me').reduce((a, m) => a + m.amount, 0))}`
+                  : outOf('Me').length
+                    ? outOf('Me').map((m) => `Pay ${show(m.to)} ${inr(m.amount)}`).join(' · ')
+                    : mode === 'unpaid' ? 'Bill not paid yet' : 'All square ✓'}
+              </Text>
+            </View>
+            <View style={styles.heroRight}>
+              <Text style={styles.heroLabel}>BILL TOTAL</Text>
+              <Text style={styles.heroTotal}>{inr(billTotal)}</Text>
+              <Text style={styles.heroSub}>{people.length} people</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {/* ℹ️ How tax & service were split (always explained, never hidden) */}
+        <TouchableOpacity style={styles.how} onPress={() => setHowOpen(!howOpen)} activeOpacity={0.8}>
+          <View style={styles.howTop}>
+            <Text style={styles.howTitle}>ℹ️ How was this split?</Text>
+            <Text style={styles.howChev}>{howOpen ? '▲' : '▼'}</Text>
+          </View>
+          <View style={styles.sumRow}>
+            <Text style={styles.sumLabel}>Items</Text>
+            <Text style={styles.sumValue}>{money(itemsTotal)}</Text>
+          </View>
+          <View style={styles.sumRow}>
+            <Text style={styles.sumLabel}>{extras >= 0 ? 'Tax, service & round-off' : 'Discount & round-off'}</Text>
+            <Text style={styles.sumValue}>{extras >= 0 ? '+' : '−'} {money(Math.abs(extras))}</Text>
+          </View>
+          <View style={[styles.sumRow, styles.sumTotal]}>
+            <Text style={styles.sumBold}>Bill total</Text>
+            <Text style={styles.sumBold}>{money(billTotal)}</Text>
+          </View>
+          {howOpen ? (
+            <Text style={styles.howBody}>
+              1. Each person pays for the items they tapped. Shared items are divided by how many each had.{'\n'}
+              2. {extras >= 0 ? 'Tax, service charge and round-off' : 'The discount'} ({money(Math.abs(extras))}) is shared in proportion: if you had 30% of the items, you {extras >= 0 ? 'pay' : 'save'} 30% of it.{'\n'}
+              3. Everything is rounded to whole rupees, and the total always matches the bill exactly ({inr(target)}).
+            </Text>
+          ) : null}
+        </TouchableOpacity>
+
+        {/* 🧾 Who had what, item by item, with faces */}
+        <TouchableOpacity style={styles.how} onPress={() => setItemsOpen(!itemsOpen)} activeOpacity={0.8}>
+          <View style={styles.howTop}>
+            <Text style={styles.howTitle}>🧾 Who had what · {items.length} items</Text>
+            <Text style={styles.howChev}>{itemsOpen ? '▲' : '▼'}</Text>
+          </View>
+          {itemsOpen
+            ? items.map((it, i) => {
+                const who = (claims[i] || []).filter((n) => people.includes(n));
+                const uniq = [...new Set(who)];
+                return (
+                  <View key={i} style={styles.itemRow}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.itemName} numberOfLines={1}>{it.qty > 1 ? `${it.qty} × ` : ''}{it.name}</Text>
+                      <View style={styles.faces}>
+                        {uniq.map((n, k) => {
+                          const units = who.filter((x) => x === n).length;
+                          return (
+                            <View key={n} style={[styles.face, { backgroundColor: HUES[(n.charCodeAt(0) || 0) % HUES.length], marginLeft: k ? -6 : 0 }]}>
+                              <Text style={styles.faceText}>{show(n).charAt(0).toUpperCase()}{units > 1 ? units : ''}</Text>
+                            </View>
+                          );
+                        })}
+                        <Text style={styles.itemWho} numberOfLines={1}>{uniq.length ? uniq.map(show).join(', ') : 'Nobody yet'}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.itemPrice}>{money(it.price)}</Text>
+                  </View>
+                );
+              })
+            : null}
+        </TouchableOpacity>
+
         {/* 💳 Who paid the bill? */}
         <View style={styles.paidBox}>
           <Text style={styles.paidTitle}>💳 Who paid the bill?</Text>
@@ -384,6 +454,24 @@ const styles = StyleSheet.create({
   tagline: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 2, marginBottom: 4 },
   hint: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
+  hero: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 22, padding: 16, marginBottom: 10 },
+  heroLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  heroBig: { color: '#fff', fontSize: 34, fontWeight: '900', marginTop: 2 },
+  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  heroRight: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 10 },
+  heroTotal: { color: '#fff', fontSize: 18, fontWeight: '800', marginTop: 2 },
+  how: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
+  howTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  howTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  howChev: { color: C.faint, fontSize: 12 },
+  howBody: { color: C.sub, fontSize: 13, lineHeight: 20, marginTop: 10 },
+  itemRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.border },
+  itemName: { color: C.text, fontSize: 14, fontWeight: '600' },
+  itemPrice: { color: C.text, fontSize: 14, fontWeight: '700', marginLeft: 8 },
+  faces: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  face: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
+  faceText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  itemWho: { color: C.faint, fontSize: 12, marginLeft: 6, flex: 1 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   sumLabel: { color: C.sub, fontSize: 14 },
   sumValue: { color: C.sub, fontSize: 14 },
