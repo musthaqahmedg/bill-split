@@ -1,32 +1,83 @@
 import * as Haptics from 'expo-haptics';
-import { useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { C } from '../services/theme';
 
-// 👋 First open: 3 simple slides, then jump straight in as a guest (no sign-up needed to try)
+// 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
   {
-    emoji: '🌙',
-    kicker: 'Where the night comes alive',
-    title: 'The whole night,\nsorted.',
-    body: 'Plan it with your crew, live it in Night Mode, split the bill and get everyone home safe. All in one app.',
-    chips: ['🎉 Plan', '🪩 Night Mode', '🧾 Split', '🏠 Home safe'],
+    hero: '🪩',
+    stickers: ['🎉', '🎶', '✨', '🍕'],
+    kicker: 'YOUR NIGHT, SORTED',
+    lines: ['PULL UP.', 'LINK UP.', 'VIBE OUT.'],
+    body: 'Plan the night, move as a squad, split the damage and get home safe. All with your people.',
+    chips: ['💬 no group chat chaos', '🧾 bills split in seconds', '🏠 get home safe'],
   },
   {
-    emoji: '🧾',
-    kicker: 'No awkward maths',
-    title: 'Pay for what\nyou had.',
-    body: 'Snap the bill. Everyone taps their items. Tax and service are shared fairly, to the rupee.',
-    chips: ['📸 Scan', '👆 Tap your items', '💸 Settle up'],
+    hero: '🧾',
+    stickers: ['📸', '👆', '💸', '🧮'],
+    kicker: 'NO AWKWARD MATHS',
+    lines: ['SNAP IT.', 'TAP IT.', 'SPLIT IT.'],
+    body: 'Scan the bill, everyone taps what they had, tax and service shared fairly. To the rupee.',
+    chips: ['📸 scan any bill', '👆 tap your items', '💸 settle by UPI'],
   },
   {
-    emoji: '🔒',
-    kicker: 'Private by design',
-    title: 'Your night,\nyour data.',
-    body: 'Try it without signing up. We never sync your contacts, never hold your money, and you can delete everything anytime.',
-    chips: ['🙅 No contact sync', '💳 No wallet', '🗑️ Delete anytime'],
+    hero: '🔒',
+    stickers: ['🙅', '💳', '🗑️', '🛡️'],
+    kicker: 'PRIVATE BY DESIGN',
+    lines: ['YOUR NIGHT.', 'YOUR DATA.', 'NO DRAMA.'],
+    body: 'Try it with no sign-up. We never sync your contacts, never hold your money, and you can delete everything anytime.',
+    chips: ['🙅 no contact sync', '💳 no wallet', '🗑️ delete anytime'],
   },
 ];
+
+// Sticker cluster: a glowing centre emoji with 4 tilted stickers gently bobbing around it
+function Stickers({ hero, stickers }) {
+  const bob = useRef(new Animated.Value(0)).current;
+  const glow = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.loop(Animated.sequence([
+      Animated.timing(bob, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+      Animated.timing(bob, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+    ]));
+    const b = Animated.loop(Animated.sequence([
+      Animated.timing(glow, { toValue: 1, duration: 1200, useNativeDriver: true }),
+      Animated.timing(glow, { toValue: 0, duration: 1200, useNativeDriver: true }),
+    ]));
+    a.start();
+    b.start();
+    return () => {
+      a.stop();
+      b.stop();
+    };
+  }, []);
+  const SPOTS = [
+    { left: 6, top: 8, rot: '-12deg', dir: 1 },
+    { right: 6, top: 0, rot: '10deg', dir: -1 },
+    { left: 18, bottom: 4, rot: '8deg', dir: -1 },
+    { right: 18, bottom: 12, rot: '-8deg', dir: 1 },
+  ];
+  return (
+    <View style={styles.cluster}>
+      <Animated.View style={[styles.halo, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.6] }) }]} />
+      <View style={styles.heroBubble}>
+        <Text style={styles.heroEmoji}>{hero}</Text>
+      </View>
+      {stickers.map((e, i) => (
+        <Animated.View
+          key={i}
+          style={[
+            styles.sticker,
+            SPOTS[i],
+            { transform: [{ rotate: SPOTS[i].rot }, { translateY: bob.interpolate({ inputRange: [0, 1], outputRange: [0, 8 * SPOTS[i].dir] }) }] },
+          ]}
+        >
+          <Text style={styles.stickerEmoji}>{e}</Text>
+        </Animated.View>
+      ))}
+    </View>
+  );
+}
 
 export default function WelcomeScreen({ onGuest, onSignIn }) {
   const { width } = Dimensions.get('window');
@@ -56,9 +107,14 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 
   return (
     <View style={styles.page}>
-      <TouchableOpacity style={styles.skip} onPress={onSignIn} hitSlop={10}>
-        <Text style={styles.skipText}>I have an account</Text>
-      </TouchableOpacity>
+      <View style={styles.topRow}>
+        <View style={styles.pill}>
+          <Text style={styles.pillText}>⚡ {SLIDES[page].kicker}</Text>
+        </View>
+        <TouchableOpacity onPress={onSignIn} hitSlop={10}>
+          <Text style={styles.skipText}>I have an account</Text>
+        </TouchableOpacity>
+      </View>
 
       <Animated.ScrollView
         ref={ref}
@@ -72,16 +128,16 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
             if (p !== page && p >= 0 && p < SLIDES.length) setPage(p);
           },
         })}
-        onMomentumScrollEnd={(e) => setPage(Math.round(e.nativeEvent.contentOffset.x / width))}
         scrollEventThrottle={16}
       >
         {SLIDES.map((s, i) => (
           <View key={i} style={[styles.slide, { width }]}>
-            <View style={styles.bubble}>
-              <Text style={styles.emoji}>{s.emoji}</Text>
+            <Stickers hero={s.hero} stickers={s.stickers} />
+            <View style={styles.headline}>
+              {s.lines.map((l, k) => (
+                <Text key={l} style={[styles.line, k === s.lines.length - 1 && styles.lineGold]}>{l}</Text>
+              ))}
             </View>
-            <Text style={styles.kicker}>{s.kicker}</Text>
-            <Text style={styles.title}>{s.title}</Text>
             <Text style={styles.body}>{s.body}</Text>
             <View style={styles.chips}>
               {s.chips.map((c) => (
@@ -103,7 +159,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
           })}
         </View>
         <TouchableOpacity style={styles.button} onPress={last ? go : next} disabled={busy} activeOpacity={0.85}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{last ? "Let's go 🚀" : 'Next'}</Text>}
+          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{last ? "Let's go — start the night →" : 'Next →'}</Text>}
         </TouchableOpacity>
         <Text style={styles.note}>{last ? 'No sign-up needed. Save your account later.' : ' '}</Text>
       </View>
@@ -113,21 +169,28 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
-  skip: { position: 'absolute', top: 60, right: 22, zIndex: 2 },
-  skipText: { color: C.accentSoft, fontSize: 15, fontWeight: '600' },
-  slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 28, paddingTop: 40 },
-  bubble: { width: 96, height: 96, borderRadius: 30, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginBottom: 28 },
-  emoji: { fontSize: 50 },
-  kicker: { color: C.accentSoft, fontSize: 15, fontWeight: '700' },
-  title: { color: C.text, fontSize: 40, fontWeight: '800', lineHeight: 46, marginTop: 8 },
-  body: { color: C.sub, fontSize: 16, lineHeight: 24, marginTop: 16 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 22 },
-  chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
-  chipText: { color: C.text, fontSize: 13, fontWeight: '600' },
-  bottom: { paddingHorizontal: 24, paddingBottom: 40 },
-  dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 22 },
-  dot: { height: 8, borderRadius: 4, backgroundColor: C.accent, marginHorizontal: 4 },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 58, paddingHorizontal: 22 },
+  pill: { backgroundColor: C.accentSoft, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  pillText: { color: '#1A1406', fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  skipText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
+  slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
+  cluster: { height: 190, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
+  halo: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: C.accent },
+  heroBubble: { width: 116, height: 116, borderRadius: 58, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  heroEmoji: { fontSize: 60 },
+  sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  stickerEmoji: { fontSize: 28 },
+  headline: { marginTop: 4 },
+  line: { color: C.text, fontSize: 46, fontWeight: '900', lineHeight: 50, letterSpacing: -0.5 },
+  lineGold: { color: C.accentSoft },
+  body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 14 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
+  chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 11, marginRight: 8, marginBottom: 8 },
+  chipText: { color: C.text, fontSize: 12, fontWeight: '600' },
+  bottom: { paddingHorizontal: 22, paddingBottom: 36 },
+  dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
+  dot: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginHorizontal: 4 },
   button: { backgroundColor: C.accent, padding: 17, borderRadius: 18, alignItems: 'center' },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  buttonText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
   note: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 12 },
 });
