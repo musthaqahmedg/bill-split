@@ -8,6 +8,7 @@ import { monthKey, monthLabel, moneySummary } from '../services/money';
 import { C } from '../services/theme';
 import FriendsRow from './FriendsRow';
 import GuestGate from './GuestGate';
+import TonightCard from './TonightCard';
 import { useUnread } from '../services/notifications';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -18,7 +19,7 @@ const hello = () => {
 const HUES = ['#4C5BD4', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
           <Text style={styles.hello}>{hello()}{name ? `, ${name}` : ''} 👋</Text>
-          <Text style={styles.title}>{showArchived ? 'Archived' : 'Your bills'}</Text>
+          <Text style={styles.title}>{showArchived ? 'Archived' : "What's the vibe\ntonight? ✨"}</Text>
         </View>
         {onNotifications ? (
           <TouchableOpacity style={styles.bell} onPress={onNotifications}>
@@ -114,6 +115,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           </TouchableOpacity>
         ) : null}
       </View>
+
+      {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} /> : null}
 
       {!showArchived && (active.length || onMoney) ? (
         <TouchableOpacity style={styles.summaryWrap} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
@@ -155,7 +158,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       ) : null}
 
       <View style={styles.sectionRow}>
-        <Text style={styles.section}>{showArchived ? 'Archived bills' : 'Recent'}</Text>
+        <Text style={styles.section}>{showArchived ? 'Archived bills' : '🧾 Your bills'}</Text>
         {archived.length > 0 || showArchived ? (
           <TouchableOpacity onPress={() => setShowArchived(!showArchived)} hitSlop={8}>
             <Text style={styles.sectionLink}>{showArchived ? '← Back' : `📦 Archived (${archived.length})`}</Text>

@@ -167,6 +167,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [addingRound, setAddingRound] = useState(false); // rolling tab: scanning another round
   const [openPartyId, setOpenPartyId] = useState<any>(null);
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
+  const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
@@ -412,6 +413,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setScreen(t);
         }}
         onPlan={() => {
+          setPlanKind(null);
           setPlanGroup(null);
           setEditPlan(null);
           setScreen('newParty');
@@ -660,7 +662,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'newParty') {
     return (
       <NewPartyScreen
-        key={editPlan ? `edit-${editPlan.id}` : 'new'}
+        key={editPlan ? `edit-${editPlan.id}` : `new-${planKind || ''}`}
+        initialKind={planKind}
         group={editPlan ? null : planGroup}
         editing={editPlan}
         onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : 'parties')}
@@ -760,6 +763,16 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       guest={guest}
       onSaveAccount={() => setScreen('saveAccount')}
       onMoney={() => setScreen('money')}
+      onPlan={(kind: any) => {
+        setPlanKind(kind);
+        setPlanGroup(null);
+        setEditPlan(null);
+        setScreen('newParty');
+      }}
+      onOpenPlan={(id: any) => {
+        setOpenPartyId(id);
+        setScreen('party');
+      }}
       draft={draft}
       onResumeDraft={resumeDraft}
       onDiscardDraft={clearDraft}
