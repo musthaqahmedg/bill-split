@@ -5,6 +5,8 @@ import { LIVE, listParties, liveOf } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 import PollCard from './PollCard';
+import NightRecap from './NightRecap';
+import { getParty } from '../services/parties';
 
 // 🌙 Home "Tonight": vibe chips to start a plan, your next plan, and its live vibe-check poll (Gautham's Home design)
 const VIBES = ['nightout', 'party', 'birthday', 'house', 'movie', 'trip', 'daytrip', 'match'];
@@ -12,6 +14,12 @@ const VIBES = ['nightout', 'party', 'birthday', 'house', 'movie', 'trip', 'daytr
 export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
   const [next, setNext] = useState(null);
   const [poll, setPoll] = useState(null);
+  const [recapParty, setRecapParty] = useState(null); // 🎬 morning-after story
+  const openRecap = async () => {
+    try {
+      setRecapParty(await getParty(next.id));
+    } catch (e) {}
+  };
 
   const load = async () => {
     try {
@@ -74,8 +82,15 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
           <Text style={styles.nextMeta} numberOfLines={1}>
             {[next.party_date, next.place ? next.place.replace(/^My place 🏠 · .*/, 'My place 🏠') : null].filter(Boolean).join(' · ') || 'Date and place to be decided'}
           </Text>
-          <View style={styles.nextBtn}>
-            <Text style={styles.nextBtnText}>Open plan ›</Text>
+          <View style={styles.nextBtns}>
+            <View style={styles.nextBtn}>
+              <Text style={styles.nextBtnText}>Open plan ›</Text>
+            </View>
+            {(next.party_members || []).some((m) => m.home_at) ? (
+              <TouchableOpacity style={styles.recapBtn} onPress={openRecap}>
+                <Text style={styles.recapText}>🎬 Last night's recap</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </TouchableOpacity>
       ) : null}
@@ -87,6 +102,7 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
           <PollCard poll={poll} myId={me && me.id} onVote={vote} />
         </View>
       ) : null}
+      {recapParty ? <NightRecap visible onClose={() => setRecapParty(null)} party={recapParty} photos={[]} /> : null}
     </View>
   );
 }
@@ -101,7 +117,10 @@ const styles = StyleSheet.create({
   nextGoing: { color: C.sub, fontSize: 13, fontWeight: '600' },
   nextTitle: { color: C.text, fontSize: 22, fontWeight: '800', marginTop: 6 },
   nextMeta: { color: C.sub, fontSize: 14, marginTop: 4 },
-  nextBtn: { alignSelf: 'flex-start', backgroundColor: C.accent, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14, marginTop: 12 },
+  nextBtns: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
+  nextBtn: { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
+  recapBtn: { backgroundColor: '#A855F7', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 12, marginLeft: 8 },
+  recapText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   nextBtnText: { color: '#fff', fontSize: 14, fontWeight: '800' },
   pollWrap: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 14, marginBottom: 14 },
   pollKicker: { color: C.red, fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 6 },
