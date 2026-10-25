@@ -5,7 +5,7 @@ import { billsForParty } from '../services/bills';
 import { saveNight } from '../services/safety';
 import { supabase } from '../services/supabaseClient';
 import { kindOf } from '../services/partyKinds';
-import { BADGES, badgeOf, setBadge } from '../services/parties';
+import { BADGES, LIVE, badgeOf, liveOf, setBadge, setLiveStatus } from '../services/parties';
 import { show } from '../services/names';
 import { C } from '../services/theme';
 import NightCheck from './NightCheck';
@@ -70,6 +70,19 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
     setStopName('');
     setStopTime('');
     setStopEdit(false);
+  };
+  // 👥 My live status: on my way → here → home
+  const meMember = party && (party.party_members || []).find((m) => m.name === 'Me');
+  const myLive = meMember ? liveOf(meMember) : null;
+  const setMine = async (st) => {
+    if (!meMember) return;
+    if (st === 'home') return imHome();
+    try {
+      await setLiveStatus(party, meMember.id, st);
+      onChanged && onChanged();
+    } catch (e) {
+      Alert.alert("Couldn't update", e.message);
+    }
   };
   const imHome = async () => {
     setHomeSheet(false);
@@ -153,6 +166,18 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           <Text style={styles.title} numberOfLines={2}>{kindOf(party.kind).emoji} {party.title}</Text>
           {party.place ? <Text style={styles.place} numberOfLines={1}>📍 {party.place.replace(/^My place 🏠 · .*/, 'My place 🏠')}</Text> : null}
 
+          {/* 👥 Where am I? one tap so the crew knows */}
+          {meMember ? (
+            <View style={styles.statusRow}>
+              {['omw', 'here', 'home'].map((st) => (
+                <TouchableOpacity key={st} style={[styles.statusBtn, myLive === st && { backgroundColor: LIVE[st].color + '33', borderColor: LIVE[st].color }]} onPress={() => setMine(st)} activeOpacity={0.8}>
+                  <Text style={styles.statusEmoji}>{LIVE[st].emoji}</Text>
+                  <Text style={[styles.statusText, myLive === st && { color: LIVE[st].color }]}>{st === 'here' ? "I'm here" : st === 'omw' ? 'On my way' : 'Home safe'}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          ) : null}
+
           {/* 🗺️ Tonight's stops */}
           <View style={styles.card}>
             <View style={styles.cardHead}>
@@ -190,14 +215,21 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           <View style={styles.card}>
             <View style={styles.cardHead}>
               <Text style={styles.cardTitle}>The crew <Text style={styles.cardHint}>· tap to give a badge 😎</Text></Text>
-              <Text style={styles.cardSub}>{home ? `🏠 ${home}/${crew.length} home safe` : `${crew.length} out tonight`}</Text>
+              <Text style={styles.cardSub}>
+                {(() => {
+                  const c = { omw: 0, here: 0, home: 0 };
+                  crew.forEach((m) => { const l = liveOf(m); if (l) c[l]++; });
+                  const parts = [c.here && `📍 ${c.here} here`, c.omw && `🚶 ${c.omw} on the way`, c.home && `🏠 ${c.home} home`].filter(Boolean);
+                  return parts.length ? parts.join(' · ') : `${crew.length} out tonight`;
+                })()}
+              </Text>
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               {crew.map((m) => (
                 <TouchableOpacity key={m.id || m.name} style={styles.person} onPress={() => m.id && setBadgeFor(m)} activeOpacity={0.7}>
-                  <View style={[styles.face, { backgroundColor: hue(m.name) }, m.home_at && styles.faceHome]}>
+                  <View style={[styles.face, { backgroundColor: hue(m.name), borderWidth: 3, borderColor: liveOf(m) ? LIVE[liveOf(m)].color : 'transparent' }, m.home_at && styles.faceHome]}>
                     <Text style={styles.faceText}>{show(m.name).charAt(0).toUpperCase()}</Text>
-                    <Text style={styles.badge}>{m.home_at ? '🏠' : m.is_driver ? '🚗' : '🎉'}</Text>
+                    <Text style={styles.badge}>{liveOf(m) ? LIVE[liveOf(m)].emoji : m.is_driver ? '🚗' : '🎉'}</Text>
                   </View>
                   <Text style={styles.personName} numberOfLines={1}>{show(m.name)}</Text>
                   {badgeOf(m, crew, party) ? <Text style={styles.personBadge} numberOfLines={2}>{badgeOf(m, crew, party)}</Text> : null}
@@ -297,6 +329,10 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 }
 
 const styles = StyleSheet.create({
+  statusRow: { flexDirection: 'row', marginTop: 16 },
+  statusBtn: { flex: 1, alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginHorizontal: 3 },
+  statusEmoji: { fontSize: 20 },
+  statusText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 3 },
   addStop: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
   stop: { flexDirection: 'row' },
   rail: { width: 26, alignItems: 'center' },

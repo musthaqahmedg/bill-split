@@ -13,7 +13,7 @@ export function splitEqually(budget, count) {
 export async function listParties() {
   const { data, error } = await supabase
     .from('parties')
-    .select('id, title, kind, party_date, place, budget, split_mode, special_person, created_at, share_token, party_members(id, name, share, paid_at, rsvp)')
+    .select('id, title, kind, party_date, place, budget, split_mode, special_person, created_at, share_token, party_members(id, name, share, paid_at, rsvp, live_status, home_at)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge)')
+    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -184,3 +184,15 @@ export function badgeOf(m, members, party) {
   if (m.name === 'Me' && party) return '🎟️ Host';
   return null;
 }
+
+// 👥 Squad live status: 'omw' (on my way) · 'here' · 'home' (home safe)
+export async function setLiveStatus(party, memberId, status) {
+  const { error } = await supabase.rpc('party_status', { p_token: party.share_token, p_member: memberId, p_status: status });
+  if (error) throw error;
+}
+export const liveOf = (m) => (m.home_at ? 'home' : m.live_status || null);
+export const LIVE = {
+  omw: { emoji: '🚶', label: 'On the way', color: '#F59E0B' },
+  here: { emoji: '📍', label: 'Here', color: '#34D399' },
+  home: { emoji: '🏠', label: 'Home safe', color: '#60A5FA' },
+};

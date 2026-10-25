@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getPolls, votePoll } from '../services/chat';
-import { listParties } from '../services/parties';
+import { LIVE, listParties, liveOf } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import { C } from '../services/theme';
 import PollCard from './PollCard';
@@ -61,7 +61,14 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
         <TouchableOpacity style={[styles.next, { borderColor: (k.color || C.accent) + '88' }]} onPress={() => onOpenPlan(next.id)} activeOpacity={0.85}>
           <View style={styles.nextTop}>
             <Text style={[styles.nextKicker, { color: k.color || C.accentSoft }]}>⏭️ NEXT UP</Text>
-            <Text style={styles.nextGoing}>🙌 {going} going</Text>
+            <Text style={styles.nextGoing}>
+              {(() => {
+                const c = { omw: 0, here: 0, home: 0 };
+                (next.party_members || []).forEach((m) => { const l = liveOf(m); if (l) c[l]++; });
+                const parts = [c.here && `📍 ${c.here} here`, c.omw && `🚶 ${c.omw} on the way`].filter(Boolean);
+                return parts.length ? parts.join(' · ') : `🙌 ${going} going`;
+              })()}
+            </Text>
           </View>
           <Text style={styles.nextTitle} numberOfLines={1}>{k.emoji} {next.title}</Text>
           <Text style={styles.nextMeta} numberOfLines={1}>
