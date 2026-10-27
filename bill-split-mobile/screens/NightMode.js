@@ -1,4 +1,3 @@
-import { LinearGradient } from '../components/SafeGradient';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { Alert, Linking, Modal, Pressable, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -9,7 +8,7 @@ import { supabase } from '../services/supabaseClient';
 import { kindOf } from '../services/partyKinds';
 import { BADGES, LIVE, badgeOf, liveOf, setBadge, setLiveStatus } from '../services/parties';
 import { show } from '../services/names';
-import { C, F, G } from '../services/theme';
+import { C, F } from '../services/theme';
 import NightCheck from './NightCheck';
 import PartyGames from './PartyGames';
 import PartyPhotos from './PartyPhotos';
@@ -19,6 +18,7 @@ import QuickAdd from './QuickAdd';
 // 🌙 Night Mode: everything you need DURING the night on one dark, simple screen.
 // Crew status · chat · photos · games · split the bill · ride home · share location · I'm home safe
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const PILLS = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const clock = () => new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
@@ -207,7 +207,8 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
         </View>
 
         <ScrollView contentContainerStyle={styles.pad} showsVerticalScrollIndicator={false}>
-          <Text style={styles.kicker}>🌙 Night Mode</Text>
+          <Text style={styles.bigTitle}>Night Mode</Text>
+          <Text style={styles.kicker}>One place for the whole night.</Text>
           <Text style={styles.title} numberOfLines={2}>{kindOf(party.kind).emoji} {party.title}</Text>
           {party.place ? <Text style={styles.place} numberOfLines={1}>📍 {party.place.replace(/^My place 🏠 · .*/, 'My place 🏠')}</Text> : null}
 
@@ -215,13 +216,34 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           {meMember ? (
             <View style={styles.statusRow}>
               {['omw', 'here', 'home'].map((st) => (
-                <TouchableOpacity key={st} style={[styles.statusBtn, myLive === st && { backgroundColor: LIVE[st].color + '33', borderColor: LIVE[st].color }]} onPress={() => setMine(st)} activeOpacity={0.8}>
+                <TouchableOpacity key={st} style={[styles.statusBtn, myLive === st && styles.statusOn]} onPress={() => setMine(st)} activeOpacity={0.8}>
                   <Text style={styles.statusEmoji}>{LIVE[st].emoji}</Text>
-                  <Text style={[styles.statusText, myLive === st && { color: LIVE[st].color }]}>{st === 'here' ? "I'm here" : st === 'omw' ? 'On my way' : 'Home safe'}</Text>
+                  <Text style={[styles.statusText, myLive === st && { color: C.onLime }]}>{st === 'here' ? "I'm here" : st === 'omw' ? 'On my way' : 'Home safe'}</Text>
                 </TouchableOpacity>
               ))}
             </View>
           ) : null}
+
+          {/* 🟨 🟦 Poster tiles (Final UX): bill so far + squad radar */}
+          {(() => {
+            const c = { omw: 0, here: 0, home: 0 };
+            crew.forEach((m) => { const l = liveOf(m); if (l) c[l]++; });
+            const all = crew.length && c.here + c.home === crew.length;
+            return (
+              <View style={styles.posters}>
+                <TouchableOpacity style={[styles.poster, { backgroundColor: C.lime }]} activeOpacity={0.85} onPress={() => { onClose(); onSplit && onSplit(crew.map((m) => m.name), party.id); }}>
+                  <Text style={styles.posterKicker}>BILL SO FAR</Text>
+                  <Text style={styles.posterBig}>{billSoFar && billSoFar.count ? `₹${billSoFar.total.toLocaleString('en-IN')}` : '₹0'}</Text>
+                  <Text style={styles.posterSub}>{billSoFar && billSoFar.count ? `You: ₹${billSoFar.mine.toLocaleString('en-IN')} · tap to add` : 'Tap to scan the bill'}</Text>
+                </TouchableOpacity>
+                <View style={[styles.poster, { backgroundColor: C.cyan }]}>
+                  <Text style={styles.posterKicker}>SQUAD RADAR</Text>
+                  <Text style={styles.posterMid}>{c.here || c.omw || c.home ? `${c.here} here · ${c.omw} on the way` : `${crew.length} out tonight`}</Text>
+                  <Text style={styles.posterSub}>{all ? 'Nobody lost 🙌' : c.home ? `🏠 ${c.home} home safe` : 'Tap your status above'}</Text>
+                </View>
+              </View>
+            );
+          })()}
 
           {/* 📍 Live location */}
           {(() => {
@@ -289,19 +311,15 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
               stops.map((st, i) => {
                 const current = !st.done && stops.slice(0, i).every((x) => x.done);
                 return (
-                  <TouchableOpacity key={i} style={styles.stop} onPress={() => toggleStop(i)} onLongPress={() => removeStop(i)} activeOpacity={0.7}>
-                    <View style={styles.rail}>
-                      <View style={[styles.dot, st.done && styles.dotDone, current && styles.dotNow]}>
-                        {st.done ? <Text style={styles.dotTick}>✓</Text> : null}
-                      </View>
-                      {i < stops.length - 1 ? <View style={[styles.line, st.done && styles.lineDone]} /> : null}
+                  <TouchableOpacity key={i} style={[styles.stop, current && styles.stopNow]} onPress={() => toggleStop(i)} onLongPress={() => removeStop(i)} activeOpacity={0.7}>
+                    <View style={[styles.switch, (st.done || current) && styles.switchOn]}>
+                      <View style={[styles.knob, (st.done || current) && styles.knobOn]} />
                     </View>
-                    <View style={{ flex: 1, paddingBottom: i < stops.length - 1 ? 14 : 0 }}>
+                    <View style={{ flex: 1 }}>
                       <Text style={[styles.stopName, st.done && styles.stopDone]} numberOfLines={1}>{st.name}</Text>
-                      <Text style={[styles.stopMeta, current && { color: C.green }]}>
-                        {current ? '● Now' : st.done ? 'Done' : 'Next'}{st.time ? ` · ${st.time}` : ''}
-                      </Text>
+                      <Text style={[styles.stopMeta, current && { color: C.lime }]}>{current ? '● Now' : st.done ? 'Done' : 'Next'}</Text>
                     </View>
+                    {st.time ? <Text style={styles.stopTime}>{st.time}</Text> : null}
                   </TouchableOpacity>
                 );
               })
@@ -313,7 +331,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
           {/* 👥 The crew tonight */}
           <View style={styles.card}>
             <View style={styles.cardHead}>
-              <Text style={styles.cardTitle}>The crew <Text style={styles.cardHint}>· tap to give a badge 😎</Text></Text>
+              <Text style={styles.cardTitle}>The squad <Text style={styles.cardHint}>· tap for a badge 😎</Text></Text>
               <Text style={styles.cardSub}>
                 {(() => {
                   const c = { omw: 0, here: 0, home: 0 };
@@ -323,18 +341,31 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
                 })()}
               </Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {crew.map((m) => (
-                <TouchableOpacity key={m.id || m.name} style={styles.person} onPress={() => m.id && setBadgeFor(m)} activeOpacity={0.7}>
-                  <View style={[styles.face, { backgroundColor: hue(m.name), borderWidth: 3, borderColor: liveOf(m) ? LIVE[liveOf(m)].color : 'transparent' }, m.home_at && styles.faceHome]}>
-                    <Text style={styles.faceText}>{show(m.name).charAt(0).toUpperCase()}</Text>
-                    <Text style={styles.badge}>{liveOf(m) ? LIVE[liveOf(m)].emoji : m.is_driver ? '🚗' : '🎉'}</Text>
+            {crew.map((m, i) => {
+              const l = liveOf(m);
+              const b = badgeOf(m, crew, party);
+              const pill = PILLS[i % PILLS.length];
+              return (
+                <TouchableOpacity key={m.id || m.name} style={styles.member} onPress={() => m.id && setBadgeFor(m)} activeOpacity={0.75}>
+                  <View style={[styles.face, { backgroundColor: pill }, m.home_at && styles.faceHome]}>
+                    <Text style={styles.faceText}>{show(m.name).slice(0, 2).toUpperCase()}</Text>
                   </View>
-                  <Text style={styles.personName} numberOfLines={1}>{show(m.name)}</Text>
-                  {badgeOf(m, crew, party) ? <Text style={styles.personBadge} numberOfLines={2}>{badgeOf(m, crew, party)}</Text> : null}
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.memberTop}>
+                      <Text style={styles.memberName} numberOfLines={1}>{show(m.name)}</Text>
+                      {b ? (
+                        <View style={[styles.pill, { backgroundColor: pill }]}>
+                          <Text style={styles.pillText} numberOfLines={1}>{b.replace(/^\S+\s/, '').toUpperCase()}</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                    <Text style={[styles.memberStatus, l && { color: LIVE[l].color }]} numberOfLines={1}>
+                      {l ? `${LIVE[l].emoji} ${LIVE[l].label}` : m.is_driver ? '🚗 Sober driver tonight' : 'No status yet · tap for a badge'}
+                    </Text>
+                  </View>
                 </TouchableOpacity>
-              ))}
-            </ScrollView>
+              );
+            })}
           </View>
 
           {/* 🔲 Quick actions */}
@@ -357,7 +388,6 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 
           {/* 🏠 The big one: always one tap away */}
           <TouchableOpacity style={styles.homeBtn} onPress={() => setHomeSheet(true)} activeOpacity={0.85}>
-            <LinearGradient colors={G.sunset} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
             <Text style={styles.homeText}>🏠 Get me home safe</Text>
             <Text style={styles.homeSub}>Ride · share location · I'm home</Text>
           </TouchableOpacity>
@@ -434,8 +464,8 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 
 const styles = StyleSheet.create({
   liveBtns: { flexDirection: 'row', marginBottom: 6 },
-  liveBtn: { flex: 1, backgroundColor: C.accent, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginHorizontal: 3 },
-  liveBtnText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  liveBtn: { flex: 1, backgroundColor: C.violet, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginHorizontal: 3 },
+  liveBtnText: { color: C.onLime, fontSize: 13, fontWeight: '800' },
   liveMine: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.green + '1F', borderRadius: 14, padding: 10, marginBottom: 6 },
   liveMineText: { color: C.text, fontSize: 13, fontWeight: '600', flex: 1 },
   liveStop: { color: C.red, fontSize: 14, fontWeight: '800', marginLeft: 10 },
@@ -448,10 +478,30 @@ const styles = StyleSheet.create({
   livePrivacy: { color: C.faint, fontSize: 11, marginTop: 8 },
   statusRow: { flexDirection: 'row', marginTop: 16 },
   statusBtn: { flex: 1, alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginHorizontal: 3 },
+  statusOn: { backgroundColor: C.lime, borderColor: C.lime },
+  bigTitle: { fontFamily: F.display, color: C.text, fontSize: 32, marginTop: 4 },
+  posters: { flexDirection: 'row', marginTop: 16 },
+  poster: { flex: 1, borderRadius: 20, padding: 14, marginHorizontal: 3, minHeight: 120 },
+  posterKicker: { color: C.onLime, fontSize: 10, fontWeight: '900', letterSpacing: 1, opacity: 0.7 },
+  posterBig: { fontFamily: F.display, color: C.onLime, fontSize: 28, marginTop: 6 },
+  posterMid: { fontFamily: F.display, color: C.onLime, fontSize: 16, lineHeight: 20, marginTop: 6 },
+  posterSub: { color: C.onLime, fontSize: 12, fontWeight: '700', marginTop: 6, opacity: 0.8 },
+  stopNow: { borderColor: C.lime },
+  switch: { width: 40, height: 24, borderRadius: 12, backgroundColor: C.cardHi, padding: 3, marginRight: 12, justifyContent: 'center' },
+  switchOn: { backgroundColor: C.lime },
+  knob: { width: 18, height: 18, borderRadius: 9, backgroundColor: C.faint },
+  knobOn: { backgroundColor: C.onLime, alignSelf: 'flex-end' },
+  stopTime: { color: C.sub, fontSize: 13, fontWeight: '700', marginLeft: 8 },
+  member: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderRadius: 16, padding: 10, marginBottom: 8 },
+  memberTop: { flexDirection: 'row', alignItems: 'center' },
+  memberName: { color: C.text, fontSize: 16, fontWeight: '800', marginRight: 8, flexShrink: 1 },
+  memberStatus: { color: C.faint, fontSize: 13, fontWeight: '600', marginTop: 3 },
+  pill: { borderRadius: 8, paddingVertical: 2, paddingHorizontal: 7, flexShrink: 1 },
+  pillText: { color: C.onLime, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
   statusEmoji: { fontSize: 20 },
   statusText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 3 },
   addStop: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
-  stop: { flexDirection: 'row' },
+  stop: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderWidth: 1, borderColor: 'transparent', borderRadius: 16, padding: 12, marginBottom: 8 },
   rail: { width: 26, alignItems: 'center' },
   dot: { width: 16, height: 16, borderRadius: 8, borderWidth: 2, borderColor: C.faint, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
   dotDone: { backgroundColor: C.green, borderColor: C.green },
@@ -463,23 +513,23 @@ const styles = StyleSheet.create({
   stopDone: { color: C.faint, textDecorationLine: 'line-through' },
   stopMeta: { color: C.faint, fontSize: 12, marginTop: 2 },
   empty: { color: C.faint, fontSize: 13, lineHeight: 19 },
-  homeBtn: { backgroundColor: '#F97316', borderRadius: 22, paddingVertical: 18, alignItems: 'center', marginTop: 4, marginBottom: 12, overflow: 'hidden' },
-  homeText: { color: '#fff', fontSize: 20, fontWeight: '900' },
-  homeSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, marginTop: 3, fontWeight: '600' },
+  homeBtn: { backgroundColor: '#FF6A1A', borderRadius: 28, paddingVertical: 18, alignItems: 'center', marginTop: 4, marginBottom: 12, overflow: 'hidden' },
+  homeText: { color: C.onLime, fontSize: 19, fontWeight: '900' },
+  homeSub: { color: C.onLime, opacity: 0.75, fontSize: 12, marginTop: 3, fontWeight: '700' },
   input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, color: C.text, fontSize: 16, marginBottom: 10 },
-  saveBtn: { backgroundColor: C.accent, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 4 },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 4 },
+  saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
   option: { borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 15, marginBottom: 10 },
   optionText: { color: C.text, fontSize: 16, fontWeight: '700' },
-  page: { flex: 1, backgroundColor: '#07070A', paddingTop: 56 },
+  page: { flex: 1, backgroundColor: C.bg, paddingTop: 56 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 8 },
   close: { color: C.sub, fontSize: 16, fontWeight: '600' },
   live: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
-  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.red, marginRight: 6 },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: C.lime, marginRight: 6 },
   liveText: { color: C.text, fontSize: 12, fontWeight: '700', letterSpacing: 0.5 },
   pad: { paddingHorizontal: 20, paddingBottom: 50 },
-  kicker: { color: C.accentSoft, fontSize: 14, fontWeight: '700', marginTop: 6 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 24, marginTop: 4 },
+  kicker: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 2 },
+  title: { color: C.lime, fontSize: 17, fontWeight: '800', marginTop: 12 },
   place: { color: C.sub, fontSize: 14, marginTop: 6 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 14, marginTop: 18 },
   cardHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
@@ -493,12 +543,12 @@ const styles = StyleSheet.create({
   sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 18, marginBottom: 14 },
   badges: { flexDirection: 'row', flexWrap: 'wrap' },
   badgeChip: { backgroundColor: C.cardHi, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
-  badgeOn: { backgroundColor: C.accent },
+  badgeOn: { backgroundColor: C.lime + '33', borderWidth: 1, borderColor: C.lime },
   badgeText: { color: C.text, fontSize: 14, fontWeight: '600' },
   clear: { color: C.red, fontSize: 14, textAlign: 'center', marginTop: 10 },
-  face: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  face: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
   faceHome: { opacity: 0.55 },
-  faceText: { color: '#fff', fontSize: 18, fontWeight: '800' },
+  faceText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   badge: { position: 'absolute', right: -4, bottom: -4, fontSize: 15 },
   personName: { color: C.sub, fontSize: 12, marginTop: 6, maxWidth: 62 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14 },
