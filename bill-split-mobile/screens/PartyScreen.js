@@ -21,6 +21,7 @@ import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import { countdown, planBucket } from '../services/when';
 import VoteTab from './VoteTab';
+import InviteSheet from './InviteSheet';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -28,6 +29,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
   const [gamesOpen, setGamesOpen] = useState(false);
   const [nightOpen, setNightOpen] = useState(false); // 🌙 Night Mode
   const [barOpen, setBarOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false); // 📨 QR + link
   const [tab, setTab] = useState('overview'); // 🗂️ Overview · Plan · Vote · Chat · Split
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
@@ -302,11 +304,11 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.invite} onPress={shareAll} activeOpacity={0.85}>
+              <TouchableOpacity style={styles.invite} onPress={() => setInviteOpen(true)} activeOpacity={0.85}>
                 <Text style={styles.inviteIcon}>👥</Text>
                 <View style={styles.flex}>
                   <Text style={styles.inviteTitle}>INVITE MORE FRIENDS</Text>
-                  <Text style={styles.inviteSub}>One link for WhatsApp groups. Friends answer and chat from it.</Text>
+                  <Text style={styles.inviteSub}>QR code, link or contacts. Friends answer and chat from it.</Text>
                 </View>
               </TouchableOpacity>
 
@@ -454,6 +456,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
       <NightMode party={party} visible={nightOpen} onClose={() => setNightOpen(false)} onChat={onChat} onSplit={onSplit} onChanged={reload} />
       <PartyGames visible={gamesOpen} onClose={() => setGamesOpen(false)} party={party} />
       <PartyBar visible={barOpen} onClose={() => setBarOpen(false)} party={party} />
+      <InviteSheet visible={inviteOpen} onClose={() => setInviteOpen(false)} party={party} link={link} onShare={shareAll} onAddPeople={() => { setInviteOpen(false); onEdit(party); }} />
       <KeyboardDone />
     </KeyboardAvoidingView>
   );
