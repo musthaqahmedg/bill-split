@@ -64,3 +64,13 @@ export function sortPlans(list, bucket, now = new Date()) {
     return bucket === 'past' ? db - da : da - db;
   });
 }
+
+// ⏱️ How long the night was: first "on my way / here" to the last "home safe" (null if unknown)
+export function nightLength(members) {
+  const starts = members.map((m) => m.live_at).filter(Boolean).map((t) => new Date(t).getTime());
+  const ends = members.map((m) => m.home_at).filter(Boolean).map((t) => new Date(t).getTime());
+  if (!starts.length || !ends.length) return null;
+  const mins = Math.round((Math.max(...ends) - Math.min(...starts)) / 60000);
+  if (mins <= 0 || mins > 24 * 60) return null;
+  return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
+}

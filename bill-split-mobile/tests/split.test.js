@@ -344,3 +344,12 @@ test("today's allowance: what's left of the budget, shared over the days left", 
   assert.equal(t.left, 1000);
   assert.equal(todaySummary([], ex, 0, now).allowance, 0);
 });
+
+test('morning recap: night length from first status to last home', async () => {
+  const { nightLength } = await import('../services/when.js');
+  const t = (h, m) => new Date(2026, 9, 24, h, m).toISOString();
+  const n = (h, m) => new Date(2026, 9, 25, h, m).toISOString();
+  assert.equal(nightLength([{ live_at: t(20, 15), home_at: n(1, 30) }, { live_at: t(21, 0), home_at: n(2, 57) }]), '6h 42m');
+  assert.equal(nightLength([{ live_at: t(20, 0) }]), null);
+  assert.equal(nightLength([{ live_at: t(20, 0), home_at: t(20, 40) }]), '40m');
+});

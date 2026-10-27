@@ -297,7 +297,7 @@ export async function listBillsDetailed() {
 export async function billsForParty(partyId) {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, total, created_at, bill_participants(name, amount_due)')
+    .select('id, total, created_at, bill_participants(name, amount_due, paid_at)')
     .eq('party_id', partyId);
   if (error) throw error;
   return data || [];

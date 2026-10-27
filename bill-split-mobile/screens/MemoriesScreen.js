@@ -4,7 +4,7 @@ import NightSky from '../components/NightSky';
 import { getParty, listParties } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
-import NightRecap from './NightRecap';
+import MorningRecap from './MorningRecap';
 
 // 📸 Memories (v12): every night you've had, as a highlight reel. Tap one to replay its story.
 export default function MemoriesScreen({ onOpenPlan, onBack }) {
@@ -53,7 +53,7 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
         <Text style={styles.meta} numberOfLines={1}>{[p.party_date, `${people(p)} ${people(p) === 1 ? 'person' : 'people'}`].filter(Boolean).join(' · ')}</Text>
         {big ? (
           <View style={styles.play}>
-            <Text style={styles.playText}>▶ Play the night</Text>
+            <Text style={styles.playText}>☀️ Open the recap</Text>
           </View>
         ) : null}
       </TouchableOpacity>
@@ -95,7 +95,7 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
         contentContainerStyle={styles.pad}
         showsVerticalScrollIndicator={false}
       />
-      {recap ? <NightRecap visible onClose={() => setRecap(null)} party={recap} photos={[]} /> : null}
+      {recap ? <MorningRecap visible onClose={() => setRecap(null)} party={recap} /> : null}
     </View>
   );
 }

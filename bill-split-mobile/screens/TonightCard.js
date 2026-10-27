@@ -5,7 +5,7 @@ import { LIVE, listParties, liveOf } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import PollCard from './PollCard';
-import NightRecap from './NightRecap';
+import MorningRecap from './MorningRecap';
 import { getParty } from '../services/parties';
 import { countdown, planBucket } from '../services/when';
 
@@ -102,7 +102,7 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
             </View>
             {(next.party_members || []).some((m) => m.home_at) ? (
               <TouchableOpacity style={styles.recapBtn} onPress={openRecap}>
-                <Text style={styles.recapText}>🎬 Last night's recap</Text>
+                <Text style={styles.recapText}>☀️ Morning recap</Text>
               </TouchableOpacity>
             ) : null}
           </View>
@@ -116,7 +116,7 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
           <PollCard poll={poll} myId={me && me.id} onVote={vote} />
         </View>
       ) : null}
-      {recapParty ? <NightRecap visible onClose={() => setRecapParty(null)} party={recapParty} photos={[]} /> : null}
+      {recapParty ? <MorningRecap visible onClose={() => setRecapParty(null)} party={recapParty} /> : null}
     </View>
   );
 }
