@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { C } from '../services/theme';
+import NearbyScreen from './NearbyScreen';
 
 const IDEAS = [
   { q: '📍 Where should we go?', o: ['', ''] },
@@ -11,10 +12,28 @@ const IDEAS = [
 ];
 
 // Make a poll for the party chat
-export default function NewPollSheet({ visible, onClose, onCreate }) {
+export default function NewPollSheet({ visible, onClose, onCreate, initial = null }) {
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
   const [saving, setSaving] = useState(false);
+  const [picking, setPicking] = useState(false); // 📍 choose places from Discover
+  useEffect(() => {
+    if (visible && initial) {
+      setQuestion(initial.q);
+      setOptions(initial.o);
+    }
+  }, [visible]);
+  // put a picked place into the first empty option (or add one, up to 6)
+  const addPlace = (name) => {
+    setOptions((cur) => {
+      if (cur.some((o) => o.trim().toLowerCase() === name.toLowerCase())) return cur;
+      const i = cur.findIndex((o) => !o.trim());
+      if (i >= 0) return cur.map((o, k) => (k === i ? name : o));
+      return cur.length < 6 ? [...cur, name] : cur;
+    });
+    if (!question.trim()) setQuestion('📍 Where should we go?');
+    setPicking(false);
+  };
 
   const reset = () => {
     setQuestion('');
@@ -83,8 +102,14 @@ export default function NewPollSheet({ visible, onClose, onCreate }) {
               <Text style={styles.addText}>+ Add option</Text>
             </TouchableOpacity>
           )}
+          <TouchableOpacity style={styles.discover} onPress={() => setPicking(true)}>
+            <Text style={styles.discoverText}>📍 Add a place from Discover</Text>
+          </TouchableOpacity>
         </ScrollView>
       </View>
+      <Modal visible={picking} animationType="slide" onRequestClose={() => setPicking(false)}>
+        <NearbyScreen discover pickLabel="＋ ADD TO VOTE" initialCategory="cafes" onBack={() => setPicking(false)} onPlanHere={addPlace} />
+      </Modal>
     </Modal>
   );
 }
@@ -94,7 +119,7 @@ const styles = StyleSheet.create({
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   cancel: { color: C.sub, fontSize: 16 },
   title: { color: C.text, fontSize: 17, fontWeight: '800' },
-  post: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },
+  post: { color: C.lime, fontSize: 16, fontWeight: '800' },
   label: { color: C.sub, fontSize: 14, marginBottom: 6, marginTop: 4 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 10 },
   chip: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 10, marginRight: 6, marginBottom: 6 },
@@ -105,5 +130,7 @@ const styles = StyleSheet.create({
   remove: { paddingHorizontal: 12, paddingVertical: 12 },
   removeText: { color: C.red, fontSize: 16 },
   add: { paddingVertical: 10 },
-  addText: { color: C.accentSoft, fontSize: 15, fontWeight: '800' },
+  addText: { color: C.lime, fontSize: 15, fontWeight: '800' },
+  discover: { borderWidth: 1, borderStyle: 'dashed', borderColor: C.lime, borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginTop: 6, marginBottom: 30 },
+  discoverText: { color: C.lime, fontSize: 15, fontWeight: '800' },
 });

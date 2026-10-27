@@ -15,7 +15,7 @@ import { C, F } from '../services/theme';
 const AGE_KEY = 'vibeout.ageOk';
 
 // 📍 Nearby: restobars, pubs, cafés, restaurants, supermarkets (no alcohol/tobacco shops: Play Store policy)
-export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked, discover = false, onPlanHere }) {
+export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked, discover = false, onPlanHere, pickLabel = null }) {
   const [category, setCategory] = useState(initialCategory);
   const [q, setQ] = useState('');
   const [loc, setLoc] = useState(null);
@@ -160,10 +160,10 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
           <View style={styles.bigBtns}>
             {onPlanHere ? (
               <TouchableOpacity style={styles.planBtn} onPress={() => onPlanHere(p.area ? `${p.name}, ${p.area}` : p.name)} activeOpacity={0.85}>
-                <Text style={styles.planText}>＋ ADD TO PLAN</Text>
+                <Text style={styles.planText}>{pickLabel || '＋ ADD TO PLAN'}</Text>
               </TouchableOpacity>
             ) : null}
-            {canBook ? (
+            {canBook && !pickLabel ? (
               <TouchableOpacity style={styles.reserveBtn} onPress={() => setBooking({ ...p, phone: d.phone || null })} activeOpacity={0.85}>
                 <Text style={styles.reserveText}>🍽️ RESERVE TABLE</Text>
               </TouchableOpacity>

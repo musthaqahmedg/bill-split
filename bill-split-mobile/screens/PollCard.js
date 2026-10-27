@@ -35,16 +35,16 @@ export default function PollCard({ poll, myId, sender, onVote }) {
 }
 
 const styles = StyleSheet.create({
-  card: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 1, borderColor: C.accent, borderRadius: 16, padding: 12, marginBottom: 10 },
-  kicker: { color: C.accentSoft, fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+  card: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
+  kicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
   q: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 4, marginBottom: 8 },
-  opt: { borderWidth: 1, borderColor: C.border, borderRadius: 12, marginBottom: 6, overflow: 'hidden', paddingVertical: 9, paddingHorizontal: 12 },
-  optOn: { borderColor: C.accentSoft },
+  opt: { borderWidth: 1, borderColor: C.border, borderRadius: 14, marginBottom: 6, overflow: 'hidden', paddingVertical: 9, paddingHorizontal: 12 },
+  optOn: { borderColor: C.lime, borderWidth: 1.5 },
   fill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: C.cardHi },
-  fillTop: { backgroundColor: '#4A2A80' },
+  fillTop: { backgroundColor: C.lime + '40' },
   optRow: { flexDirection: 'row', justifyContent: 'space-between' },
   optText: { color: C.text, fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
-  pct: { color: C.sub, fontSize: 13, fontWeight: '700' },
+  pct: { color: C.lime, fontSize: 13, fontWeight: '900' },
   names: { color: C.faint, fontSize: 11, marginTop: 2 },
   total: { color: C.faint, fontSize: 12, marginTop: 2 },
 });
