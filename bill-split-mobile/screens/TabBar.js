@@ -111,7 +111,7 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
               <Text style={styles.optEmoji}>💸</Text>
               <View style={{ flex: 1 }}>
                 <Text style={styles.optTitle}>Add a spend</Text>
-                <Text style={styles.optSub}>Cab, snacks, entry… goes into My Money</Text>
+                <Text style={styles.optSub}>Cab, snacks, entry… goes into your Vault</Text>
               </View>
               <Text style={styles.chev}>›</Text>
             </TouchableOpacity>

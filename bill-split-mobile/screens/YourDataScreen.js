@@ -17,7 +17,7 @@ const KEEP = [
   ['👤', 'Your name, and your email or phone to log you in'],
   ['🧾', 'Bills and plans you create, and who was in them'],
   ['📸', 'Photos you choose to add to a plan'],
-  ['💸', 'Spends you log in My Money (only you can see them)'],
+  ['💸', 'Spends you log in your Vault (only you can see them)'],
   ['📍', 'Live location, only while you share it with a plan’s crew (15 min to 8 hours). Deleted the moment it ends'],
   ['💬', 'Messages in your plan chats. They disappear from the app 30 days after the last message, are kept locked away for 1 year (Indian law), then deleted for good'],
   ['🐞', 'Bug notes you send us'],

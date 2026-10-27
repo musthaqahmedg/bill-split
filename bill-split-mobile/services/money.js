@@ -197,3 +197,21 @@ export function habitsSummary(detailedBills, key, expenses = []) {
   const habit = drinks + smoke;
   return { drinks, smoke, habit, total, nights, dry, pct: total ? Math.round((habit / total) * 100) : 0, yearly: habit * 12 };
 }
+
+// 📆 Today's allowance (Final UX "daily allowance"), from the monthly Night Budget only (no income needed):
+// what's left of the budget before today, shared over the days left in the month (today included).
+export function todaySummary(bills, expenses, budget, now = new Date()) {
+  const key = monthKey(now);
+  const sameDay = (d) => d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+  const rows = [
+    ...(bills || []).map((b) => ({ d: billDate(b), amt: myShare(b) })),
+    ...(expenses || []).map((e) => ({ d: new Date(e.spent_at), amt: Math.round(Number(e.amount) || 0) })),
+  ].filter((r) => r.amt > 0 && monthKey(r.d) === key);
+  const today = rows.filter((r) => sameDay(r.d)).reduce((s, r) => s + r.amt, 0);
+  const before = rows.filter((r) => !sameDay(r.d) && r.d < now).reduce((s, r) => s + r.amt, 0);
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = daysInMonth - now.getDate() + 1;
+  const b = Math.max(0, Math.round(Number(budget) || 0));
+  const allowance = b ? Math.max(0, Math.floor((b - before) / daysLeft)) : 0;
+  return { today, before, daysLeft, allowance, left: allowance - today, base: b ? Math.floor(b / daysInMonth) : 0 };
+}

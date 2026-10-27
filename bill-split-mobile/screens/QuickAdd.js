@@ -1,15 +1,14 @@
-import { LinearGradient } from '../components/SafeGradient';
 import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Keyboard, Modal, Pressable, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { addExpense } from '../services/expenses';
 import { EXPENSE_CATS } from '../services/money';
-import { C, F, G } from '../services/theme';
+import { C, F } from '../services/theme';
 
-// 💸 Log a spend in 2 taps: pick what, tap an amount (or type), done. Goes into My Money.
+// 💸 Log a spend in 2 taps: pick what, tap an amount (or type), done. Goes into the Vault.
 const QUICK = [50, 100, 200, 500];
 
-export default function QuickAdd({ visible, onClose, partyId = null, onSaved }) {
+export default function QuickAdd({ visible, onClose, partyId = null, onSaved, initialCat = null }) {
   const [cat, setCat] = useState('cab');
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
@@ -18,6 +17,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved }) 
     if (visible) {
       setAmount('');
       setNote('');
+      if (initialCat) setCat(initialCat);
     }
   }, [visible]);
 
@@ -45,7 +45,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved }) 
         <Pressable style={styles.sheet}>
           <View style={styles.handle} />
           <Text style={styles.title}>💸 Quick add</Text>
-          <Text style={styles.sub}>Log a spend. It goes into My Money, and only you see it.</Text>
+          <Text style={styles.sub}>Log a spend. It goes into your Vault, and only you see it.</Text>
           <View style={styles.cats}>
             {Object.entries(EXPENSE_CATS).map(([k, v]) => (
               <TouchableOpacity key={k} style={[styles.cat, cat === k && styles.catOn]} onPress={() => setCat(k)} activeOpacity={0.8}>
@@ -75,8 +75,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved }) 
           </View>
           <TextInput style={styles.note} value={note} onChangeText={setNote} placeholder="Note (optional), e.g. Auto to Toddy shop" placeholderTextColor={C.faint} keyboardAppearance="dark" maxLength={80} />
           <TouchableOpacity style={styles.save} onPress={save} disabled={saving} activeOpacity={0.85}>
-            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveText}>Add {amount ? `₹${Number(amount).toLocaleString('en-IN')}` : ''} {EXPENSE_CATS[cat].emoji}</Text>}
+            {saving ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.saveText}>Add {amount ? `₹${Number(amount).toLocaleString('en-IN')}` : ''} {EXPENSE_CATS[cat].emoji}</Text>}
           </TouchableOpacity>
         </Pressable>
       </Pressable>
@@ -92,7 +91,7 @@ const styles = StyleSheet.create({
   sub: { color: C.sub, fontSize: 13, marginTop: 4, marginBottom: 14 },
   cats: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   cat: { width: '23.5%', alignItems: 'center', backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginBottom: 8 },
-  catOn: { borderColor: C.accentSoft, backgroundColor: C.accent + '33' },
+  catOn: { borderColor: C.lime, backgroundColor: C.lime + '22' },
   catEmoji: { fontSize: 22 },
   catText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 3 },
   catTextOn: { color: C.text },
@@ -103,6 +102,6 @@ const styles = StyleSheet.create({
   quickBtn: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14, marginHorizontal: 4 },
   quickText: { color: C.text, fontSize: 14, fontWeight: '700' },
   note: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, color: C.text, fontSize: 14, marginTop: 14 },
-  save: { backgroundColor: C.accent, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12, overflow: 'hidden' },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  save: { backgroundColor: C.lime, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12, overflow: 'hidden' },
+  saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
 });

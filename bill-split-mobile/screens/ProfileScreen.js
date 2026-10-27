@@ -305,7 +305,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
           <TouchableOpacity style={styles.feedbackRow} onPress={onMoney}>
             <Text style={styles.feedbackEmoji}>💰</Text>
             <View style={styles.activeText}>
-              <Text style={styles.activeTitle}>My Money</Text>
+              <Text style={styles.activeTitle}>Vault (my money)</Text>
               <Text style={styles.activeSub}>Your going-out spend and Night Budget</Text>
             </View>
             <Text style={styles.chev}>›</Text>

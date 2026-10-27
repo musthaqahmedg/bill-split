@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, S
 import { listBills, listBillsDetailed } from '../services/bills';
 import { listExpenses, removeExpense } from '../services/expenses';
 import QuickAdd from './QuickAdd';
-import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor } from '../services/money';
+import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor, todaySummary } from '../services/money';
 import { show } from '../services/names';
 import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
@@ -15,40 +15,12 @@ import NightSky from '../components/NightSky';
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-// Night Budget ring, drawn with dots (no chart library needed)
-function Ring({ pct, color, size = 190, children }) {
-  const N = 48;
-  const r = size / 2 - 8;
-  return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
-      {Array.from({ length: N }).map((_, i) => {
-        const a = (i / N) * 2 * Math.PI - Math.PI / 2;
-        const on = i < Math.round(pct * N);
-        return (
-          <View
-            key={i}
-            style={{
-              position: 'absolute',
-              width: 9,
-              height: 9,
-              borderRadius: 5,
-              left: size / 2 + r * Math.cos(a) - 4.5,
-              top: size / 2 + r * Math.sin(a) - 4.5,
-              backgroundColor: on ? color : C.border,
-            }}
-          />
-        );
-      })}
-      {children}
-    </View>
-  );
-}
-
 export default function MyMoneyScreen({ onBack }) {
   const [bills, setBills] = useState(null);
   const [detailed, setDetailed] = useState([]); // items + claims, for the habits card
   const [expenses, setExpenses] = useState([]); // 💸 quick-add spends
   const [adding, setAdding] = useState(false);
+  const [addCat, setAddCat] = useState(null); // quick-add chip that opened the sheet
   const [budget, setBudget] = useState(0);
   const [month, setMonth] = useState(monthKey(new Date()));
   const [editing, setEditing] = useState(false);
@@ -112,7 +84,7 @@ export default function MyMoneyScreen({ onBack }) {
   const s = moneySummary(bills, month, new Date(), expenses);
   const bal = homeBalance(bills);
   const st = isNow ? budgetStatus(s.spent, budget) : null;
-  const ringColor = !st ? C.accent : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.green;
+  const ringColor = !st ? C.lime : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.lime;
   const maxBar = Math.max(1, ...s.months.map((m) => m.spent));
   const h = habitsSummary(detailed, month, expenses);
   const monthSpends = expenses.filter((e) => monthKey(new Date(e.spent_at)) === month);
@@ -130,8 +102,13 @@ export default function MyMoneyScreen({ onBack }) {
             <Text style={styles.back}>‹ Back</Text>
           </TouchableOpacity>
         ) : null}
-        <Text style={styles.kicker}>Only you can see this 🔒</Text>
-        <Text style={styles.title}>💰 My Money</Text>
+        <View style={styles.headRow}>
+          <Text style={styles.kicker}>YOUR NUMBERS</Text>
+          <View style={styles.privatePill}>
+            <Text style={styles.privateText}>🔒 Only you</Text>
+          </View>
+        </View>
+        <Text style={styles.title}>VAULT</Text>
 
         {/* ‹ October 2026 › */}
         <View style={styles.monthRow}>
@@ -144,47 +121,105 @@ export default function MyMoneyScreen({ onBack }) {
           </TouchableOpacity>
         </View>
 
-        {/* 🎯 Night Budget ring */}
-        <View style={styles.ringCard}>
-          <Ring pct={st ? st.pct : 0} color={ringColor}>
-            <Text style={styles.ringLabel}>{isNow ? 'Spent this month' : 'Spent'}</Text>
-            <Text style={styles.ringBig}>{inr(s.spent)}</Text>
-            {st ? (
-              <Text style={[styles.ringSub, { color: st.left < 0 ? C.red : C.sub }]}>{st.left < 0 ? 'over budget' : `${inr(st.left)} left`}</Text>
-            ) : (
-              <Text style={styles.ringSub}>{s.nights} night{s.nights === 1 ? '' : 's'} out</Text>
-            )}
-          </Ring>
-          {isNow ? (
-            st ? (
-              <TouchableOpacity onPress={() => { setDraft(String(budget)); setEditing(true); }}>
-                <Text style={styles.mood}>{st.mood.emoji} {st.mood.text} · Budget {inr(budget)} ✏️</Text>
+        {/* 💳 Spent this month (Final UX hero) */}
+        <View style={styles.hero}>
+          <View style={styles.heroTop}>
+            <Text style={styles.heroLabel}>{isNow ? 'Spent this month' : 'Spent'}</Text>
+            {budget ? (
+              <TouchableOpacity onPress={() => { setDraft(String(budget)); setEditing(true); }} hitSlop={8}>
+                <Text style={styles.heroLabel}>Budget {inr(budget)} ✏️</Text>
               </TouchableOpacity>
-            ) : (
-              <TouchableOpacity style={styles.setBtn} onPress={() => { setDraft(''); setEditing(true); }}>
-                <Text style={styles.setText}>🎯 Set a Night Budget</Text>
-              </TouchableOpacity>
-            )
+            ) : null}
+          </View>
+          <Text style={[styles.heroBig, st && st.left < 0 && { color: C.red }]}>{inr(s.spent)}</Text>
+          {st ? (
+            <>
+              <View style={styles.track}>
+                <View style={[styles.fill, { width: `${Math.min(100, Math.round(st.pct * 100))}%`, backgroundColor: ringColor }]} />
+              </View>
+              <View style={styles.heroTop}>
+                <Text style={styles.heroLabel}>{st.left < 0 ? 'Over budget by' : 'Left to spend'}</Text>
+                <Text style={[styles.heroLeft, st.left < 0 && { color: C.red }]}>{inr(Math.abs(st.left))}</Text>
+              </View>
+              <View style={styles.moodPill}>
+                <Text style={styles.moodText}>{st.mood.emoji} {st.mood.text}</Text>
+              </View>
+            </>
+          ) : isNow ? (
+            <TouchableOpacity style={styles.setBtn} onPress={() => { setDraft(''); setEditing(true); }}>
+              <Text style={styles.setText}>🎯 Set a monthly Night Budget</Text>
+            </TouchableOpacity>
           ) : null}
+          <View style={styles.statsRow}>
+            <Text style={styles.statInline}><Text style={styles.b}>{s.nights}</Text> nights out</Text>
+            <Text style={styles.statInline}><Text style={styles.b}>{inr(s.avg)}</Text> / night</Text>
+            <Text style={[styles.statInline, s.change > 0 ? { color: C.pink } : s.change < 0 ? { color: C.green } : null]}>
+              <Text style={styles.b}>{s.change === null ? '–' : `${s.change > 0 ? '+' : ''}${s.change}%`}</Text> vs last
+            </Text>
+          </View>
         </View>
 
-        {/* Quick stats */}
-        <View style={styles.stats}>
-          <View style={styles.stat}>
-            <Text style={styles.statBig}>{s.nights}</Text>
-            <Text style={styles.statLabel}>nights out</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={styles.statBig}>{inr(s.avg)}</Text>
-            <Text style={styles.statLabel}>per night</Text>
-          </View>
-          <View style={styles.stat}>
-            <Text style={[styles.statBig, s.change > 0 ? { color: C.pink } : s.change < 0 ? { color: C.green } : null]}>
-              {s.change === null ? '–' : `${s.change > 0 ? '+' : ''}${s.change}%`}
-            </Text>
-            <Text style={styles.statLabel}>vs last month</Text>
-          </View>
-        </View>
+        {/* ⚡ Tonight: today's allowance + quick add */}
+        {isNow ? (
+          (() => {
+            const t = todaySummary(bills, expenses, budget);
+            return (
+              <View style={styles.today}>
+                <View style={styles.heroTop}>
+                  <Text style={styles.todayKicker}>TONIGHT</Text>
+                  {budget ? <Text style={styles.todayDays}>{t.daysLeft} {t.daysLeft === 1 ? 'day' : 'days'} left this month</Text> : null}
+                </View>
+                {budget ? (
+                  <>
+                    <Text style={styles.todayLabel}>Left tonight</Text>
+                    <Text style={[styles.todayBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
+                    <Text style={styles.todaySub}>{inr(t.today)} spent of {inr(t.allowance)} today</Text>
+                  </>
+                ) : (
+                  <Text style={styles.todaySub}>Spent today: <Text style={styles.b}>{inr(t.today)}</Text>. Set a Night Budget to get a daily allowance.</Text>
+                )}
+                <Text style={styles.quickLabel}>QUICK ADD</Text>
+                <View style={styles.quick}>
+                  {[['drinks', C.lime], ['cab', C.pink], ['snacks', '#FFB347'], ['entry', C.violet], ['other', null]].map(([k, col]) => (
+                    <TouchableOpacity key={k} style={[styles.quickChip, col ? { backgroundColor: col } : styles.quickOther]} onPress={() => { setAddCat(k); setAdding(true); }} activeOpacity={0.85}>
+                      <Text style={[styles.quickText, !col && { color: C.text }]}>{EXPENSE_CATS[k].emoji} {k === 'snacks' ? 'Late-night food' : EXPENSE_CATS[k].label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            );
+          })()
+        ) : null}
+
+        {/* 🧾 Where it went */}
+        {s.spent ? (
+          (() => {
+            const extrasSum = s.extras.reduce((a, x) => a + x.amount, 0);
+            const rows = [{ label: '🍽️ Nights out (your bill shares)', amount: s.spent - extrasSum }, ...s.extras.map((x) => ({ label: `${EXPENSE_CATS[x.category].emoji} ${EXPENSE_CATS[x.category].label}`, amount: x.amount }))]
+              .filter((x) => x.amount > 0)
+              .sort((a, b) => b.amount - a.amount);
+            const COLS = [C.violet, C.pink, C.lime, C.cyan, '#FFB347', '#FF8A3D'];
+            return (
+              <View style={styles.card}>
+                <View style={styles.heroTop}>
+                  <Text style={styles.cardKicker}>WHERE IT WENT</Text>
+                  <Text style={styles.todayDays}>{rows.length} {rows.length === 1 ? 'category' : 'categories'}</Text>
+                </View>
+                {rows.map((x, i) => (
+                  <View key={x.label} style={styles.catRow}>
+                    <View style={styles.heroTop}>
+                      <Text style={styles.catName}>{x.label}</Text>
+                      <Text style={styles.catAmt}>{inr(x.amount)}</Text>
+                    </View>
+                    <View style={styles.catTrack}>
+                      <View style={[styles.catFill, { width: `${Math.max(3, Math.round((x.amount / s.spent) * 100))}%`, backgroundColor: COLS[i % COLS.length] }]} />
+                    </View>
+                  </View>
+                ))}
+              </View>
+            );
+          })()
+        ) : null}
 
         {/* 📅 Weekly check-in */}
         {isNow ? (
@@ -331,7 +366,7 @@ export default function MyMoneyScreen({ onBack }) {
         <Text style={styles.foot}>🔒 Built only from bills in the app. We never read your bank or SMS.</Text>
       </ScrollView>
 
-      <QuickAdd visible={adding} onClose={() => setAdding(false)} onSaved={load} />
+      <QuickAdd visible={adding} onClose={() => { setAdding(false); setAddCat(null); }} onSaved={load} initialCat={addCat} />
 
       {/* 🎯 Set budget */}
       <Modal visible={editing} transparent animationType="fade" onRequestClose={() => setEditing(false)}>
@@ -375,9 +410,40 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
   center: { justifyContent: 'center', alignItems: 'center' },
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 40 },
-  back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
-  kicker: { color: C.sub, fontSize: 14, fontWeight: '500' },
-  title: { fontFamily: F.display, color: C.text, fontSize: 24, marginTop: 2 },
+  back: { color: C.lime, fontSize: 17, marginBottom: 10 },
+  headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  kicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  privatePill: { backgroundColor: C.violet, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 9 },
+  privateText: { color: C.onLime, fontSize: 11, fontWeight: '900' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 38, marginTop: 4 },
+  hero: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 24, padding: 18, marginTop: 12 },
+  heroTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  heroLabel: { color: C.sub, fontSize: 13, fontWeight: '600' },
+  heroBig: { fontFamily: F.display, color: C.lime, fontSize: 36, marginTop: 6 },
+  heroLeft: { fontFamily: F.bold, color: C.lime, fontSize: 18 },
+  track: { height: 10, borderRadius: 5, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 14, marginBottom: 12 },
+  fill: { height: '100%', borderRadius: 5 },
+  moodPill: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 9, paddingHorizontal: 12, marginTop: 14 },
+  moodText: { color: C.onLime, fontSize: 13, fontWeight: '800' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12, marginTop: 14 },
+  statInline: { color: C.faint, fontSize: 12 },
+  today: { backgroundColor: C.card, borderWidth: 1, borderColor: C.lime + '66', borderRadius: 24, padding: 18, marginTop: 12 },
+  todayKicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  todayDays: { color: C.faint, fontSize: 12, fontWeight: '600' },
+  todayLabel: { color: C.sub, fontSize: 13, fontWeight: '600', marginTop: 10 },
+  todayBig: { fontFamily: F.display, color: C.text, fontSize: 30, marginTop: 2 },
+  todaySub: { color: C.sub, fontSize: 13, marginTop: 6, lineHeight: 19 },
+  quickLabel: { color: C.faint, fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginTop: 16, marginBottom: 8 },
+  quick: { flexDirection: 'row', flexWrap: 'wrap' },
+  quickChip: { borderRadius: 16, paddingVertical: 9, paddingHorizontal: 13, marginRight: 8, marginBottom: 8 },
+  quickOther: { borderWidth: 1, borderColor: C.border },
+  quickText: { color: C.onLime, fontSize: 14, fontWeight: '800' },
+  cardKicker: { color: C.text, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  catRow: { marginTop: 14 },
+  catName: { color: C.text, fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
+  catAmt: { fontFamily: F.bold, color: C.text, fontSize: 15 },
+  catTrack: { height: 6, borderRadius: 3, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 8 },
+  catFill: { height: '100%', borderRadius: 3 },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 14 },
   arrow: { color: C.text, fontSize: 30, paddingHorizontal: 18 },
   arrowOff: { color: C.border },
@@ -387,8 +453,8 @@ const styles = StyleSheet.create({
   ringBig: { fontFamily: F.bold, color: C.text, fontSize: 27, marginTop: 2 },
   ringSub: { color: C.sub, fontSize: 13, marginTop: 2 },
   mood: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 12 },
-  setBtn: { backgroundColor: C.accent, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 18, marginTop: 12 },
-  setText: { color: '#fff', fontSize: 15, fontWeight: '800' },
+  setBtn: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 18, marginTop: 14 },
+  setText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   stats: { flexDirection: 'row', marginTop: 12 },
   stat: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingVertical: 14, alignItems: 'center', marginHorizontal: 3 },
   statBig: { fontFamily: F.bold, color: C.text, fontSize: 16 },
@@ -401,7 +467,7 @@ const styles = StyleSheet.create({
   barAmt: { color: C.faint, fontSize: 10, height: 14 },
   barTrack: { flex: 1, width: 22, justifyContent: 'flex-end', marginVertical: 4 },
   barFill: { width: '100%', borderRadius: 6, backgroundColor: C.cardHi },
-  barOn: { backgroundColor: C.accent },
+  barOn: { backgroundColor: C.lime },
   barLabel: { color: C.faint, fontSize: 11 },
   barLabelOn: { color: C.text, fontWeight: '700' },
   insight: { color: C.sub, fontSize: 14, lineHeight: 22, marginTop: 2 },
@@ -437,7 +503,7 @@ const styles = StyleSheet.create({
   picks: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
   pick: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
   pickText: { color: C.text, fontSize: 14, fontWeight: '600' },
-  saveBtn: { backgroundColor: C.accent, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 10 },
-  saveText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 10 },
+  saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
   remove: { color: C.red, fontSize: 14, textAlign: 'center', marginTop: 14 },
 });

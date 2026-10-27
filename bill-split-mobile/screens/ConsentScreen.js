@@ -12,7 +12,7 @@ export const GRIEVANCE_EMAIL = 'maginfosystems@gmail.com';
 const DATA = [
   ['👤', 'Name, and your email or phone', 'To log you in and show your name to friends in your plans'],
   ['🧾', 'Bills, items and who had what', 'To split bills and show who owes whom'],
-  ['💸', 'Spends you log yourself (optional)', 'For My Money. Only you can see them'],
+  ['💸', 'Spends you log yourself (optional)', 'For your Vault. Only you can see them'],
   ['🎉', 'Plans, who’s coming, chat and photos', 'To run your plans with your group'],
   ['📸', 'Bill photos you scan', 'To read the items (sent to Google Gemini, not kept)'],
   ['🎂', 'Birthday (optional)', 'For friend birthday reminders'],

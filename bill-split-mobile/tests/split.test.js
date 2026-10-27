@@ -327,3 +327,20 @@ test('plan dates: a night logged 2 days after it happened stays in the past', as
   assert.equal(planBucket(p, now), 'past');
   assert.equal(countdown(p, now), '7 days ago');
 });
+
+test("today's allowance: what's left of the budget, shared over the days left", async () => {
+  const { todaySummary } = await import('../services/money.js');
+  const now = new Date(2026, 9, 27, 20, 0); // 27 Oct, 5 days left incl. today
+  const ex = [
+    { spent_at: new Date(2026, 9, 10).toISOString(), amount: 3000, category: 'cab' },
+    { spent_at: new Date(2026, 9, 27, 19).toISOString(), amount: 400, category: 'snacks' },
+    { spent_at: new Date(2026, 8, 30).toISOString(), amount: 9999, category: 'cab' }, // last month: ignored
+  ];
+  const t = todaySummary([], ex, 10000, now);
+  assert.equal(t.daysLeft, 5);
+  assert.equal(t.before, 3000);
+  assert.equal(t.today, 400);
+  assert.equal(t.allowance, 1400); // (10000 - 3000) / 5
+  assert.equal(t.left, 1000);
+  assert.equal(todaySummary([], ex, 0, now).allowance, 0);
+});
