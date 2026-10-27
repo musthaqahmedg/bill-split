@@ -1,4 +1,3 @@
-import { LinearGradient } from '../components/SafeGradient';
 import { useEffect, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePicker from '@react-native-community/datetimepicker';
@@ -14,7 +13,7 @@ import MenuSheet, { MenuButton } from './MenuSheet';
 import { createParty, sharesFor, updateParty } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C, F, G } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // Party name ideas that change every few seconds in the empty box
 const IDEAS = [
@@ -31,10 +30,10 @@ const IDEAS = [
 // Quick budget picks, and a fun line about what the money means
 // 🎟️ Pick the vibe as a ticket: price is PER PERSON, total = price × people (Gautham's ticket idea)
 const TICKETS = [
-  { key: 'early', name: 'Early Bird', emoji: '🐣', per: 500, note: 'Chill & cheap', color: '#34D399' },
-  { key: 'regular', name: 'Regular', emoji: '🎟️', per: 1000, note: 'The usual', color: '#60A5FA' },
-  { key: 'owl', name: 'Night Owl', emoji: '🦉', per: 2000, note: 'Going big', color: '#9B5CFF' },
-  { key: 'vip', name: 'VIP Table', emoji: '👑', per: 5000, note: 'All out', color: '#F59E0B' },
+  { key: 'early', name: 'EARLY BIRD', per: 500, note: 'Chill & cheap', color: '#E2FF3B' },
+  { key: 'regular', name: 'REGULAR', per: 1000, note: 'The usual', color: '#55E0F0' },
+  { key: 'owl', name: 'NIGHT OWL', per: 2000, note: 'Going big', color: '#FFB3D9' },
+  { key: 'vip', name: 'VIP TABLE', per: 5000, note: 'All out, seats for the squad', color: '#FFD84D' },
 ];
 const FUN = [
   ['plates of biryani 🍗', 200],
@@ -91,10 +90,10 @@ function FunLine({ text, style }) {
 }
 
 const STEPS = [
-  { key: 'what', emoji: '✨', label: 'What' },
-  { key: 'when', emoji: '📅', label: 'When' },
-  { key: 'who', emoji: '👥', label: 'Who' },
-  { key: 'money', emoji: '💰', label: 'Money' },
+  { key: 'what', emoji: '✨', label: 'What', kicker: 'SET THE MOOD', title: "What's the\nenergy? ⚡", next: "When & where" },
+  { key: 'when', emoji: '📅', label: 'When', kicker: 'PICK THE SPOT', title: 'Where we\ngoing? 📍', next: "Who's coming" },
+  { key: 'who', emoji: '👥', label: 'Who', kicker: 'BRING THE SQUAD', title: "Who's pulling\nup? 👥", next: 'Set the budget' },
+  { key: 'money', emoji: '💰', label: 'Money', kicker: 'LAST STEP', title: 'Grab your\nticket 🎟️', next: '' },
 ];
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -269,15 +268,17 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
       <TouchableOpacity onPress={() => (step > 0 ? go(step - 1) : leave())}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>{ex ? 'Edit plan' : 'Plan something'} {kindOf(kind).emoji}</Text>
       <View style={styles.steps}>
         {STEPS.map((st, i) => (
-          <TouchableOpacity key={st.key} style={styles.stepItem} onPress={() => (i <= step || ex ? go(i) : next())} activeOpacity={0.7}>
+          <TouchableOpacity key={st.key} style={styles.stepItem} onPress={() => (i <= step || ex ? go(i) : next())} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10 }}>
             <View style={[styles.stepBar, i <= step && styles.stepBarOn]} />
-            <Text style={[styles.stepText, i === step && styles.stepTextOn]}>{st.emoji} {st.label}</Text>
           </TouchableOpacity>
         ))}
       </View>
+      <View style={styles.kickerPill}>
+        <Text style={styles.kickerText}>{ex ? 'EDIT PLAN · ' : ''}STEP {step + 1} OF 4 · {STEPS[step].kicker}</Text>
+      </View>
+      <Text style={styles.title}>{STEPS[step].title}</Text>
       {resume ? (
         <View style={styles.draftBox}>
           <Text style={styles.draftTitle}>📝 Finish your unsaved plan?</Text>
@@ -299,15 +300,14 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         {step === 0 && (
           <>
         {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
-        <Text style={styles.label}>What's the plan?</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.kinds} keyboardShouldPersistTaps="handled">
+        <Text style={styles.lead}>Pick the vibe. We'll tune the places and the plan to it.</Text>
+        <View style={styles.kinds}>
           {KINDS.map((k) => (
-            <TouchableOpacity key={k.key} style={[styles.kind, kind === k.key && styles.kindOn]} onPress={() => setKind(k.key)}>
-              <Text style={styles.kindEmoji}>{k.emoji}</Text>
-              <Text style={[styles.kindText, kind === k.key && styles.kindTextOn]}>{k.label}</Text>
+            <TouchableOpacity key={k.key} style={[styles.kind, { borderColor: k.color }, kind === k.key && styles.kindOn]} onPress={() => setKind(k.key)}>
+              <Text style={[styles.kindText, kind === k.key && styles.kindTextOn]}>{k.emoji} {k.label}</Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
 
         <Text style={styles.label}>Name</Text>
         <TextInput
@@ -332,7 +332,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
               display={Platform.OS === 'ios' ? 'inline' : 'default'}
               minimumDate={new Date()}
               themeVariant="dark"
-              accentColor={C.accent}
+              accentColor={C.lime}
               onChange={onPickDate}
             />
             {Platform.OS === 'ios' && (
@@ -359,7 +359,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
         {step === 2 && (
           <>
-        <Text style={styles.label}>Who's pulling up? ({people.length})</Text>
+        <Text style={styles.label}>In the squad ({people.length})</Text>
         <View style={styles.chips}>
           {people.map((p) => (
             <TouchableOpacity key={p} style={styles.chip} onPress={() => p !== 'Me' && removePerson(p)}>
@@ -414,26 +414,25 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
         {step === 3 && (
           <>
-        <Text style={styles.label}>Pick your ticket 🎟️ <Text style={styles.labelSoft}>(per person)</Text></Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tickets} keyboardShouldPersistTaps="handled">
-          {TICKETS.map((t) => {
-            const total = t.per * Math.max(people.length, 1);
-            const on = Number(budget) === total;
-            return (
-              <TouchableOpacity key={t.key} activeOpacity={0.85} onPress={() => { Keyboard.dismiss(); setBudget(String(total)); }}
-                style={[styles.ticket, { borderColor: on ? t.color : C.border }, on && { backgroundColor: t.color + '22' }]}>
-                <View style={[styles.notch, styles.notchL]} />
-                <View style={[styles.notch, styles.notchR]} />
-                <Text style={styles.ticketEmoji}>{t.emoji}</Text>
-                <Text style={[styles.ticketName, on && { color: t.color }]}>{t.name}</Text>
-                <Text style={styles.ticketPer}>{inr(t.per)}</Text>
-                <View style={styles.ticketCut} />
-                <Text style={styles.ticketNote}>{t.note}</Text>
-                <Text style={styles.ticketTotal}>{inr(total)} total</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        <Text style={styles.lead}>Price is per person. We split the bill after.</Text>
+        {TICKETS.map((t) => {
+          const total = t.per * Math.max(people.length, 1);
+          const on = Number(budget) === total;
+          return (
+            <TouchableOpacity key={t.key} activeOpacity={0.85} onPress={() => { Keyboard.dismiss(); setBudget(String(total)); }}
+              style={[styles.ticket, { backgroundColor: t.color }, on && styles.ticketOn]}>
+              <View style={[styles.notch, styles.notchL]} />
+              <View style={[styles.notch, styles.notchR]} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ticketName}>{t.name}</Text>
+                <Text style={styles.ticketNote}>{t.note} · {inr(total)} total</Text>
+              </View>
+              <View style={styles.ticketCut} />
+              <Text style={styles.ticketPer}>{inr(t.per)}</Text>
+              {on ? <Text style={styles.ticketTick}>✓</Text> : null}
+            </TouchableOpacity>
+          );
+        })}
 
         <View onLayout={keep('budget')}>
           <Text style={styles.label}>Or set the total budget (₹)</Text>
@@ -448,9 +447,9 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
           maximumValue={1}
           value={toPos(budget)}
           onValueChange={(v) => setBudget(String(toBudget(v)))}
-          minimumTrackTintColor={C.accent}
+          minimumTrackTintColor={C.lime}
           maximumTrackTintColor={C.border}
-          thumbTintColor={C.accentSoft}
+          thumbTintColor={C.lime}
         />
         <View style={styles.scale}>
           <Text style={styles.scaleText}>{inr(MIN_B)}</Text>
@@ -528,13 +527,11 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         ) : null}
         {step < STEPS.length - 1 ? (
           <TouchableOpacity style={[styles.button, styles.navNext]} onPress={next}>
-            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            <Text style={styles.buttonText}>Next: {STEPS[step + 1].label} ›</Text>
+            <Text style={styles.buttonText}>NEXT: {STEPS[step].next.toUpperCase()} →</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity style={[styles.button, styles.navNext]} onPress={() => { Keyboard.dismiss(); create(); }} disabled={saving}>
-            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {saving ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{ex ? 'Save changes' : '🎉 Create plan'}</Text>}
+            {saving ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.buttonText}>{ex ? 'SAVE CHANGES →' : 'LOCK IT IN →'}</Text>}
           </TouchableOpacity>
         )}
       </View>
@@ -545,17 +542,19 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
 const styles = StyleSheet.create({
   labelSoft: { color: C.faint, fontSize: 13 },
-  tickets: { marginBottom: 16, marginHorizontal: -4 },
-  ticket: { width: 128, backgroundColor: C.card, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: 18, paddingVertical: 14, paddingHorizontal: 12, marginHorizontal: 4, alignItems: 'center', overflow: 'hidden' },
-  notch: { position: 'absolute', top: 76, width: 18, height: 18, borderRadius: 9, backgroundColor: C.bg },
-  notchL: { left: -10 },
-  notchR: { right: -10 },
-  ticketEmoji: { fontSize: 26 },
-  ticketName: { color: C.text, fontSize: 15, fontWeight: '800', marginTop: 4 },
-  ticketPer: { color: C.sub, fontSize: 13, fontWeight: '600', marginTop: 2 },
-  ticketCut: { alignSelf: 'stretch', borderTopWidth: 1, borderStyle: 'dashed', borderColor: C.border, marginVertical: 10 },
-  ticketNote: { color: C.faint, fontSize: 12 },
-  ticketTotal: { color: C.text, fontSize: 13, fontWeight: '700', marginTop: 2 },
+  ticket: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingVertical: 16, paddingLeft: 18, paddingRight: 16, marginBottom: 10, overflow: 'hidden', borderWidth: 3, borderColor: 'transparent' },
+  ticketOn: { borderColor: '#fff' },
+  notch: { position: 'absolute', top: '50%', marginTop: -9, width: 18, height: 18, borderRadius: 9, backgroundColor: C.bg },
+  notchL: { left: -9 },
+  notchR: { right: -9 },
+  ticketName: { fontFamily: F.display, color: C.onLime, fontSize: 18 },
+  ticketNote: { color: C.onLime, opacity: 0.75, fontSize: 12, fontWeight: '700', marginTop: 3 },
+  ticketCut: { alignSelf: 'stretch', borderLeftWidth: 1.5, borderStyle: 'dashed', borderColor: 'rgba(0,0,0,0.35)', marginHorizontal: 12 },
+  ticketPer: { fontFamily: F.display, color: C.onLime, fontSize: 20 },
+  ticketTick: { position: 'absolute', top: 6, right: 12, color: C.onLime, fontSize: 14, fontWeight: '900' },
+  lead: { color: C.sub, fontSize: 14, lineHeight: 20, marginBottom: 14 },
+  kickerPill: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10, marginBottom: 10 },
+  kickerText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   draftBox: { backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginTop: 10 },
   draftTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
@@ -565,18 +564,17 @@ const styles = StyleSheet.create({
   draftGoText: { color: '#2A1B00', fontSize: 14, fontWeight: '800' },
   draftNo: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14 },
   draftNoText: { color: C.sub, fontSize: 14, fontWeight: '600' },
-  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 22, color: C.text, marginBottom: 12 },
+  back: { color: C.lime, fontSize: 16, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 30, lineHeight: 36, color: C.text, marginBottom: 8 },
   list: { flex: 1 },
   scrollPad: { paddingBottom: 260 }, // room so any box can scroll above the keypad
   groupTag: { alignSelf: 'flex-start', color: C.accentSoft, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10, fontSize: 13, fontWeight: '700', marginBottom: 10, overflow: 'hidden' },
-  kinds: { marginBottom: 14, flexGrow: 0 },
-  kind: { alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginRight: 8, minWidth: 78 },
-  kindOn: { backgroundColor: C.accent, borderColor: C.accent },
-  kindEmoji: { fontSize: 26 },
-  kindText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 4 },
-  kindTextOn: { color: '#fff' },
-  label: { color: C.sub, fontSize: 14, marginBottom: 6 },
+  kinds: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 14 },
+  kind: { borderWidth: 1.5, borderRadius: 18, paddingVertical: 9, paddingHorizontal: 14, marginRight: 8, marginBottom: 8 },
+  kindOn: { backgroundColor: C.lime, borderColor: C.lime },
+  kindText: { color: C.text, fontSize: 14, fontWeight: '700' },
+  kindTextOn: { color: C.onLime },
+  label: { color: C.sub, fontSize: 12, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 },
   hint: { color: C.faint, fontSize: 13, marginBottom: 8 },
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 13, fontSize: 16, color: C.text, marginBottom: 14 },
   row: { flexDirection: 'row' },
@@ -599,12 +597,12 @@ const styles = StyleSheet.create({
   suggest: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, marginRight: 6, marginBottom: 6 },
   suggestText: { color: C.sub, fontSize: 13 },
   mode: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 6, marginBottom: 6 },
-  modeOn: { backgroundColor: C.accent, borderColor: C.accent },
+  modeOn: { backgroundColor: C.lime, borderColor: C.lime },
   modeText: { color: C.sub, fontSize: 14, fontWeight: '600' },
-  modeTextOn: { color: '#fff' },
-  preview: { backgroundColor: C.greenBg, borderRadius: 16, padding: 16, alignItems: 'center', marginTop: 6, marginBottom: 20 },
+  modeTextOn: { color: C.onLime, fontWeight: '800' },
+  preview: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 16, alignItems: 'center', marginTop: 6, marginBottom: 20 },
   previewText: { color: C.sub, fontSize: 14 },
-  previewAmount: { color: C.green, fontSize: 30, fontWeight: '800', marginTop: 4 },
+  previewAmount: { fontFamily: F.display, color: C.lime, fontSize: 30, marginTop: 4 },
   previewNote: { color: C.faint, fontSize: 12, marginTop: 4 },
   slider: { width: '100%', height: 36 },
   scale: { flexDirection: 'row', justifyContent: 'space-between', marginTop: -4 },
@@ -613,16 +611,16 @@ const styles = StyleSheet.create({
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   after: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 6 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
+  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
   steps: { flexDirection: 'row', marginBottom: 14 },
   stepItem: { flex: 1, marginRight: 6 },
   stepBar: { height: 4, borderRadius: 2, backgroundColor: C.border },
-  stepBarOn: { backgroundColor: C.accent },
+  stepBarOn: { backgroundColor: C.lime },
   stepText: { color: C.faint, fontSize: 12, fontWeight: '600', marginTop: 6 },
   stepTextOn: { color: C.text },
   nav: { flexDirection: 'row', paddingTop: 10, paddingBottom: 30, backgroundColor: C.bg },
   navBack: { justifyContent: 'center', paddingHorizontal: 18, marginRight: 10, borderRadius: 18, borderWidth: 1, borderColor: C.border },
   navBackText: { color: C.text, fontSize: 16, fontWeight: '700' },
   navNext: { flex: 1 },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  buttonText: { color: C.onLime, fontSize: 15, fontWeight: '900', letterSpacing: 0.5 },
 });
