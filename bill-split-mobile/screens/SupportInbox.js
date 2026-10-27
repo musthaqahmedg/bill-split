@@ -57,7 +57,7 @@ export default function SupportInbox({ onBack, onOpen }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 6 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 26, marginBottom: 12 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 22, marginBottom: 12 },
   pad: { paddingBottom: 40 },
   empty: { color: C.faint, fontSize: 15, textAlign: 'center', marginTop: 40 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.1)' },

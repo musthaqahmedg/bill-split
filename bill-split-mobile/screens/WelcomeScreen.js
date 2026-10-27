@@ -10,8 +10,8 @@ const SLIDES = [
   {
     hero: '🪩',
     stickers: ['🎉', '🎶', '✨', '🍕'],
-    kicker: 'YOUR NIGHT. SORTED.',
-    lines: ['Where the night', 'comes alive.'],
+    kicker: 'YOUR NIGHT, SORTED',
+    lines: ['PULL UP.', 'LINK UP.', 'VIBE OUT.'],
     body: 'Plan the night, move as a squad, split the damage and get home safe. All with your people.',
     chips: ['💬 no group chat chaos', '🧾 bills split in seconds', '🏠 get home safe'],
   },
@@ -19,7 +19,7 @@ const SLIDES = [
     hero: '🧾',
     stickers: ['📸', '👆', '💸', '🧮'],
     kicker: 'NO AWKWARD MATHS',
-    lines: ['Snap it. Tap it.', 'Split it fairly.'],
+    lines: ['SNAP IT.', 'TAP IT.', 'SPLIT IT.'],
     body: 'Scan the bill, everyone taps what they had, tax and service shared fairly. To the rupee.',
     chips: ['📸 scan any bill', '👆 tap your items', '💸 settle by UPI'],
   },
@@ -27,7 +27,7 @@ const SLIDES = [
     hero: '🔒',
     stickers: ['🙅', '💳', '🗑️', '🛡️'],
     kicker: 'PRIVATE BY DESIGN',
-    lines: ['Your night.', 'Your data.'],
+    lines: ['YOUR NIGHT.', 'YOUR DATA.', 'NO DRAMA.'],
     body: 'Try it with no sign-up. We never sync your contacts, never hold your money, and you can delete everything anytime.',
     chips: ['🙅 no contact sync', '💳 no wallet', '🗑️ delete anytime'],
   },
@@ -162,8 +162,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
           })}
         </View>
         <TouchableOpacity style={styles.button} onPress={last ? go : next} disabled={busy} activeOpacity={0.85}>
-          <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{last ? "Let's go — start the night →" : 'Next →'}</Text>}
+          {busy ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.buttonText}>{last ? "LET'S GO – START THE NIGHT →" : 'NEXT →'}</Text>}
         </TouchableOpacity>
         <Text style={styles.note}>{last ? 'No sign-up needed. Save your account later.' : ' '}</Text>
       </View>
@@ -174,8 +173,8 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 58, paddingHorizontal: 22 },
-  pill: { borderWidth: 1, borderColor: C.accentSoft + '66', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
-  pillText: { color: C.accentSoft, fontSize: 11, fontWeight: '800', letterSpacing: 1.2 },
+  pill: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  pillText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   skipText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
   slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   cluster: { height: 190, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
@@ -185,8 +184,8 @@ const styles = StyleSheet.create({
   sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   stickerEmoji: { fontSize: 28 },
   headline: { marginTop: 4 },
-  line: { fontFamily: F.display, color: C.text, fontSize: 42, lineHeight: 50 },
-  lineGold: { fontFamily: F.italic, color: C.accentSoft },
+  line: { fontFamily: F.display, color: C.text, fontSize: 37, lineHeight: 42, letterSpacing: -0.5 },
+  lineGold: { color: C.violet },
   body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 14 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
   chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 11, marginRight: 8, marginBottom: 8 },
@@ -194,7 +193,7 @@ const styles = StyleSheet.create({
   bottom: { paddingHorizontal: 22, paddingBottom: 36 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
   dot: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginHorizontal: 4 },
-  button: { backgroundColor: C.accent, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
+  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
+  buttonText: { color: C.onLime, fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
   note: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 12 },
 });

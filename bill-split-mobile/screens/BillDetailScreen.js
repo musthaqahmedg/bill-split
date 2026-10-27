@@ -431,7 +431,7 @@ const styles = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   back: { color: C.accentSoft, fontSize: 16 },
   edit: { color: C.accentSoft, fontSize: 16, fontWeight: '700' },
-  title: { fontFamily: F.display, fontSize: 26, color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   meta: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 15 },
   list: { flex: 1 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },

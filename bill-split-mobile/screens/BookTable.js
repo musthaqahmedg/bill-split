@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   sheet: { backgroundColor: C.bg, borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 34, maxHeight: '88%' },
   handle: { alignSelf: 'center', width: 40, height: 5, borderRadius: 3, backgroundColor: C.border, marginBottom: 12 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 22 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   place: { color: C.sub, fontSize: 15, marginTop: 2 },
   label: { color: C.faint, fontSize: 12, fontWeight: '600', letterSpacing: 0.5, marginTop: 16, marginBottom: 8, textTransform: 'uppercase' },
   chip: { borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, backgroundColor: 'rgba(255,255,255,0.07)' },

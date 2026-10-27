@@ -21,9 +21,8 @@ export function planDay(text, createdAt, now = new Date()) {
   const base = createdAt ? new Date(createdAt) : now;
   const y = base.getFullYear();
   const options = [y - 1, y, y + 1].map((yy) => new Date(yy, month, day));
-  // a plan is made before (or on) its day, so prefer the first one on/after creation (allow 1 day slack)
-  const after = options.find((d) => d >= startOf(new Date(base.getTime() - DAY)));
-  return after || options[1];
+  // pick the year that lands closest to when the plan was made (works for future plans and logged past nights)
+  return options.reduce((best, d) => (Math.abs(d - base) < Math.abs(best - base) ? d : best));
 }
 
 // 'live' (today, or someone's out right now) · 'upcoming' (future or no date) · 'past'

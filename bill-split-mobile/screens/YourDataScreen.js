@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 50 },
   back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
   kicker: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
-  title: { fontFamily: F.display, color: C.text, fontSize: 29, marginTop: 2 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 24, marginTop: 2 },
   lead: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 8, marginBottom: 6 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, marginTop: 12 },
   cardTitle: { color: C.text, fontSize: 16, fontWeight: '800', marginBottom: 8 },

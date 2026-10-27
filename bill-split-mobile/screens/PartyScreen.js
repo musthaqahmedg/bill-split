@@ -388,7 +388,7 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   edit: { color: C.accentSoft, fontSize: 16, fontWeight: '800', marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 26, color: C.text },
+  title: { fontFamily: F.display, fontSize: 22, color: C.text },
   meta: { color: C.faint, fontSize: 14, marginTop: 4 },
   list: { flex: 1, marginTop: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },

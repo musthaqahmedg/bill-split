@@ -1,43 +1,44 @@
-// VibeOut look = Gautham's v12 "Neon Luxe": deep purple night, purple → pink gradients,
-// elegant serif headlines (italic accent word), small lime + gold touches.
+// VibeOut look = Gautham's "Final UX" (25 Oct): black canvas, neon lime-yellow, hot pink and violet,
+// chunky wide headlines and poster-style cards. Rule: text on lime is always dark (C.onLime).
 export const C = {
-  bg: '#0B0614',        // deep night purple-black
-  card: '#17112A',      // cards and boxes
-  cardHi: '#221A3A',    // highlighted card / inner box
-  border: '#2F2550',    // card borders
-  text: '#F7F3FF',      // main text
-  sub: '#B6ABD0',       // secondary text
-  faint: '#7D7398',     // hints, small notes
-  accent: '#8B3DFF',    // solid buttons (purple, white text)
-  accentSoft: '#D9B8FF',// soft lilac: links, kickers
-  lime: '#C6FF3D',      // small "live / paid / your vote" chips
-  onLime: '#0B0614',    // text on lime
-  gold: '#F2CD8B',      // money amounts
-  cyan: '#62D8FF',
-  pink: '#F0469E',      // covering / pairs 💛💑 and gradients
-  pinkBg: '#2A1226',
+  bg: '#0E0E12',        // screen background (black)
+  card: '#1A1A21',      // cards and boxes
+  cardHi: '#24242D',    // highlighted card / inner box
+  border: '#2E2E39',    // card borders
+  text: '#F7F7F9',      // main text
+  sub: '#ABABBC',       // secondary text
+  faint: '#76768A',     // hints, small notes
+  accent: '#8B5CF6',    // solid buttons (violet, white text)
+  accentSoft: '#E2FF3B',// neon lime-yellow: links, highlights, kickers
+  lime: '#E2FF3B',
+  onLime: '#0E0E12',    // text on lime
+  violet: '#A98BFF',    // soft violet poster cards
+  gold: '#E2FF3B',      // money amounts
+  cyan: '#55E0F0',
+  pink: '#FF4FA0',      // covering / pairs 💛💑 and gradients
+  pinkBg: '#2C1424',
   green: '#34D399',     // paid / not drinking
   greenBg: '#0F2A20',
   red: '#F87171',       // delete / remove
   amber: '#FBBF24',     // mystery items 🕵️
   amberBg: '#2C2310',
-  disabled: '#352C4D',
+  disabled: '#34343F',  // buttons you can't press yet
 };
 
 // 🌈 Gradients
 export const G = {
-  hot: ['#8B3DFF', '#E23CA8'],      // purple → pink: main actions
-  night: ['#5B2BD9', '#B03CF0'],    // deep purple
-  lime: ['#C6FF3D', '#9CF06B'],     // lime (dark text)
-  sunset: ['#FF7A1A', '#F0469E'],   // orange → pink: get me home safe
-  card: ['#24123E', '#17112A'],     // glow card
-  sky: ['#3A1466', '#1A0B30', '#0B0614'], // night sky behind headers
+  hot: ['#FF4FA0', '#8B5CF6'],      // pink → violet: main actions
+  night: ['#8B5CF6', '#55E0F0'],    // violet → cyan
+  lime: ['#E2FF3B', '#B8FF5C'],     // lime (dark text)
+  sunset: ['#FF7A1A', '#FF4FA0'],   // orange → pink: get me home safe
+  card: ['#22172E', '#1A1A21'],     // subtle glow card
+  sky: ['#1E1430', '#0E0E12'],      // soft glow behind headers
 };
 
-// 🔤 Fonts (loaded in App.tsx): elegant serif for headlines, chunky for the logo
+// 🔤 Fonts (loaded in App.tsx): chunky wide display font for headlines and big numbers
 export const F = {
-  display: 'PlayfairDisplay_700Bold',
-  italic: 'PlayfairDisplay_700Bold_Italic',
-  bold: 'PlayfairDisplay_700Bold',
+  display: 'Unbounded_800ExtraBold',
+  italic: 'Unbounded_800ExtraBold',
+  bold: 'Unbounded_700Bold',
   logo: 'Unbounded_800ExtraBold',
 };

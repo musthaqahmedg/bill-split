@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   hello: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontFamily: F.display, fontSize: 29, color: C.text, marginTop: 2 },
+  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginTop: 2 },
   bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   bellIcon: { fontSize: 20 },
   bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   sumBox: { flex: 1, alignItems: 'center' },
   sumLine: { width: 1, backgroundColor: C.border },
   sumLabel: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  sumValue: { fontFamily: F.bold, fontSize: 24, marginTop: 4 },
+  sumValue: { fontFamily: F.bold, fontSize: 22, marginTop: 4 },
 
   draft: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginBottom: 14 },
   draftEmoji: { fontSize: 22, marginRight: 10 },

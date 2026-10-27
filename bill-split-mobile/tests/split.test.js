@@ -319,3 +319,11 @@ test('plan dates: read "Sat, 18 Oct", sort into live / upcoming / past, countdow
   assert.equal(countdown({ party_date: 'Thu, 29 Oct', created_at: made }, now), 'In 4 days');
   assert.equal(countdown({ party_date: null, created_at: made }, now), 'Date TBD');
 });
+
+test('plan dates: a night logged 2 days after it happened stays in the past', async () => {
+  const { planBucket, countdown } = await import('../services/when.js');
+  const now = new Date(2026, 9, 27, 12, 0);
+  const p = { party_date: 'Tue, 20 Oct', created_at: new Date(2026, 9, 22).toISOString() };
+  assert.equal(planBucket(p, now), 'past');
+  assert.equal(countdown(p, now), '7 days ago');
+});

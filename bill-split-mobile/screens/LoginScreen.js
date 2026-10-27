@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   guestSub: { color: C.faint, fontSize: 12, marginTop: 3 },
   trust: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 24, lineHeight: 18 },
   logo: { fontSize: 56, textAlign: 'center' },
-  title: { fontFamily: F.display, fontSize: 36, textAlign: 'center', color: C.text, marginTop: 8 },
+  title: { fontFamily: F.display, fontSize: 30, textAlign: 'center', color: C.text, marginTop: 8 },
   subtitle: { fontSize: 16, color: C.accentSoft, marginTop: 6, marginBottom: 40, textAlign: 'center' },
   label: { color: C.sub, fontSize: 14, marginBottom: 8 },
   quick: { backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.accent, borderRadius: 14, padding: 16, marginBottom: 20, alignItems: 'center' },

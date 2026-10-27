@@ -6,14 +6,14 @@ import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C, F, G } from '../services/theme';
 import QuickAdd from './QuickAdd';
 
-// 📱 Bottom tabs (v12): Home · Rooms · 📸 Scan · Wallet · Memories
-// Tap 📸 to scan a bill straight away; long-press it for more (plan / spend).
+// 📱 Bottom tabs (Final UX): Home · Rooms · 🧾 Scan · Discover · Vault
+// Tap 🧾 to scan a bill straight away; long-press it for more (plan / spend).
 const TABS = [
-  { key: 'home', icon: '🏠', label: 'Home' },
-  { key: 'parties', icon: '🎉', label: 'Rooms' },
+  { key: 'home', icon: '✨', label: 'Home' },
+  { key: 'parties', icon: '💬', label: 'Rooms' },
   { key: 'plus' },
-  { key: 'money', icon: '👛', label: 'Wallet' },
-  { key: 'memories', icon: '🎞️', label: 'Memories' },
+  { key: 'discover', icon: '🧭', label: 'Discover' },
+  { key: 'money', icon: '👛', label: 'Vault' },
 ];
 
 const tap = () => {
@@ -44,8 +44,7 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
                 setMenu(true);
               }}
             >
-              <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-              <Text style={styles.plusText}>📸</Text>
+              <Text style={styles.plusText}>🧾</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -130,14 +129,14 @@ const styles = StyleSheet.create({
   icon: { fontSize: 21 },
   iconOff: { opacity: 0.45 },
   label: { color: C.faint, fontSize: 11, fontWeight: '600', marginTop: 2 },
-  labelOn: { color: C.text },
-  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.accent, marginTop: 3 },
-  plus: { width: 50, height: 50, borderRadius: 25, backgroundColor: C.accent, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },
+  labelOn: { color: C.lime },
+  dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.lime, marginTop: 3 },
+  plus: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },
   plusText: { color: '#fff', fontSize: 22 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 14 },
-  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 19, marginBottom: 12 },
+  sheetTitle: { fontFamily: F.bold, color: C.text, fontSize: 18, marginBottom: 12 },
   option: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderRadius: 16, padding: 14, marginBottom: 10 },
   optEmoji: { fontSize: 26, marginRight: 12 },
   optTitle: { color: C.text, fontSize: 16, fontWeight: '700' },

@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   dotOn: { backgroundColor: '#fff', width: 16 },
   text: { padding: 14 },
   kicker: { color: C.green, fontSize: 11, fontWeight: '800', letterSpacing: 1.5 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 19, marginTop: 4 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 16, marginTop: 4 },
   desc: { color: C.accentSoft, fontSize: 13, marginTop: 2 },
   extract: { color: C.sub, fontSize: 14, lineHeight: 20, marginTop: 8 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },

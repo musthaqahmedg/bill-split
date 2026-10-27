@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   header: { paddingHorizontal: 20, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 8 },
   vanish: { color: C.faint, fontSize: 11, marginTop: 4 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 22 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   sub: { color: C.faint, fontSize: 12, marginTop: 2 },
   loading: { marginTop: 40 },
   list: { padding: 14, paddingBottom: 8 },

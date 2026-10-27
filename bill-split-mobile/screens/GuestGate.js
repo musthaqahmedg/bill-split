@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
   back: { position: 'absolute', top: 58, left: 20 },
   backText: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
   emoji: { fontSize: 56 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 25, marginTop: 14, textAlign: 'center' },
+  title: { fontFamily: F.display, color: C.text, fontSize: 21, marginTop: 14, textAlign: 'center' },
   body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 10, textAlign: 'center' },
   button: { backgroundColor: C.accent, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 26, marginTop: 24 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },

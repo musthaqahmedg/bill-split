@@ -64,7 +64,7 @@ export default function NotificationsScreen({ onBack }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 16 },
   back: { color: C.accentSoft, fontSize: 17 },
-  title: { fontFamily: F.display, fontSize: 32, color: C.text, marginTop: 14, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 27, color: C.text, marginTop: 14, marginBottom: 12 },
   pad: { paddingBottom: 40 },
   row: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 8, borderRadius: 14, marginBottom: 4 },
   unread: { backgroundColor: 'rgba(139,92,246,0.12)' },

@@ -100,7 +100,7 @@ function PlanCard({ item, index, onPress, bucket }) {
   );
 }
 
-export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups, onNearby }) {
+export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroups, onNearby, onMemories }) {
   const [parties, setParties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -163,11 +163,11 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
             <View style={styles.quick}>
               <TouchableOpacity style={styles.quickBtn} onPress={onNewParty} activeOpacity={0.85}>
                 <Text style={styles.quickEmoji}>🎉</Text>
-                <Text style={styles.quickText}>New plan</Text>
+                <Text style={[styles.quickText, { color: C.onLime }]}>New plan</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onNearby} activeOpacity={0.85}>
-                <Text style={styles.quickEmoji}>📍</Text>
-                <Text style={styles.quickText}>Places nearby</Text>
+              <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onMemories || onNearby} activeOpacity={0.85}>
+                <Text style={styles.quickEmoji}>🎞️</Text>
+                <Text style={styles.quickText}>Memories</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onGroups} activeOpacity={0.85}>
                 <Text style={styles.quickEmoji}>👥</Text>
@@ -220,8 +220,8 @@ const styles = StyleSheet.create({
   back: { color: C.accentSoft, fontSize: 17, marginBottom: 10 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   sub: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontFamily: F.display, fontSize: 34, color: C.text, marginTop: 2 },
-  titleItalic: { fontFamily: F.italic, color: C.accentSoft },
+  title: { fontFamily: F.display, fontSize: 28, color: C.text, marginTop: 2 },
+  titleItalic: { fontFamily: F.display, color: C.lime },
   tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, marginBottom: 14 },
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 9, borderRadius: 12 },
   tabOn: { backgroundColor: C.lime },
@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   roundIcon: { fontSize: 19 },
   gap: { marginLeft: 8 },
   quick: { flexDirection: 'row', marginBottom: 14 },
-  quickBtn: { flex: 1, backgroundColor: C.accent, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
+  quickBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
   quickAlt: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, marginLeft: 8 },
   quickEmoji: { fontSize: 22 },
   quickText: { color: C.text, fontSize: 13, fontWeight: '700', marginTop: 4 },

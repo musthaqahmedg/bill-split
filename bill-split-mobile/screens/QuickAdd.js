@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 36 },
   handle: { alignSelf: 'center', width: 40, height: 4, borderRadius: 2, backgroundColor: C.border, marginBottom: 12 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 22 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 18 },
   sub: { color: C.sub, fontSize: 13, marginTop: 4, marginBottom: 14 },
   cats: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
   cat: { width: '23.5%', alignItems: 'center', backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 10, marginBottom: 8 },

@@ -99,7 +99,7 @@ export default function GroupsScreen({ onBack, onOpenGroup }) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 29, color: C.text },
+  title: { fontFamily: F.display, fontSize: 24, color: C.text },
   sub: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 14 },
   newBtn: { borderWidth: 1, borderColor: C.accent, borderStyle: 'dashed', borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 14 },
   newText: { color: C.accentSoft, fontSize: 16, fontWeight: '800' },

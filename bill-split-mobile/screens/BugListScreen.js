@@ -134,7 +134,7 @@ export default function BugListScreen({ onBack }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 18 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 6 },
-  title: { fontFamily: F.display, color: C.text, fontSize: 26, marginBottom: 12 },
+  title: { fontFamily: F.display, color: C.text, fontSize: 22, marginBottom: 12 },
   blockers: { color: '#F87171', fontSize: 14, fontWeight: '700', marginTop: -6, marginBottom: 10 },
   tabs: { flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: 3, marginBottom: 12 },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: 10 },

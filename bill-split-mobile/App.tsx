@@ -37,7 +37,6 @@ import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
 import { useFonts } from 'expo-font';
 import { Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
-import { PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic } from '@expo-google-fonts/playfair-display';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
 import NewPartyScreen from './screens/NewPartyScreen';
 import PartiesScreen from './screens/PartiesScreen';
@@ -402,7 +401,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
-  const TAB_PAGES = ['home', 'parties', 'money', 'memories'];
+  const TAB_PAGES = ['home', 'parties', 'discover', 'money'];
   const page = renderPage();
   if (!TAB_PAGES.includes(screen)) return page;
   return (
@@ -563,17 +562,6 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return <MyMoneyScreen />;
   }
 
-  if (screen === 'memories') {
-    return (
-      <MemoriesScreen
-        onOpenPlan={(id: any) => {
-          setOpenPartyId(id);
-          setScreen('party');
-        }}
-      />
-    );
-  }
-
   if (screen === 'yourData') {
     return <YourDataScreen onBack={() => setScreen('profile')} />;
   }
@@ -636,6 +624,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setScreen('newParty');
         }}
         onGroups={() => setScreen('groups')}
+        onMemories={() => setScreen('memories')}
         onNearby={() => {
           setNearby({ from: 'parties', category: 'restobars', title: null });
           setScreen('nearby');
@@ -724,6 +713,22 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         }}
       />
       </>
+    );
+  }
+
+  if (screen === 'discover') {
+    return <NearbyScreen initialCategory="cafes" title="🧭 Discover" />;
+  }
+
+  if (screen === 'memories') {
+    return (
+      <MemoriesScreen
+        onBack={() => setScreen('parties')}
+        onOpenPlan={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
     );
   }
 
@@ -818,7 +823,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
 // Whole app + the notification banner that slides over any screen
 function Root() {
-  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold, PlayfairDisplay_700Bold, PlayfairDisplay_700Bold_Italic }); // 🔤 chunky display font
+  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold }); // 🔤 chunky display font
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUid(data.session ? data.session.user.id : null));
