@@ -1,13 +1,13 @@
-import { LinearGradient } from '../components/SafeGradient';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getPolls, votePoll } from '../services/chat';
 import { LIVE, listParties, liveOf } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
-import { C, F, G } from '../services/theme';
+import { C, F } from '../services/theme';
 import PollCard from './PollCard';
 import NightRecap from './NightRecap';
 import { getParty } from '../services/parties';
+import { countdown, planBucket } from '../services/when';
 
 // 🌙 Home "Tonight": vibe chips to start a plan, your next plan, and its live vibe-check poll (Gautham's Home design)
 const VIBES = ['nightout', 'party', 'birthday', 'house', 'movie', 'trip', 'daytrip', 'match'];
@@ -58,19 +58,30 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
           const v = KINDS.find((x) => x.key === key);
           if (!v) return null;
           return (
-            <TouchableOpacity key={key} style={[styles.chip, { borderColor: v.color + '66' }]} onPress={() => onPlan(key)} activeOpacity={0.8}>
+            <TouchableOpacity key={key} style={[styles.chip, { borderColor: v.color }]} onPress={() => onPlan(key)} activeOpacity={0.8}>
               <Text style={styles.chipText}>{v.emoji} {v.label}</Text>
             </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      {/* ⏭️ Next up */}
+      {/* 🟢 Live night strip (Final UX): your plan is on today */}
+      {next && planBucket(next) === 'live' ? (
+        <TouchableOpacity style={styles.live} onPress={() => onOpenPlan(next.id)} activeOpacity={0.85}>
+          <View style={styles.liveDot} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.liveKicker}>LIVE NIGHT ACTIVE</Text>
+            <Text style={styles.liveTitle} numberOfLines={1}>{next.title}{next.place ? ` · ${next.place.replace(/^My place 🏠 · .*/, 'My place')}` : ''}</Text>
+          </View>
+          <Text style={styles.liveGo}>VIEW ›</Text>
+        </TouchableOpacity>
+      ) : null}
+
+      {/* ⏭️ Next up: a lime poster card */}
       {next ? (
         <TouchableOpacity style={[styles.next, { borderColor: (k.color || C.accent) + '88' }]} onPress={() => onOpenPlan(next.id)} activeOpacity={0.85}>
-          <LinearGradient colors={['#2A1640', '#15151D']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
           <View style={styles.nextTop}>
-            <Text style={[styles.nextKicker, { color: k.color || C.accentSoft }]}>⏭️ NEXT UP</Text>
+            <Text style={styles.nextKicker}>{planBucket(next) === 'past' ? 'LAST TIME' : 'NEXT UP'} · {countdown(next).toUpperCase()}</Text>
             <Text style={styles.nextGoing}>
               {(() => {
                 const c = { omw: 0, here: 0, home: 0 };
@@ -80,7 +91,8 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
               })()}
             </Text>
           </View>
-          <Text style={styles.nextTitle} numberOfLines={1}>{k.emoji} {next.title}</Text>
+          <Text style={styles.nextTitle} numberOfLines={2}>{next.title}</Text>
+          <Text style={styles.nextEmoji}>{k.emoji}</Text>
           <Text style={styles.nextMeta} numberOfLines={1}>
             {[next.party_date, next.place ? next.place.replace(/^My place 🏠 · .*/, 'My place 🏠') : null].filter(Boolean).join(' · ') || 'Date and place to be decided'}
           </Text>
@@ -111,19 +123,25 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
 
 const styles = StyleSheet.create({
   chips: { marginBottom: 14, marginHorizontal: -2 },
-  chip: { backgroundColor: C.card, borderWidth: 1, borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13, marginHorizontal: 3 },
+  chip: { backgroundColor: 'transparent', borderWidth: 1.5, borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13, marginHorizontal: 3 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '600' },
-  next: { backgroundColor: C.card, borderWidth: 1.5, borderRadius: 22, padding: 16, marginBottom: 14, overflow: 'hidden', shadowColor: '#9B5CFF', shadowOpacity: 0.5, shadowRadius: 16, elevation: 6 },
+  next: { backgroundColor: C.lime, borderRadius: 22, padding: 16, marginBottom: 14, overflow: 'hidden' },
+  nextEmoji: { position: 'absolute', right: 14, bottom: 10, fontSize: 46, opacity: 0.9 },
+  live: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 12 },
+  liveDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime, marginRight: 10 },
+  liveKicker: { color: C.lime, fontSize: 10, fontWeight: '900', letterSpacing: 1.2 },
+  liveTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 1 },
+  liveGo: { color: C.lime, fontSize: 12, fontWeight: '900', marginLeft: 8 },
   nextTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  nextKicker: { fontSize: 12, fontWeight: '800', letterSpacing: 1 },
-  nextGoing: { color: C.sub, fontSize: 13, fontWeight: '600' },
-  nextTitle: { fontFamily: F.display, color: C.text, fontSize: 18, marginTop: 6 },
-  nextMeta: { color: C.sub, fontSize: 14, marginTop: 4 },
+  nextKicker: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 1, opacity: 0.7 },
+  nextGoing: { color: C.onLime, fontSize: 12, fontWeight: '800' },
+  nextTitle: { fontFamily: F.display, color: C.onLime, fontSize: 24, lineHeight: 28, marginTop: 6, marginRight: 50 },
+  nextMeta: { color: C.onLime, opacity: 0.75, fontSize: 13, fontWeight: '600', marginTop: 4, marginRight: 50 },
   nextBtns: { flexDirection: 'row', alignItems: 'center', marginTop: 12 },
-  nextBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
-  recapBtn: { backgroundColor: '#A855F7', borderRadius: 14, paddingVertical: 8, paddingHorizontal: 12, marginLeft: 8 },
+  nextBtn: { backgroundColor: C.onLime, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14 },
+  recapBtn: { backgroundColor: C.accent, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 12, marginLeft: 8 },
   recapText: { color: '#fff', fontSize: 14, fontWeight: '800' },
-  nextBtnText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
+  nextBtnText: { color: C.lime, fontSize: 14, fontWeight: '900' },
   pollWrap: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 14, marginBottom: 14 },
-  pollKicker: { color: C.red, fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 6 },
+  pollKicker: { color: C.pink, fontSize: 12, fontWeight: '800', letterSpacing: 1, marginBottom: 6 },
 });
