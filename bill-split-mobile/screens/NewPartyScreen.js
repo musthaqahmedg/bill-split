@@ -98,7 +98,7 @@ const STEPS = [
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null }) {
+export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null, initialPlace = null }) {
   const [menuFor, setMenuFor] = useState(null); // 📋 menu of the chosen place
   // editing = an existing plan: the form starts filled in and saves changes instead of creating
   const ex = editing;
@@ -107,7 +107,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
   const [kind, setKind] = useState(ex ? ex.kind || 'party' : initialKind || 'party'); // birthday, trip, movie…
   const [dateObj, setDateObj] = useState(null); // picked from the calendar
   const [showCal, setShowCal] = useState(false);
-  const [place, setPlace] = useState(ex ? ex.place || '' : '');
+  const [place, setPlace] = useState(ex ? ex.place || '' : initialPlace || ''); // 📍 prefilled from Discover
   const [budget, setBudget] = useState(ex ? String(Math.round(ex.budget || 0)) : '');
   const [dateText] = useState(ex ? ex.party_date || '' : ''); // keep the old date unless a new one is picked
   // Planning for a group? Everyone in it is added straight away

@@ -172,7 +172,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [openPartyId, setOpenPartyId] = useState<any>(null);
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
+  const [planPlace, setPlanPlace] = useState<any>(null); // 📍 place picked in Discover → "Add to plan"
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
+  useEffect(() => {
+    if (screen !== 'newParty') setPlanPlace(null); // a Discover place only prefills the plan started from it
+  }, [screen]);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
@@ -671,11 +675,12 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'newParty') {
     return (
       <NewPartyScreen
-        key={editPlan ? `edit-${editPlan.id}` : `new-${planKind || ''}`}
+        key={editPlan ? `edit-${editPlan.id}` : `new-${planKind || ''}-${planPlace || ''}`}
         initialKind={planKind}
+        initialPlace={planPlace}
         group={editPlan ? null : planGroup}
         editing={editPlan}
-        onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : 'parties')}
+        onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : planPlace ? 'discover' : 'parties')}
         onCreated={(id: any) => {
           if (!editPlan) setCelebrate(true);
           setOpenPartyId(id);
@@ -717,7 +722,19 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'discover') {
-    return <NearbyScreen initialCategory="cafes" title="🧭 Discover" />;
+    return (
+      <NearbyScreen
+        discover
+        initialCategory="cafes"
+        onPlanHere={(place: any) => {
+          setPlanPlace(place);
+          setPlanKind('nightout');
+          setPlanGroup(null);
+          setEditPlan(null);
+          setScreen('newParty');
+        }}
+      />
+    );
   }
 
   if (screen === 'memories') {

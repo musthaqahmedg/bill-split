@@ -15,7 +15,7 @@ import { C, F } from '../services/theme';
 const AGE_KEY = 'vibeout.ageOk';
 
 // 📍 Nearby: restobars, pubs, cafés, restaurants, supermarkets (no alcohol/tobacco shops: Play Store policy)
-export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked }) {
+export default function NearbyScreen({ onBack, initialCategory = 'restobars', title, bookFor, onBooked, discover = false, onPlanHere }) {
   const [category, setCategory] = useState(initialCategory);
   const [q, setQ] = useState('');
   const [loc, setLoc] = useState(null);
@@ -125,13 +125,16 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
     cafe: '#B45309', hotel: '#3B82F6', cinema: '#E11D48', resort: '#14B8A6', guest_house: '#0EA5E9', attraction: '#22C55E',
     viewpoint: '#16A34A', beach: '#06B6D4', waterfall: '#0891B2', park: '#22C55E', museum: '#6366F1', fort: '#78716C',
   };
-  const renderPlace = ({ item: p }) => {
+  // Final UX: solid neon poster blocks with dark text, colour rotates down the list
+  const NEON = [C.lime, C.violet, C.pink, C.cyan, '#FFD84D'];
+  const renderPlace = ({ item: p, index }) => {
     const d = details[p.id] || {};
     const st = openStatus(d.hours);
     const isSaved = saved.some((s) => s.id === p.id);
+    const canBook = ['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category);
     return (
       <View style={styles.card}>
-        <View style={[styles.poster, { backgroundColor: (POSTER[p.kind] || C.accent) + '33' }]}>
+        <View style={[styles.poster, { backgroundColor: NEON[index % NEON.length] }]}>
           <Text style={styles.posterEmoji}>{p.emoji || EMOJI[p.kind] || '📍'}</Text>
           <View style={styles.posterTags}>
             {p.km != null ? (
@@ -140,8 +143,8 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
               </View>
             ) : null}
             {st ? (
-              <View style={[styles.tag, { backgroundColor: st.soon ? '#F59E0B' : st.open ? '#16A34A' : '#7F1D1D' }]}>
-                <Text style={[styles.tagText, { color: '#fff' }]}>{st.soon ? 'Closing soon' : st.open ? 'Open now' : 'Closed'}</Text>
+              <View style={[styles.tag, { backgroundColor: st.soon ? '#F59E0B' : st.open ? '#0E0E12' : '#7F1D1D' }]}>
+                <Text style={[styles.tagText, { color: st.open && !st.soon ? C.lime : '#fff' }]}>{st.soon ? 'Closing soon' : st.open ? 'Open now' : 'Closed'}</Text>
               </View>
             ) : null}
           </View>
@@ -152,6 +155,20 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
           <Text style={[styles.status, st.soon ? styles.soon : st.open ? styles.open : styles.closed]}>
             {st.soon ? '🟠' : st.open ? '🟢' : '🔴'} {st.label}
           </Text>
+        ) : null}
+        {onPlanHere || canBook ? (
+          <View style={styles.bigBtns}>
+            {onPlanHere ? (
+              <TouchableOpacity style={styles.planBtn} onPress={() => onPlanHere(p.area ? `${p.name}, ${p.area}` : p.name)} activeOpacity={0.85}>
+                <Text style={styles.planText}>＋ ADD TO PLAN</Text>
+              </TouchableOpacity>
+            ) : null}
+            {canBook ? (
+              <TouchableOpacity style={styles.reserveBtn} onPress={() => setBooking({ ...p, phone: d.phone || null })} activeOpacity={0.85}>
+                <Text style={styles.reserveText}>🍽️ RESERVE TABLE</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
         ) : null}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.btn} onPress={() => Linking.openURL(directionsUrl(p))}>
@@ -165,11 +182,6 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
           {['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category) ? (
             <TouchableOpacity style={styles.btn} onPress={() => setMenuFor(p.name)}>
               <Text style={styles.btnText}>📋 Menu</Text>
-            </TouchableOpacity>
-          ) : null}
-          {['restobars', 'pubs', 'cafes', 'food', 'saved'].includes(category) ? (
-            <TouchableOpacity style={[styles.btn, styles.bookBtn]} onPress={() => setBooking({ ...p, phone: d.phone || null })}>
-              <Text style={[styles.btnText, styles.bookText]}>🍽️ Book</Text>
             </TouchableOpacity>
           ) : null}
           <TouchableOpacity style={[styles.btn, isSaved && styles.btnOn]} onPress={() => toggleSave(p)}>
@@ -187,7 +199,15 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
           <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
       ) : null}
-      <Text style={styles.title}>{title || '📍 Nearby'}</Text>
+      {discover ? (
+        <>
+          <Text style={styles.kicker}>● LIVE NEAR YOU</Text>
+          <Text style={styles.bigTitle}>Discover</Text>
+          <Text style={styles.lead}>Tap a poster to plan it, or reserve a table for the crew.</Text>
+        </>
+      ) : (
+        <Text style={styles.title}>{title || '📍 Nearby'}</Text>
+      )}
 
       <FlatList
         data={blocked ? [] : shown}
@@ -282,13 +302,21 @@ function distance(a, b) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
-  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
+  back: { color: C.lime, fontSize: 16, marginBottom: 10 },
   title: { fontFamily: F.display, fontSize: 24, color: C.text, marginBottom: 12 },
+  kicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  bigTitle: { fontFamily: F.display, fontSize: 36, color: C.text, marginTop: 4 },
+  lead: { color: C.sub, fontSize: 14, marginTop: 2, marginBottom: 14 },
+  bigBtns: { flexDirection: 'row', marginTop: 10 },
+  planBtn: { flex: 1, borderWidth: 1.5, borderColor: C.text, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginRight: 8 },
+  planText: { color: C.text, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
+  reserveBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 11, alignItems: 'center' },
+  reserveText: { color: C.onLime, fontSize: 13, fontWeight: '900', letterSpacing: 0.5 },
   chips: { marginBottom: 10 },
   chip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8 },
-  chipOn: { backgroundColor: C.accent, borderColor: C.accent },
+  chipOn: { backgroundColor: C.lime, borderColor: C.lime },
   chipText: { color: C.sub, fontSize: 14, fontWeight: '700' },
-  chipTextOn: { color: '#fff' },
+  chipTextOn: { color: C.onLime },
   search: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 12, padding: 12, fontSize: 16, color: C.text, marginBottom: 10 },
   filters: { flexDirection: 'row', marginBottom: 6 },
   filter: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 11, marginRight: 8 },
@@ -299,13 +327,13 @@ const styles = StyleSheet.create({
   loading: { marginVertical: 16 },
   listPad: { paddingBottom: 40 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 10, marginBottom: 12 },
-  poster: { borderRadius: 16, padding: 14, minHeight: 120, justifyContent: 'flex-end', overflow: 'hidden' },
-  posterEmoji: { position: 'absolute', right: 10, top: 6, fontSize: 64, opacity: 0.9 },
+  poster: { borderRadius: 18, padding: 16, minHeight: 150, justifyContent: 'flex-end', overflow: 'hidden' },
+  posterEmoji: { position: 'absolute', right: 12, top: 10, fontSize: 70 },
   posterTags: { position: 'absolute', left: 12, top: 12, flexDirection: 'row' },
-  tag: { backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, marginRight: 6 },
+  tag: { backgroundColor: '#0E0E12', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, marginRight: 6 },
   tagText: { color: C.text, fontSize: 11, fontWeight: '800' },
-  posterName: { fontFamily: F.display, color: '#fff', fontSize: 18, marginTop: 34, marginRight: 60 },
-  posterArea: { color: 'rgba(255,255,255,0.8)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  posterName: { fontFamily: F.display, color: C.onLime, fontSize: 22, lineHeight: 26, marginTop: 40, marginRight: 70 },
+  posterArea: { color: C.onLime, opacity: 0.75, fontSize: 13, fontWeight: '700', marginTop: 3 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   name: { color: C.text, fontSize: 16, fontWeight: '800', flex: 1, marginRight: 8 },
   km: { color: C.accentSoft, fontSize: 13, fontWeight: '800' },
@@ -315,7 +343,7 @@ const styles = StyleSheet.create({
   soon: { color: C.amber },
   closed: { color: C.pink },
   actions: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
-  btn: { borderWidth: 1, borderColor: C.border, backgroundColor: C.bg, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 11, marginRight: 6, marginBottom: 4 },
+  btn: { borderWidth: 1, borderColor: C.border, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 11, marginRight: 6, marginBottom: 4 },
   bookBtn: { backgroundColor: C.accent, borderColor: C.accent },
   bookText: { color: '#fff' },
   btnOn: { backgroundColor: C.amberBg, borderColor: C.amber },
