@@ -366,3 +366,22 @@ test('tip: added on top of the printed bill, shared like tax, still adds up exac
   const none = computeSplit({ items, people, claims, bill: { total: 420 } });
   assert.equal(none.billTotal, 420);
 });
+
+test('your nights: weekday chart, favourite day and squad', async () => {
+  const { nightsStats } = await import('../services/when.js');
+  const now = new Date(2026, 9, 27, 12);
+  const made = new Date(2026, 9, 1).toISOString();
+  const plans = [
+    { party_date: 'Fri, 23 Oct', created_at: made, party_members: [{ name: 'Me' }, { name: 'Arun', rsvp: 'in' }, { name: 'Bibin', rsvp: 'out' }] },
+    { party_date: 'Fri, 16 Oct', created_at: made, party_members: [{ name: 'Me' }, { name: 'Arun', rsvp: 'in' }, { name: 'Bibin', rsvp: 'in' }] },
+    { party_date: 'Sat, 3 Oct', created_at: made, party_members: [{ name: 'Me' }, { name: 'Gautham', rsvp: 'in' }] },
+    { party_date: 'Sat, 31 Oct', created_at: made, party_members: [{ name: 'Me' }] }, // upcoming: not counted
+  ];
+  const s = nightsStats(plans, now);
+  assert.equal(s.nights, 3);
+  assert.equal(s.month, 3);
+  assert.equal(s.favDay, 'Fri');
+  assert.deepEqual(s.week.find((w) => w.day === 'Fri'), { day: 'Fri', count: 2 });
+  assert.deepEqual(s.squad[0], { name: 'Arun', count: 2 });
+  assert.equal(s.squad.length, 3);
+});

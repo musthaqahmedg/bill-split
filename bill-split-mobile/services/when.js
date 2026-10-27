@@ -74,3 +74,28 @@ export function nightLength(members) {
   if (mins <= 0 || mins > 24 * 60) return null;
   return mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`;
 }
+
+// 📊 "Your nights" (Final UX): nights out, which weekday you go out most, who you're out with most
+const WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+export function nightsStats(plans, now = new Date()) {
+  const past = (plans || []).filter((p) => planBucket(p, now) !== 'upcoming');
+  const days = [0, 0, 0, 0, 0, 0, 0];
+  const crew = {};
+  past.forEach((p) => {
+    const d = planDay(p.party_date, p.created_at, now) || new Date(p.created_at);
+    days[d.getDay()]++;
+    (p.party_members || [])
+      .filter((m) => m.name !== 'Me' && m.rsvp !== 'out')
+      .forEach((m) => { crew[m.name] = (crew[m.name] || 0) + 1; });
+  });
+  // Mon → Sun reads better on a chart
+  const week = [1, 2, 3, 4, 5, 6, 0].map((i) => ({ day: WEEK[i], count: days[i] }));
+  const top = Math.max(...days);
+  const favDay = top ? WEEK[days.indexOf(top)] : null;
+  const squad = Object.entries(crew).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name, count]) => ({ name, count }));
+  const month = past.filter((p) => {
+    const d = planDay(p.party_date, p.created_at, now) || new Date(p.created_at);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+  return { nights: past.length, month, week, favDay, squad };
+}

@@ -4,6 +4,8 @@ import NightSky from '../components/NightSky';
 import { getParty, listParties } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
+import { nightsStats } from '../services/when';
+import { show } from '../services/names';
 import MorningRecap from './MorningRecap';
 
 // 📸 Memories (v12): every night you've had, as a highlight reel. Tap one to replay its story.
@@ -81,6 +83,44 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
               <Text style={styles.titleItalic}>Memories</Text>
             </Text>
             <Text style={styles.lead}>Every night, saved. Tap to replay the story.</Text>
+            {(() => {
+              const st = nightsStats(plans);
+              if (!st.nights) return null;
+              const max = Math.max(1, ...st.week.map((w) => w.count));
+              return (
+                <View style={styles.stats}>
+                  <View style={styles.statsTop}>
+                    <Text style={styles.statsKicker}>📊 YOUR NIGHTS</Text>
+                    <Text style={styles.statsMeta}>{st.month} this month</Text>
+                  </View>
+                  <View style={styles.statsRow}>
+                    <View>
+                      <Text style={styles.statsBig}>{st.nights}</Text>
+                      <Text style={styles.statsLabel}>nights out</Text>
+                    </View>
+                    {st.favDay ? (
+                      <View style={{ alignItems: 'flex-end' }}>
+                        <Text style={[styles.statsBig, { color: C.lime }]}>{st.favDay}</Text>
+                        <Text style={styles.statsLabel}>your night</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <View style={styles.week}>
+                    {st.week.map((w) => (
+                      <View key={w.day} style={styles.weekCol}>
+                        <View style={styles.weekTrack}>
+                          <View style={[styles.weekBar, { height: `${Math.max(w.count ? 10 : 0, (w.count / max) * 100)}%` }, w.day === st.favDay && { backgroundColor: C.lime }]} />
+                        </View>
+                        <Text style={[styles.weekDay, w.day === st.favDay && { color: C.lime }]}>{w.day[0]}</Text>
+                      </View>
+                    ))}
+                  </View>
+                  {st.squad.length ? (
+                    <Text style={styles.squad}>👯 Out most with <Text style={styles.squadNames}>{st.squad.map((x) => `${show(x.name)} (${x.count})`).join(', ')}</Text></Text>
+                  ) : null}
+                </View>
+              );
+            })()}
             {top ? <Poster p={top} big /> : (
               <View style={styles.empty}>
                 <Text style={styles.emptyEmoji}>📸</Text>
@@ -105,6 +145,20 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center' },
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.lime, fontSize: 16, fontWeight: '600', marginBottom: 12 },
+  stats: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 14 },
+  statsTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  statsKicker: { color: C.text, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  statsMeta: { color: C.faint, fontSize: 12, fontWeight: '700' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  statsBig: { fontFamily: F.display, color: C.text, fontSize: 28 },
+  statsLabel: { color: C.sub, fontSize: 12, fontWeight: '600' },
+  week: { flexDirection: 'row', height: 80, marginTop: 12 },
+  weekCol: { flex: 1, alignItems: 'center' },
+  weekTrack: { flex: 1, width: 18, justifyContent: 'flex-end' },
+  weekBar: { width: '100%', borderRadius: 5, backgroundColor: C.violet },
+  weekDay: { color: C.faint, fontSize: 11, fontWeight: '800', marginTop: 4 },
+  squad: { color: C.sub, fontSize: 13, marginTop: 12 },
+  squadNames: { color: C.text, fontWeight: '800' },
   logo: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 2 },
   title: { marginTop: 14 },
   titleItalic: { fontFamily: F.display, color: C.text, fontSize: 32 },

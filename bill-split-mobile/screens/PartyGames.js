@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Easing, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { sendMessage } from '../services/chat';
-import { CHARADES, DARES, MOST_LIKELY, NEVER, TRUTHS, WHEEL_REASONS, WOULD_RATHER, pick } from '../services/games';
+import { CHARADES, DARES, HOT_SEAT, MOST_LIKELY, NEVER, REVEAL, TRUTHS, WHEEL_REASONS, WOULD_RATHER, pick } from '../services/games';
 import { getProfile } from '../services/profile';
 import { C, F } from '../services/theme';
 
@@ -32,12 +32,14 @@ export default function PartyGames({ visible, onClose, party }) {
   };
 
   const GAMES = [
-    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#9B5CFF' },
-    { key: 'never', emoji: '🙋', name: 'Never have I ever', sub: 'Clean, funny confessions', color: '#EC4899' },
-    { key: 'tod', emoji: '🎭', name: 'Truth or dare', sub: 'Pass the phone around', color: '#F59E0B' },
-    { key: 'charades', emoji: '🤫', name: 'Charades', sub: 'Act it out, 60 seconds', color: '#22D3EE' },
-    { key: 'likely', emoji: '👉', name: 'Most likely to…', sub: 'Point at the friend', color: '#A855F7' },
-    { key: 'rather', emoji: '🤔', name: 'Would you rather', sub: 'Pick a side, defend it', color: '#34D399' },
+    { key: 'reveal', emoji: '🃏', name: 'Reveal together', sub: 'Answer in secret, reveal at once', color: '#E2FF3B' },
+    { key: 'hot', emoji: '🔥', name: 'Hot seat', sub: '60 seconds of questions', color: '#FF4FA0' },
+    { key: 'wheel', emoji: '🎡', name: 'Spin the wheel', sub: 'Who picks the song? Let fate decide', color: '#A98BFF' },
+    { key: 'never', emoji: '🙋', name: 'Never have I ever', sub: 'Clean, funny confessions', color: '#55E0F0' },
+    { key: 'tod', emoji: '🎭', name: 'Truth or dare', sub: 'Pass the phone around', color: '#FFD84D' },
+    { key: 'charades', emoji: '🤫', name: 'Charades', sub: 'Act it out, 60 seconds', color: '#FF8A3D' },
+    { key: 'likely', emoji: '👉', name: 'Most likely to…', sub: 'Point at the friend', color: '#7CFFB2' },
+    { key: 'rather', emoji: '🤔', name: 'Would you rather', sub: 'Pick a side, defend it', color: '#FFB3D9' },
   ];
 
   return (
@@ -61,12 +63,12 @@ export default function PartyGames({ visible, onClose, party }) {
             <Text style={styles.sub}>{players.length} players · no drinking games, just good vibes 😎</Text>
             <View style={styles.grid}>
               {GAMES.map((g) => (
-                <TouchableOpacity key={g.key} style={[styles.tile, { backgroundColor: g.color + '26', borderColor: g.color + '88' }]} onPress={() => setGame(g.key)} activeOpacity={0.85}>
+                <TouchableOpacity key={g.key} style={[styles.tile, { backgroundColor: g.color }]} onPress={() => setGame(g.key)} activeOpacity={0.85}>
                   <Text style={styles.tileEmoji}>{g.emoji}</Text>
                   <Text style={styles.tileName}>{g.name}</Text>
                   <Text style={styles.tileSub}>{g.sub}</Text>
-                  <View style={[styles.tilePlay, { backgroundColor: g.color }]}>
-                    <Text style={styles.tilePlayText}>Play ›</Text>
+                  <View style={styles.tilePlay}>
+                    <Text style={styles.tilePlayText}>PLAY ›</Text>
                   </View>
                 </TouchableOpacity>
               ))}
@@ -74,6 +76,8 @@ export default function PartyGames({ visible, onClose, party }) {
           </ScrollView>
         )}
 
+        {game === 'reveal' && <Reveal players={players} onPost={post} />}
+        {game === 'hot' && <HotSeat players={players} />}
         {game === 'wheel' && <Wheel players={players} onPost={post} />}
         {game === 'never' && <Deck title="🙋 Never have I ever" cards={NEVER} color="#EC4899" hint="Put a finger down if you have 😅" />}
         {game === 'tod' && <TruthOrDare players={players} />}
@@ -82,6 +86,132 @@ export default function PartyGames({ visible, onClose, party }) {
         {game === 'rather' && <Deck title="🤔 Would you rather" cards={WOULD_RATHER} color="#34D399" hint="Everyone picks a side. Losers explain why 😄" />}
       </View>
     </Modal>
+  );
+}
+
+// 🃏 Reveal together: a prompt, everyone types an answer in secret (pass the phone), then reveal all at once.
+// Answers stay on this phone only, nothing is saved.
+function Reveal({ players, onPost }) {
+  const [prompt, setPrompt] = useState(() => pick(REVEAL));
+  const [answers, setAnswers] = useState({});
+  const [typing, setTyping] = useState(null); // who has the phone right now
+  const [draft, setDraft] = useState('');
+  const [shown, setShown] = useState(false);
+  const done = players.filter((p) => answers[p]).length;
+  const flip = useRef(new Animated.Value(0)).current;
+
+  const reveal = () => {
+    setShown(true);
+    flip.setValue(0);
+    Animated.spring(flip, { toValue: 1, friction: 6, useNativeDriver: true }).start();
+  };
+  const fresh = () => {
+    setPrompt((c) => pick(REVEAL, c));
+    setAnswers({});
+    setShown(false);
+  };
+  const save = () => {
+    if (draft.trim()) setAnswers((a) => ({ ...a, [typing]: draft.trim().slice(0, 80) }));
+    setTyping(null);
+    setDraft('');
+  };
+
+  return (
+    <ScrollView contentContainerStyle={styles.center} keyboardShouldPersistTaps="handled">
+      <Text style={styles.gameTitle}>🃏 Reveal together</Text>
+      <View style={[styles.bigCard, { backgroundColor: '#E2FF3B', minHeight: 150 }]}>
+        <Text style={[styles.bigCardText, { color: '#0E0E12' }]}>{prompt}</Text>
+      </View>
+
+      {typing ? (
+        <View style={styles.secret}>
+          <Text style={styles.sub}>🙈 Only {typing} looks. Type your answer, then pass the phone.</Text>
+          <TextInput style={styles.secretInput} value={draft} onChangeText={setDraft} placeholder="Your answer…" placeholderTextColor={C.faint} keyboardAppearance="dark" autoFocus secureTextEntry={false} maxLength={80} onSubmitEditing={save} />
+          <TouchableOpacity style={styles.bigBtn} onPress={save}>
+            <Text style={styles.bigBtnText}>LOCK IT IN 🔒</Text>
+          </TouchableOpacity>
+        </View>
+      ) : shown ? (
+        <View style={{ width: '100%', marginTop: 12 }}>
+          {players.filter((p) => answers[p]).map((p, i) => (
+            <Animated.View key={p} style={[styles.answer, { transform: [{ scale: flip.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }], opacity: flip }]}>
+              <Text style={[styles.answerName, { color: COLORS[i % COLORS.length] }]}>{p.split(' ')[0]}</Text>
+              <Text style={styles.answerText}>{answers[p]}</Text>
+            </Animated.View>
+          ))}
+          <TouchableOpacity style={styles.ghost} onPress={() => onPost(`🃏 ${prompt}\n` + players.filter((p) => answers[p]).map((p) => `• ${p.split(' ')[0]}: ${answers[p]}`).join('\n'))}>
+            <Text style={styles.ghostText}>💬 Post to party chat</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bigBtn} onPress={fresh}>
+            <Text style={styles.bigBtnText}>NEXT PROMPT ›</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          <Text style={styles.sub}>Tap your name, answer in secret, pass the phone. {done} of {players.length} locked in.</Text>
+          <View style={styles.names}>
+            {players.map((p) => (
+              <TouchableOpacity key={p} style={[styles.nameChip, answers[p] && styles.nameOn]} onPress={() => { setTyping(p); setDraft(''); }}>
+                <Text style={[styles.nameText, answers[p] && styles.nameTextOn]}>{answers[p] ? '🔒 ' : ''}{p.split(' ')[0]}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <TouchableOpacity style={[styles.bigBtn, done < 2 && styles.dim]} onPress={reveal} disabled={done < 2}>
+            <Text style={styles.bigBtnText}>{done < 2 ? 'Need 2+ answers' : 'REVEAL ALL 🃏'}</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
+  );
+}
+
+// 🔥 Hot seat: one person, 60 seconds, the squad asks the questions on the cards
+function HotSeat({ players }) {
+  const [who, setWho] = useState(() => pick(players));
+  const [q, setQ] = useState(() => pick(HOT_SEAT));
+  const [time, setTime] = useState(0);
+  const timer = useRef(null);
+  useEffect(() => () => clearInterval(timer.current), []);
+  const start = () => {
+    setTime(60);
+    clearInterval(timer.current);
+    timer.current = setInterval(() => setTime((t) => {
+      if (t <= 1) {
+        clearInterval(timer.current);
+        return 0;
+      }
+      return t - 1;
+    }), 1000);
+  };
+  const nextPlayer = () => {
+    clearInterval(timer.current);
+    setTime(0);
+    setWho((w) => pick(players, w));
+    setQ((c) => pick(HOT_SEAT, c));
+  };
+  return (
+    <ScrollView contentContainerStyle={styles.center}>
+      <Text style={styles.gameTitle}>🔥 Hot seat</Text>
+      <Text style={styles.turn}>In the seat: <Text style={styles.turnName}>{who}</Text></Text>
+      {time ? <Text style={[styles.timer, time <= 10 && { color: C.red }]}>{time}s</Text> : null}
+      <View style={[styles.bigCard, { backgroundColor: '#FF4FA0' }]}>
+        <Text style={styles.cardKind}>ASK THEM</Text>
+        <Text style={[styles.bigCardText, { color: '#0E0E12' }]}>{q}</Text>
+      </View>
+      <View style={styles.todRow}>
+        <TouchableOpacity style={[styles.todBtn, { backgroundColor: C.cardHi }]} onPress={() => setQ((c) => pick(HOT_SEAT, c))}>
+          <Text style={[styles.todText, { color: C.text, fontSize: 16 }]}>Next question</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.todBtn, { backgroundColor: C.lime }]} onPress={time ? nextPlayer : start}>
+          <Text style={[styles.todText, { color: '#0E0E12', fontSize: 16 }]}>{time ? 'Next player ›' : 'Start 60s ⏱️'}</Text>
+        </TouchableOpacity>
+      </View>
+      {!time ? (
+        <TouchableOpacity style={styles.ghost} onPress={nextPlayer}>
+          <Text style={styles.ghostText}>🔄 Pick someone else</Text>
+        </TouchableOpacity>
+      ) : null}
+    </ScrollView>
   );
 }
 
@@ -219,7 +349,7 @@ function MostLikely({ players, onPost }) {
         ))}
       </View>
       {winner ? (
-        <TouchableOpacity style={[styles.bigBtn, { backgroundColor: '#A855F7' }]} onPress={() => onPost(`👉 ${card.replace('Who is most likely to', 'Most likely to')} → ${winner} 😂`)}>
+        <TouchableOpacity style={[styles.bigBtn, { backgroundColor: C.pink }]} onPress={() => onPost(`👉 ${card.replace('Who is most likely to', 'Most likely to')} → ${winner} 😂`)}>
           <Text style={styles.bigBtnText}>Post to chat 💬</Text>
         </TouchableOpacity>
       ) : null}
@@ -339,21 +469,26 @@ function Charades() {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tile: { width: '48.5%', borderWidth: 1, borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170 },
+  tile: { width: '48.5%', borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170 },
   tileEmoji: { fontSize: 34 },
-  tileName: { fontFamily: F.bold, color: C.text, fontSize: 14, marginTop: 8 },
-  tileSub: { color: C.sub, fontSize: 12, marginTop: 3, flex: 1 },
-  tilePlay: { alignSelf: 'flex-start', borderRadius: 12, paddingVertical: 5, paddingHorizontal: 12, marginTop: 10 },
-  tilePlayText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  tileName: { fontFamily: F.display, color: C.onLime, fontSize: 15, marginTop: 8 },
+  tileSub: { color: C.onLime, opacity: 0.75, fontSize: 12, fontWeight: '600', marginTop: 3, flex: 1 },
+  tilePlay: { alignSelf: 'flex-start', backgroundColor: C.onLime, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 12, marginTop: 10 },
+  tilePlayText: { color: '#fff', fontSize: 12, fontWeight: '900', letterSpacing: 0.5 },
+  secret: { width: '100%', alignItems: 'center', marginTop: 14 },
+  secretInput: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 16, padding: 14, color: C.text, fontSize: 17, fontWeight: '700' },
+  answer: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 12, marginBottom: 8 },
+  answerName: { fontSize: 12, fontWeight: '900', letterSpacing: 0.8, textTransform: 'uppercase' },
+  answerText: { color: C.text, fontSize: 17, fontWeight: '700', marginTop: 3 },
   names: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginTop: 14 },
   nameChip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, margin: 4 },
-  nameOn: { backgroundColor: '#A855F7', borderColor: '#A855F7' },
+  nameOn: { backgroundColor: C.lime, borderColor: C.lime },
   nameText: { color: C.text, fontSize: 14, fontWeight: '700' },
-  nameTextOn: { color: '#fff' },
+  nameTextOn: { color: C.onLime },
   page: { flex: 1, backgroundColor: C.bg, padding: 18 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   title: { fontFamily: F.display, color: C.text, fontSize: 19 },
-  link: { color: C.accentSoft, fontSize: 16, fontWeight: '600' },
+  link: { color: C.lime, fontSize: 16, fontWeight: '600' },
   sub: { color: C.faint, fontSize: 13, marginBottom: 14, textAlign: 'center' },
   flex: { flex: 1 },
   card: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, padding: 16, marginBottom: 10, borderWidth: 1 },
@@ -365,9 +500,9 @@ const styles = StyleSheet.create({
   gameTitle: { fontFamily: F.bold, color: C.text, fontSize: 20, marginBottom: 8 },
   reasons: { maxHeight: 44, marginBottom: 10 },
   chip: { borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8, backgroundColor: 'rgba(255,255,255,0.08)' },
-  chipOn: { backgroundColor: C.accent },
+  chipOn: { backgroundColor: C.lime },
   chipText: { color: C.sub, fontSize: 13, fontWeight: '500' },
-  chipTextOn: { color: '#fff', fontWeight: '600' },
+  chipTextOn: { color: C.onLime, fontWeight: '800' },
   pointer: { color: C.text, fontSize: 28, marginBottom: -6, zIndex: 2 },
   wheel: { backgroundColor: 'rgba(255,255,255,0.05)', borderWidth: 3, borderColor: 'rgba(255,255,255,0.15)' },
   slice: { position: 'absolute', width: 84, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 6 },
@@ -379,8 +514,8 @@ const styles = StyleSheet.create({
   resultSmall: { color: C.pink, fontSize: 16, fontWeight: '600', marginTop: 2 },
   ghost: { marginTop: 10, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)' },
   ghostText: { color: C.text, fontSize: 13, fontWeight: '600' },
-  bigBtn: { marginTop: 22, backgroundColor: C.accent, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 40 },
-  bigBtnText: { color: '#fff', fontSize: 17, fontWeight: '800', letterSpacing: 0.5 },
+  bigBtn: { marginTop: 22, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 40 },
+  bigBtnText: { color: C.onLime, fontSize: 16, fontWeight: '900', letterSpacing: 0.5 },
   dim: { opacity: 0.6 },
   bigCard: { width: '100%', minHeight: 230, borderRadius: 24, padding: 26, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   bigCardText: { fontFamily: F.bold, color: '#fff', fontSize: 22, textAlign: 'center', lineHeight: 29 },

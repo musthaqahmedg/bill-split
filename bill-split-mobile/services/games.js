@@ -124,3 +124,37 @@ export const WOULD_RATHER = [
   'Would you rather be famous for 1 day, or rich for 1 year?',
   'Would you rather always have to share your food, or never be allowed to share?',
 ];
+
+// 🔥 Hot seat: one person in the seat, the squad fires questions (clean, fun, no drinking)
+export const HOT_SEAT = [
+  "What's the most embarrassing song on your playlist?",
+  'Who in this group would you call at 3 AM?',
+  "What's your worst fashion phase?",
+  'What was your first impression of the person on your left?',
+  "What's the pettiest thing you've ever done?",
+  'Which app do you open way too much?',
+  "What's a hill you'll die on?",
+  'Best trip of your life, in 10 seconds?',
+  "What's your most-used emoji, and why?",
+  "Who here would survive longest in a zombie movie?",
+  "What's something you pretend to like?",
+  'Describe your dream night out in 3 words',
+  "What's the last thing you googled?",
+  'Who in the group is secretly the funniest?',
+  "What's your go-to karaoke song?",
+  'Biggest red flag you ignored?',
+];
+
+// 🃏 Reveal together: everyone answers in secret, pass the phone, then reveal all answers at once
+export const REVEAL = [
+  'Rate tonight out of 10',
+  'Best moment of the night so far?',
+  'Song that should play next?',
+  'Where should we go after this?',
+  'One word for this group',
+  "Who's the main character tonight?",
+  'Best food we had tonight?',
+  'Next trip destination?',
+  'Who will text the group chat first tomorrow?',
+  'Describe tonight as a movie title',
+];
