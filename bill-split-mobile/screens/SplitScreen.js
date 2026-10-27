@@ -1,4 +1,3 @@
-import { LinearGradient } from '../components/SafeGradient';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,7 +12,7 @@ import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
-import { C, F, G } from '../services/theme';
+import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
@@ -31,6 +30,7 @@ export default function SplitScreen({
   const [wholeOpen, setWholeOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false); // ℹ️ how tax & service were split
   const [itemsOpen, setItemsOpen] = useState(false); // 🧾 who had what, item by item
+  const [tip, setTip] = useState(Number(bill && bill.tip) || 0); // 💁 optional tip on top
 
   // Pairs: who is this person paired with?
   const partnerOf = (name) => {
@@ -39,7 +39,8 @@ export default function SplitScreen({
   };
 
   // 🧮 All the maths lives in the tested split engine
-  const { itemsTotal, billTotal, extras, target, shares, covering, finalOf, sum } = computeSplit({ items, people, claims, payers, bill });
+  const { itemsTotal, billTotal, printed, extras, target, shares, covering, finalOf, sum } = computeSplit({ items, people, claims, payers, bill: { ...bill, tip } });
+  const tipFor = (pct) => Math.round((printed * pct) / 100);
   const final = people.map((n) => finalOf[n]);
 
   const rows = shares
@@ -123,7 +124,7 @@ export default function SplitScreen({
     setSaving(true);
     try {
       const payload = {
-        bill: { ...bill, total: billTotal }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
+        bill: { ...bill, total: billTotal, tip }, items, people, nonDrinkers, claims, payers, amounts: finalOf,
         paidMode: payment.mode || 'me', paid, partyId,
       };
       if (editingBillId) {
@@ -177,6 +178,34 @@ export default function SplitScreen({
           </View>
         ) : null}
 
+        {/* 💁 Optional tip, shared like tax & service */}
+        <View style={styles.tipBox}>
+          <View style={styles.tipTop}>
+            <Text style={styles.tipTitle}>💁 ADD A TIP?</Text>
+            <Text style={styles.tipNote}>{tip ? `+ ${inr(tip)} shared fairly` : 'Optional'}</Text>
+          </View>
+          <View style={styles.tipRow}>
+            {[0, 5, 10].map((pct) => {
+              const on = pct === 0 ? tip === 0 : tip === tipFor(pct);
+              return (
+                <TouchableOpacity key={pct} style={[styles.tipChip, on && styles.tipOn]} onPress={() => setTip(tipFor(pct))} activeOpacity={0.85}>
+                  <Text style={[styles.tipText, on && styles.tipTextOn]}>{pct ? `${pct}%` : 'No tip'}</Text>
+                  {pct ? <Text style={[styles.tipAmt, on && styles.tipTextOn]}>{inr(tipFor(pct))}</Text> : null}
+                </TouchableOpacity>
+              );
+            })}
+            <TextInput
+              style={[styles.tipChip, styles.tipInput, tip && ![5, 10].some((p) => tip === tipFor(p)) && styles.tipOn]}
+              value={tip && ![5, 10].some((p) => tip === tipFor(p)) ? String(tip) : ''}
+              onChangeText={(t) => setTip(Math.min(100000, Math.round(Number(t.replace(/[^0-9]/g, '')) || 0)))}
+              placeholder="₹ other"
+              placeholderTextColor={C.faint}
+              keyboardType="number-pad"
+              keyboardAppearance="dark"
+            />
+          </View>
+        </View>
+
         {/* ℹ️ How tax & service were split (always explained, never hidden) */}
         <TouchableOpacity style={styles.how} onPress={() => setHowOpen(!howOpen)} activeOpacity={0.8}>
           <View style={styles.howTop}>
@@ -188,9 +217,15 @@ export default function SplitScreen({
             <Text style={styles.sumValue}>{money(itemsTotal)}</Text>
           </View>
           <View style={styles.sumRow}>
-            <Text style={styles.sumLabel}>{extras >= 0 ? 'Tax, service & round-off' : 'Discount & round-off'}</Text>
-            <Text style={styles.sumValue}>{extras >= 0 ? '+' : '−'} {money(Math.abs(extras))}</Text>
+            <Text style={styles.sumLabel}>{extras - tip >= 0 ? 'Tax, service & round-off' : 'Discount & round-off'}</Text>
+            <Text style={styles.sumValue}>{extras - tip >= 0 ? '+' : '−'} {money(Math.abs(extras - tip))}</Text>
           </View>
+          {tip ? (
+            <View style={styles.sumRow}>
+              <Text style={styles.sumLabel}>💁 Tip</Text>
+              <Text style={styles.sumValue}>+ {money(tip)}</Text>
+            </View>
+          ) : null}
           <View style={[styles.sumRow, styles.sumTotal]}>
             <Text style={styles.sumBold}>Bill total</Text>
             <Text style={styles.sumBold}>{money(billTotal)}</Text>
@@ -354,10 +389,9 @@ export default function SplitScreen({
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={save} disabled={saving}>
-        <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
         {saving
-          ? <ActivityIndicator color="#fff" />
-          : <Text style={styles.buttonText}>{editingBillId ? 'Save changes' : 'Save bill'}</Text>}
+          ? <ActivityIndicator color={C.onLime} />
+          : <Text style={styles.buttonText}>{editingBillId ? 'SAVE CHANGES →' : 'SAVE THE BILL →'}</Text>}
       </TouchableOpacity>
 
       {/* Who's covering this friend? */}
@@ -456,12 +490,23 @@ const styles = StyleSheet.create({
   tagline: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 2, marginBottom: 4 },
   hint: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 15 },
   summary: { backgroundColor: C.card, borderRadius: 16, padding: 16, marginBottom: 15 },
-  hero: { flexDirection: 'row', backgroundColor: C.accent, borderRadius: 22, padding: 16, marginBottom: 10 },
-  heroLabel: { color: 'rgba(255,255,255,0.75)', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
-  heroBig: { fontFamily: F.bold, color: '#fff', fontSize: 31, marginTop: 2 },
-  heroSub: { color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: '600', marginTop: 2 },
+  hero: { flexDirection: 'row', backgroundColor: C.lime, borderRadius: 22, padding: 16, marginBottom: 10 },
+  tipBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 12, marginBottom: 10 },
+  tipTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  tipTitle: { color: C.text, fontSize: 12, fontWeight: '900', letterSpacing: 1 },
+  tipNote: { color: C.faint, fontSize: 12, fontWeight: '600' },
+  tipRow: { flexDirection: 'row' },
+  tipChip: { flex: 1, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 8, alignItems: 'center', marginRight: 6 },
+  tipOn: { backgroundColor: C.lime, borderColor: C.lime },
+  tipText: { color: C.text, fontSize: 14, fontWeight: '800' },
+  tipAmt: { color: C.faint, fontSize: 11, fontWeight: '700', marginTop: 1 },
+  tipTextOn: { color: C.onLime },
+  tipInput: { flex: 1.2, width: 0, minWidth: 0, marginRight: 0, color: C.text, fontSize: 14, fontWeight: '800', textAlign: 'center', paddingVertical: 10 },
+  heroLabel: { color: C.onLime, opacity: 0.7, fontSize: 11, fontWeight: '900', letterSpacing: 1 },
+  heroBig: { fontFamily: F.display, color: C.onLime, fontSize: 32, marginTop: 2 },
+  heroSub: { color: C.onLime, opacity: 0.8, fontSize: 12, fontWeight: '700', marginTop: 2 },
   heroRight: { alignItems: 'flex-end', justifyContent: 'center', marginLeft: 10 },
-  heroTotal: { fontFamily: F.bold, color: '#fff', fontSize: 16, marginTop: 2 },
+  heroTotal: { fontFamily: F.bold, color: C.onLime, fontSize: 16, marginTop: 2 },
   how: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
   howTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   howTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
@@ -484,7 +529,7 @@ const styles = StyleSheet.create({
   coveredCard: { borderColor: C.pink, backgroundColor: '#2A1621' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   name: { fontSize: 18, fontWeight: '800', color: C.text },
-  pay: { fontSize: 22, fontWeight: '800', color: C.accentSoft },
+  pay: { fontFamily: F.bold, fontSize: 20, color: C.lime },
   coveredPay: { fontSize: 18, fontWeight: '800', color: C.pink },
   pairTag: { color: C.pink, fontSize: 13, fontWeight: '700', marginTop: -4, marginBottom: 6 },
   line: { color: C.sub, fontSize: 14, marginBottom: 3 },
@@ -495,9 +540,9 @@ const styles = StyleSheet.create({
   paidBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.accent, borderRadius: 16, padding: 14, marginBottom: 12 },
   paidTitle: { color: C.text, fontSize: 16, fontWeight: '800', marginBottom: 10 },
   payChip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
-  payChipOn: { backgroundColor: C.accent, borderColor: C.accent },
+  payChipOn: { backgroundColor: C.lime, borderColor: C.lime },
   payChipText: { color: C.sub, fontSize: 14, fontWeight: '600' },
-  payChipTextOn: { color: '#fff' },
+  payChipTextOn: { color: C.onLime },
   paidHint: { color: C.faint, fontSize: 13, marginTop: 2 },
   multiRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   multiName: { flex: 1, color: C.text, fontSize: 15 },
@@ -508,8 +553,8 @@ const styles = StyleSheet.create({
   owes: { color: C.amber, fontSize: 14, fontWeight: '700', marginBottom: 6 },
   wholeBtn: { borderWidth: 1, borderColor: C.pink, borderRadius: 14, padding: 14, alignItems: 'center', marginBottom: 10 },
   wholeText: { color: C.pink, fontSize: 16, fontWeight: '800' },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', overflow: 'hidden' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  button: { backgroundColor: C.lime, padding: 16, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
+  buttonText: { color: C.onLime, fontSize: 15, fontWeight: '900', letterSpacing: 0.5 },
 
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, paddingBottom: 40 },

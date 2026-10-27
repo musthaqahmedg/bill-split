@@ -4,7 +4,8 @@
 // people = ['Me', 'Arun', ...]
 // claims = one list per item, a name once per unit they had (['Arun','Arun','Bibin'] = Arun 2, Bibin 1)
 // payers = one map per item: { Arun: 'Bibin' } = Bibin pays for Arun's part of this item (sponsor / pair)
-// bill   = { total, tax, service_charge, discount }   total > 0 wins; otherwise items + tax + service − discount
+// bill   = { total, tax, service_charge, discount, tip }   total > 0 wins; otherwise items + tax + service − discount
+//          tip (optional, ₹) is added on top of the printed bill and shared like tax & service
 //
 // Rules:
 // - Each person's items are shared by how many units they had
@@ -14,10 +15,12 @@
 export function computeSplit({ items = [], people = [], claims = [], payers = [], bill = null }) {
   const price = (it) => Number(it && it.price) || 0;
   const itemsTotal = items.reduce((s, it) => s + price(it), 0);
-  const billTotal =
+  const printed =
     bill && Number(bill.total) > 0
       ? Number(bill.total)
       : itemsTotal + (Number(bill && bill.tax) || 0) + (Number(bill && bill.service_charge) || 0) - (Number(bill && bill.discount) || 0);
+  const tip = Math.max(0, Number(bill && bill.tip) || 0);
+  const billTotal = printed + tip;
   const extras = billTotal - itemsTotal; // tax + service − discount + round-off
   const withExtras = (amt) => (itemsTotal !== 0 ? amt + extras * (amt / itemsTotal) : 0);
 
@@ -91,5 +94,5 @@ export function computeSplit({ items = [], people = [], claims = [], payers = []
   const finalOf = Object.fromEntries(people.map((n, i) => [n, final[i]]));
   const sum = final.reduce((a, b) => a + b, 0);
 
-  return { itemsTotal, billTotal, extras, target, shares, payExact, covering, finalOf, sum, unclaimed };
+  return { itemsTotal, billTotal, printed, tip, extras, target, shares, payExact, covering, finalOf, sum, unclaimed };
 }

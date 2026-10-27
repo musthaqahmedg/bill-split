@@ -133,6 +133,19 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     });
   };
 
+  // 💸 One message for everyone who still owes, with the link to pay
+  const requestAll = () => {
+    const due = moves.filter((m) => !(byName[m.from] && byName[m.from].paid_at));
+    if (!due.length) return;
+    Share.share({
+      message:
+        `💸 ${bill.title || 'Last night'}: settle-up time 🙏\n` +
+        due.map((m) => `• ${show(m.from)} → ${m.to === 'Me' ? 'me' : show(m.to)}: ${inr(m.amount)}`).join('\n') +
+        (myUpi ? `\n\nUPI: ${myUpi}` : '') +
+        `\n\nSee your share and pay here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}`,
+    });
+  };
+
   // Guest link: friends open it in the browser, see their share and pay with UPI
   const shareLink = () =>
     Share.share({
@@ -323,11 +336,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
         ) : toCollect.length > 0 ? (
           <View style={styles.settle}>
             <View style={styles.settleTop}>
-              <Text style={styles.settleTitle}>💸 Settle up</Text>
-              <Text style={styles.settleCount}>{paidList.length} of {toCollect.length} paid</Text>
+              <Text style={styles.settleTitle}>SETTLE UP</Text>
+              <Text style={styles.settleCount}>{paidList.length} of {toCollect.length} settled</Text>
             </View>
-            <View style={styles.barBg}>
-              <View style={[styles.barFill, { width: `${(paidList.length / toCollect.length) * 100}%` }]} />
+            <View style={styles.segs}>
+              {toCollect.map((p) => (
+                <View key={p.id || p.name} style={[styles.seg, p.paid_at && styles.segOn]} />
+              ))}
             </View>
             {moves.map((m) => {
               const done = byName[m.from] && byName[m.from].paid_at;
@@ -340,6 +355,11 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
             <Text style={styles.settleNote}>
               {stillToCollect > 0 ? `${inr(stillToCollect)} still to settle` : "Everyone's settled 🎉"}
             </Text>
+            {stillToCollect > 0 && bill.share_token ? (
+              <TouchableOpacity style={styles.requestBtn} onPress={requestAll} activeOpacity={0.85}>
+                <Text style={styles.requestText}>💸 SEND REQUESTS</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         ) : null}
 
@@ -448,10 +468,15 @@ const styles = StyleSheet.create({
   line: { color: C.sub, fontSize: 14, marginBottom: 3 },
   paidBy: { color: C.pink, fontWeight: '600' },
   covering: { color: C.pink, fontSize: 14, fontWeight: '700', marginTop: 6 },
-  settle: { backgroundColor: C.greenBg, borderRadius: 16, padding: 16, marginBottom: 15 },
+  settle: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, padding: 16, marginBottom: 15 },
+  segs: { flexDirection: 'row', marginTop: 12, marginBottom: 6 },
+  seg: { flex: 1, height: 8, borderRadius: 4, backgroundColor: C.cardHi, marginRight: 4 },
+  segOn: { backgroundColor: C.lime },
+  requestBtn: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginTop: 12 },
+  requestText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   settleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  settleTitle: { fontSize: 16, fontWeight: '800', color: C.green },
-  settleCount: { fontSize: 14, fontWeight: '700', color: C.green },
+  settleTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2, color: C.pink },
+  settleCount: { fontSize: 14, fontWeight: '800', color: C.text },
   barBg: { height: 8, backgroundColor: '#1E5A44', borderRadius: 4, marginTop: 10, overflow: 'hidden' },
   barFill: { height: 8, backgroundColor: C.green, borderRadius: 4 },
   settleNote: { color: C.sub, fontSize: 13, marginTop: 8 },

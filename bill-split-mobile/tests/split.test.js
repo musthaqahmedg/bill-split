@@ -353,3 +353,16 @@ test('morning recap: night length from first status to last home', async () => {
   assert.equal(nightLength([{ live_at: t(20, 0) }]), null);
   assert.equal(nightLength([{ live_at: t(20, 0), home_at: t(20, 40) }]), '40m');
 });
+
+test('tip: added on top of the printed bill, shared like tax, still adds up exactly', async () => {
+  const items = [{ name: 'Biryani', price: 300, qty: 1 }, { name: 'Lime soda', price: 100, qty: 1 }];
+  const people = ['Me', 'Arun'];
+  const claims = [['Me'], ['Arun']];
+  const r = computeSplit({ items, people, claims, bill: { total: 420, tip: 42 } });
+  assert.equal(r.billTotal, 462);
+  assert.equal(r.tip, 42);
+  assert.equal(r.finalOf.Me + r.finalOf.Arun, 462);
+  assert.equal(r.finalOf.Me, 347); // 300/400 of 462 = 346.5 → biggest remainder rounds up
+  const none = computeSplit({ items, people, claims, bill: { total: 420 } });
+  assert.equal(none.billTotal, 420);
+});

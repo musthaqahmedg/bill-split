@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   wrap: { marginBottom: 10 },
   bars: { flexDirection: 'row' },
   bar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: C.border, marginRight: 4 },
-  barOn: { backgroundColor: C.accent },
+  barOn: { backgroundColor: C.lime },
   text: { color: C.faint, fontSize: 12, fontWeight: '600', marginTop: 6 },
   now: { color: C.text },
 });

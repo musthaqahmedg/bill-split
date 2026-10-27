@@ -6,6 +6,9 @@ import { show } from '../services/names';
 import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 
+const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF', '#7CFFB2'];
+const initials = (n) => show(n).slice(0, 2).toUpperCase();
+
 export default function ItemsScreen({ items, people, initialClaims, initialNonDrinkers, onBack, onNext }) {
   const [nonDrinkers, setNonDrinkers] = useState(
     (initialNonDrinkers || []).filter((p) => people.includes(p))
@@ -62,6 +65,15 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
     }));
   };
 
+  // 💰 running total per person (items only, before tax & service)
+  const cutOf = (person) =>
+    items.reduce((sum, it, i) => {
+      const list = claims[i];
+      const u = list.filter((p) => p === person).length;
+      return list.length ? sum + ((Number(it.price) || 0) * u) / list.length : sum;
+    }, 0);
+  const colorOf = (person) => FACES[Math.max(0, people.indexOf(person)) % FACES.length];
+
   const claimed = claims.filter((c) => c.length > 0).length;
   const allDone = claimed === items.length;
   const left = items.length - claimed;
@@ -81,7 +93,20 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 
       <BillSteps at={3} />
       <Text style={styles.title}>Who had what?</Text>
-      <Text style={styles.sub}>Tap everyone who had each item. Shared items split between them.</Text>
+      <Text style={styles.sub}>Tap the faces on each item. Shared items split between them.</Text>
+
+      {/* 💰 Each person's cut so far */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cuts} contentContainerStyle={{ paddingRight: 6 }}>
+        {people.map((p) => (
+          <View key={p} style={styles.cut}>
+            <View style={[styles.cutFace, { backgroundColor: colorOf(p) }]}>
+              <Text style={styles.cutInit}>{initials(p)}</Text>
+            </View>
+            <Text style={styles.cutName} numberOfLines={1}>{show(p)}</Text>
+            <Text style={styles.cutAmt}>₹{Math.round(cutOf(p)).toLocaleString('en-IN')}</Text>
+          </View>
+        ))}
+      </ScrollView>
       <TouchableOpacity style={styles.equalBtn} onPress={splitEqually}>
         <Text style={styles.equalText}>🤷 Can’t remember? Split everything equally</Text>
       </TouchableOpacity>
@@ -125,20 +150,24 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                   const n = unitsOf(i, p);
                   const blocked = !canHave(i, p);
                   return (
-                    <TouchableOpacity
-                      key={p}
-                      style={[styles.chip, on && styles.chipOn, blocked && styles.chipBlocked]}
-                      onPress={() => toggle(i, p)}
-                      disabled={blocked}
-                    >
-                      <Text style={[styles.chipText, on && styles.chipTextOn, blocked && styles.chipTextBlocked]}>
-                        {blocked ? `🥤 ${show(p)}` : show(p)}{n > 1 ? ` ×${n}` : ''}
-                      </Text>
+                    <TouchableOpacity key={p} style={[styles.av, blocked && styles.avBlocked]} onPress={() => toggle(i, p)} disabled={blocked} activeOpacity={0.75}>
+                      <View style={[styles.avFace, on ? { backgroundColor: colorOf(p), borderColor: '#fff' } : styles.avOff]}>
+                        <Text style={[styles.avInit, !on && { color: C.faint }]}>{blocked ? '🥤' : initials(p)}</Text>
+                        {n > 1 ? (
+                          <View style={styles.avBadge}>
+                            <Text style={styles.avBadgeText}>×{n}</Text>
+                          </View>
+                        ) : null}
+                      </View>
+                      <Text style={[styles.avName, on && { color: C.text }]} numberOfLines={1}>{show(p)}</Text>
                     </TouchableOpacity>
                   );
                 })}
-                <TouchableOpacity style={styles.chipAll} onPress={() => toggleAll(i)}>
-                  <Text style={styles.chipAllText}>All</Text>
+                <TouchableOpacity style={styles.av} onPress={() => toggleAll(i)} activeOpacity={0.75}>
+                  <View style={[styles.avFace, styles.avAll]}>
+                    <Text style={styles.avAllText}>ALL</Text>
+                  </View>
+                  <Text style={styles.avName}>Everyone</Text>
                 </TouchableOpacity>
               </View>
 
@@ -173,8 +202,8 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       </Text>
 
       <TouchableOpacity style={[styles.button, !allDone && styles.disabled]} onPress={next}>
-        <Text style={styles.buttonText}>
-          {allDone ? 'See the split' : `Tag ${left} more item${left === 1 ? '' : 's'} to continue ↑`}
+        <Text style={[styles.buttonText, !allDone && { color: C.sub }]}>
+          {allDone ? 'SEE THE SPLIT →' : `Tag ${left} more item${left === 1 ? '' : 's'} to continue ↑`}
         </Text>
       </TouchableOpacity>
 
@@ -213,23 +242,39 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
-  back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
-  title: { fontFamily: F.display, fontSize: 22, color: C.text },
+  back: { color: C.lime, fontSize: 16, marginBottom: 10 },
+  title: { fontFamily: F.display, fontSize: 26, color: C.text },
+  cuts: { flexGrow: 0, marginBottom: 12 },
+  cut: { alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 10, marginRight: 8, minWidth: 72 },
+  cutFace: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  cutInit: { color: C.onLime, fontSize: 11, fontWeight: '900' },
+  cutName: { color: C.sub, fontSize: 11, fontWeight: '700', marginTop: 4, maxWidth: 64 },
+  cutAmt: { fontFamily: F.bold, color: C.lime, fontSize: 13, marginTop: 1 },
+  av: { alignItems: 'center', width: 58, marginRight: 4, marginBottom: 6 },
+  avBlocked: { opacity: 0.4 },
+  avFace: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  avOff: { backgroundColor: C.cardHi, borderColor: C.border, borderStyle: 'dashed' },
+  avInit: { color: C.onLime, fontSize: 13, fontWeight: '900' },
+  avBadge: { position: 'absolute', right: -6, top: -6, backgroundColor: C.onLime, borderRadius: 9, paddingHorizontal: 4, borderWidth: 1, borderColor: C.lime },
+  avBadgeText: { color: C.lime, fontSize: 10, fontWeight: '900' },
+  avName: { color: C.faint, fontSize: 11, fontWeight: '700', marginTop: 4, maxWidth: 56 },
+  avAll: { backgroundColor: 'transparent', borderColor: C.lime },
+  avAllText: { color: C.lime, fontSize: 11, fontWeight: '900' },
   sub: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 12 },
-  dryBox: { backgroundColor: C.greenBg, borderRadius: 16, padding: 12, marginBottom: 12 },
-  dryLabel: { fontSize: 14, fontWeight: '700', color: C.green, marginBottom: 8 },
-  dryChip: { borderWidth: 1, borderColor: '#1E5A44', borderRadius: 16, paddingVertical: 5, paddingHorizontal: 11, marginRight: 8, marginBottom: 6, backgroundColor: C.bg },
-  dryChipOn: { backgroundColor: C.green, borderColor: C.green },
-  dryText: { color: C.green, fontSize: 13 },
-  dryTextOn: { color: '#0B2A1F', fontWeight: '700' },
+  dryBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 12, marginBottom: 12 },
+  dryLabel: { fontSize: 12, fontWeight: '900', letterSpacing: 1, color: C.cyan, marginBottom: 8 },
+  dryChip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 5, paddingHorizontal: 11, marginRight: 8, marginBottom: 6, backgroundColor: C.bg },
+  dryChipOn: { backgroundColor: C.cyan, borderColor: C.cyan },
+  dryText: { color: C.sub, fontSize: 13 },
+  dryTextOn: { color: C.onLime, fontWeight: '800' },
   list: { flex: 1 },
-  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginBottom: 10 },
+  card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
   mysteryCard: { borderColor: C.amber, backgroundColor: C.amberBg },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   nameTap: { flex: 1, marginRight: 10 },
   itemName: { fontSize: 16, fontWeight: '700', color: C.text },
   infoIcon: { fontSize: 14 },
-  itemPrice: { fontSize: 16, fontWeight: '700', color: C.sub },
+  itemPrice: { fontFamily: F.bold, fontSize: 15, color: C.text },
   chips: { flexDirection: 'row', flexWrap: 'wrap' },
   chip: { borderWidth: 1, borderColor: C.accent, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
   chipOn: { backgroundColor: C.accent },
@@ -253,9 +298,9 @@ const styles = StyleSheet.create({
   countNum: { color: C.text, fontSize: 15, fontWeight: '800', width: 30, textAlign: 'center' },
   countAmt: { color: C.faint, fontSize: 13, width: 64, textAlign: 'right' },
   count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center' },
-  disabled: { backgroundColor: '#34343F' },
-  buttonText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  button: { backgroundColor: C.lime, padding: 16, borderRadius: 18, alignItems: 'center' },
+  disabled: { backgroundColor: C.disabled },
+  buttonText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
 
   infoOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 28 },
   infoCard: { backgroundColor: C.card, borderRadius: 20, padding: 22, borderWidth: 1, borderColor: C.border },
@@ -267,5 +312,5 @@ const styles = StyleSheet.create({
   infoTagText: { fontSize: 14, fontWeight: '700', color: C.text },
   infoAbout: { fontSize: 16, color: C.sub, lineHeight: 22 },
   infoNote: { fontSize: 12, color: C.faint, marginTop: 14 },
-  infoBtn: { backgroundColor: C.accent, padding: 14, borderRadius: 14, alignItems: 'center', marginTop: 18 },
+  infoBtn: { backgroundColor: C.lime, padding: 14, borderRadius: 14, alignItems: 'center', marginTop: 18 },
 });

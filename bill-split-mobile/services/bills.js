@@ -38,7 +38,8 @@ export async function saveBill({ bill, items, people, claims, payers, nonDrinker
       tax: bill.tax || 0,
       service_charge: bill.service_charge || 0,
       discount: bill.discount || 0,
-      fingerprint: makeFingerprint(bill),
+      tip: bill.tip || 0, // 💁 included in total
+      fingerprint: makeFingerprint({ ...bill, total: (Number(bill.total) || 0) - (Number(bill.tip) || 0) }), // printed total, so tipped bills still match
       authenticity: bill.check || null,
       status: 'split',
       paid_mode: paidMode || 'me', // 💳 who paid the restaurant
@@ -135,7 +136,8 @@ export function billToFlow(saved) {
     restaurant: saved.restaurant || '',
     bill_no: saved.bill_no || '',
     date: saved.bill_date || '',
-    total: Number(saved.total) || 0,
+    total: (Number(saved.total) || 0) - (Number(saved.tip) || 0), // the printed bill; the tip comes back separately
+    tip: Number(saved.tip) || 0,
     tax: Number(saved.tax) || 0,
     service_charge: Number(saved.service_charge) || 0,
     discount: Number(saved.discount) || 0,
