@@ -35,6 +35,7 @@ import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
+import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
 import { useFonts } from 'expo-font';
 import { Unbounded_700Bold, Unbounded_800ExtraBold } from '@expo-google-fonts/unbounded';
 import ConsentScreen, { CONSENT_VERSION } from './screens/ConsentScreen';
@@ -405,7 +406,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
-  const TAB_PAGES = ['home', 'parties', 'discover', 'money'];
+  const TAB_PAGES = ['home', 'parties', 'money', 'memories'];
   const page = renderPage();
   if (!TAB_PAGES.includes(screen)) return page;
   return (
@@ -628,7 +629,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setScreen('newParty');
         }}
         onGroups={() => setScreen('groups')}
-        onMemories={() => setScreen('memories')}
+        onMemories={() => setScreen('discover')}
         onNearby={() => {
           setNearby({ from: 'parties', category: 'restobars', title: null });
           setScreen('nearby');
@@ -725,6 +726,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return (
       <NearbyScreen
         discover
+        onBack={() => setScreen('parties')}
         initialCategory="cafes"
         onPlanHere={(place: any) => {
           setPlanPlace(place);
@@ -740,7 +742,6 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'memories') {
     return (
       <MemoriesScreen
-        onBack={() => setScreen('parties')}
         onOpenPlan={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
@@ -840,7 +841,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
 // Whole app + the notification banner that slides over any screen
 function Root() {
-  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold }); // 🔤 chunky display font
+  const [fontsOk, fontErr] = useFonts({ Unbounded_700Bold, Unbounded_800ExtraBold, Silkscreen_400Regular }); // 🔤 chunky display font
   const [uid, setUid] = useState<string | null>(null);
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setUid(data.session ? data.session.user.id : null));

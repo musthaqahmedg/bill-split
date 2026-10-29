@@ -542,7 +542,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 
 const styles = StyleSheet.create({
   labelSoft: { color: C.faint, fontSize: 13 },
-  ticket: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingVertical: 16, paddingLeft: 18, paddingRight: 16, marginBottom: 10, overflow: 'hidden', borderWidth: 3, borderColor: 'transparent' },
+  ticket: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingVertical: 16, paddingLeft: 18, paddingRight: 16, marginBottom: 10, overflow: 'hidden', borderWidth: 3, borderColor: 'transparent', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   ticketOn: { borderColor: '#fff' },
   notch: { position: 'absolute', top: '50%', marginTop: -9, width: 18, height: 18, borderRadius: 9, backgroundColor: C.bg },
   notchL: { left: -9 },
@@ -553,8 +553,8 @@ const styles = StyleSheet.create({
   ticketPer: { fontFamily: F.display, color: C.onLime, fontSize: 20 },
   ticketTick: { position: 'absolute', top: 6, right: 12, color: C.onLime, fontSize: 14, fontWeight: '900' },
   lead: { color: C.sub, fontSize: 14, lineHeight: 20, marginBottom: 14 },
-  kickerPill: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10, marginBottom: 10 },
-  kickerText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
+  kickerPill: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 12, paddingVertical: 4, paddingHorizontal: 10, marginBottom: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  kickerText: { fontFamily: F.pixel, color: C.onLime, fontSize: 11, letterSpacing: 0.8 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   draftBox: { backgroundColor: C.amberBg, borderWidth: 1, borderColor: C.amber, borderRadius: 16, padding: 12, marginTop: 10 },
   draftTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
@@ -611,7 +611,7 @@ const styles = StyleSheet.create({
   fun: { color: C.accentSoft, fontSize: 13, fontWeight: '600', marginTop: 10, textAlign: 'center' },
   nudge: { color: C.amber, fontSize: 12, marginTop: 6, textAlign: 'center' },
   after: { color: C.faint, fontSize: 12, textAlign: 'center', marginTop: 6 },
-  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
+  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   steps: { flexDirection: 'row', marginBottom: 14 },
   stepItem: { flex: 1, marginRight: 6 },
   stepBar: { height: 4, borderRadius: 2, backgroundColor: C.border },

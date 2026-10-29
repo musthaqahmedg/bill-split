@@ -165,7 +165,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           </View>
           {onMoney ? (
             <TouchableOpacity style={styles.moneyRow} onPress={onMoney} activeOpacity={0.8}>
-              <Text style={styles.moneyText}>👛 Vault · {inr(moneySummary(bills, monthKey(new Date())).spent)} spent in {monthLabel(monthKey(new Date()))}</Text>
+              <Text style={styles.moneyText}>👛 My money · {inr(moneySummary(bills, monthKey(new Date())).spent)} spent in {monthLabel(monthKey(new Date()))}</Text>
               <Text style={styles.moneyGo}>›</Text>
             </TouchableOpacity>
           ) : null}
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   logo: { fontFamily: F.logo, color: C.lime, fontSize: 13, letterSpacing: 2, marginBottom: 6 },
   settle: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 14 },
   settleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  settleKicker: { color: C.pink, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  settleKicker: { fontFamily: F.pixel, color: C.pink, fontSize: 11, letterSpacing: 1.2 },
   settleCount: { color: C.faint, fontSize: 12, fontWeight: '700' },
   settleRow: { flexDirection: 'row', marginTop: 10 },
   settleLabel: { color: C.sub, fontSize: 12, fontWeight: '600' },
@@ -254,7 +254,7 @@ const styles = StyleSheet.create({
   settleBtns: { flexDirection: 'row', marginTop: 14 },
   snapBtn: { flex: 1, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 12, alignItems: 'center', marginRight: 8 },
   snapText: { color: C.text, fontSize: 14, fontWeight: '800' },
-  settleBtn: { flex: 1.2, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 12, alignItems: 'center' },
+  settleBtn: { flex: 1.2, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   settleBtnText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   moneyRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12, marginTop: 14 },
   moneyText: { color: C.text, fontSize: 14, fontWeight: '600' },
@@ -291,6 +291,6 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 46 },
   emptyText: { fontSize: 19, color: C.text, fontWeight: '700', marginTop: 10 },
   emptySub: { fontSize: 14, color: C.sub, marginTop: 6, textAlign: 'center', paddingHorizontal: 30 },
-  emptyBtn: { backgroundColor: C.lime, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 22, marginTop: 18 },
+  emptyBtn: { backgroundColor: C.lime, borderRadius: 24, paddingVertical: 12, paddingHorizontal: 22, marginTop: 18, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   emptyBtnText: { color: C.onLime, fontSize: 15, fontWeight: '700' },
 });

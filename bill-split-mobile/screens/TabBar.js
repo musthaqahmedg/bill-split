@@ -6,14 +6,14 @@ import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C, F, G } from '../services/theme';
 import QuickAdd from './QuickAdd';
 
-// 📱 Bottom tabs (Final UX): Home · Rooms · 🧾 Scan · Discover · Vault
-// Tap 🧾 to scan a bill straight away; long-press it for more (plan / spend).
+// 📱 Bottom tabs (v14 sticker pop): Tonight · Rooms · 📷 Scan · Money · Memories
+// Tap 📷 to scan a bill straight away; long-press it for more (plan / spend).
 const TABS = [
-  { key: 'home', icon: '✨', label: 'Home' },
-  { key: 'parties', icon: '💬', label: 'Rooms' },
+  { key: 'home', icon: '🌙', label: 'Tonight' },
+  { key: 'parties', icon: '🎉', label: 'Rooms' },
   { key: 'plus' },
-  { key: 'discover', icon: '🧭', label: 'Discover' },
-  { key: 'money', icon: '👛', label: 'Vault' },
+  { key: 'money', icon: '👛', label: 'Money' },
+  { key: 'memories', icon: '📸', label: 'Memories' },
 ];
 
 const tap = () => {
@@ -44,7 +44,7 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
                 setMenu(true);
               }}
             >
-              <Text style={styles.plusText}>🧾</Text>
+              <Text style={styles.plusText}>📷</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   label: { color: C.faint, fontSize: 11, fontWeight: '600', marginTop: 2 },
   labelOn: { color: C.lime },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.lime, marginTop: 3 },
-  plus: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },
+  plus: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },
   plusText: { color: '#fff', fontSize: 22 },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 18 },

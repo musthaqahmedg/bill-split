@@ -469,7 +469,7 @@ function Charades() {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  tile: { width: '48.5%', borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170 },
+  tile: { width: '48.5%', borderRadius: 22, padding: 14, marginBottom: 10, minHeight: 170, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   tileEmoji: { fontSize: 34 },
   tileName: { fontFamily: F.display, color: C.onLime, fontSize: 15, marginTop: 8 },
   tileSub: { color: C.onLime, opacity: 0.75, fontSize: 12, fontWeight: '600', marginTop: 3, flex: 1 },
@@ -514,7 +514,7 @@ const styles = StyleSheet.create({
   resultSmall: { color: C.pink, fontSize: 16, fontWeight: '600', marginTop: 2 },
   ghost: { marginTop: 10, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)' },
   ghostText: { color: C.text, fontSize: 13, fontWeight: '600' },
-  bigBtn: { marginTop: 22, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 40 },
+  bigBtn: { marginTop: 22, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 15, paddingHorizontal: 40, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   bigBtnText: { color: C.onLime, fontSize: 16, fontWeight: '900', letterSpacing: 0.5 },
   dim: { opacity: 0.6 },
   bigCard: { width: '100%', minHeight: 230, borderRadius: 24, padding: 26, justifyContent: 'center', alignItems: 'center', marginTop: 10 },

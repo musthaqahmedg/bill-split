@@ -108,7 +108,7 @@ export default function MyMoneyScreen({ onBack }) {
             <Text style={styles.privateText}>🔒 Only you</Text>
           </View>
         </View>
-        <Text style={styles.title}>VAULT</Text>
+        <Text style={styles.title}>MY MONEY</Text>
 
         {/* ‹ October 2026 › */}
         <View style={styles.monthRow}>
@@ -412,8 +412,8 @@ const styles = StyleSheet.create({
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 40 },
   back: { color: C.lime, fontSize: 17, marginBottom: 10 },
   headRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  kicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
-  privatePill: { backgroundColor: C.violet, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 9 },
+  kicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11, letterSpacing: 1.5 },
+  privatePill: { backgroundColor: C.violet, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 9, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   privateText: { color: C.onLime, fontSize: 11, fontWeight: '900' },
   title: { fontFamily: F.display, color: C.text, fontSize: 38, marginTop: 4 },
   hero: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 24, padding: 18, marginTop: 12 },
@@ -423,22 +423,22 @@ const styles = StyleSheet.create({
   heroLeft: { fontFamily: F.bold, color: C.lime, fontSize: 18 },
   track: { height: 10, borderRadius: 5, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 14, marginBottom: 12 },
   fill: { height: '100%', borderRadius: 5 },
-  moodPill: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 9, paddingHorizontal: 12, marginTop: 14 },
+  moodPill: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 9, paddingHorizontal: 12, marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   moodText: { color: C.onLime, fontSize: 13, fontWeight: '800' },
   statsRow: { flexDirection: 'row', justifyContent: 'space-between', borderTopWidth: 1, borderTopColor: C.border, paddingTop: 12, marginTop: 14 },
   statInline: { color: C.faint, fontSize: 12 },
   today: { backgroundColor: C.card, borderWidth: 1, borderColor: C.lime + '66', borderRadius: 24, padding: 18, marginTop: 12 },
-  todayKicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  todayKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11, letterSpacing: 1.5 },
   todayDays: { color: C.faint, fontSize: 12, fontWeight: '600' },
   todayLabel: { color: C.sub, fontSize: 13, fontWeight: '600', marginTop: 10 },
   todayBig: { fontFamily: F.display, color: C.text, fontSize: 30, marginTop: 2 },
   todaySub: { color: C.sub, fontSize: 13, marginTop: 6, lineHeight: 19 },
   quickLabel: { color: C.faint, fontSize: 11, fontWeight: '900', letterSpacing: 1.2, marginTop: 16, marginBottom: 8 },
   quick: { flexDirection: 'row', flexWrap: 'wrap' },
-  quickChip: { borderRadius: 16, paddingVertical: 9, paddingHorizontal: 13, marginRight: 8, marginBottom: 8 },
+  quickChip: { borderRadius: 16, paddingVertical: 9, paddingHorizontal: 13, marginRight: 8, marginBottom: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   quickOther: { borderWidth: 1, borderColor: C.border },
   quickText: { color: C.onLime, fontSize: 14, fontWeight: '800' },
-  cardKicker: { color: C.text, fontSize: 11, fontWeight: '900', letterSpacing: 1.5 },
+  cardKicker: { fontFamily: F.pixel, color: C.text, fontSize: 11, letterSpacing: 1.5 },
   catRow: { marginTop: 14 },
   catName: { color: C.text, fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
   catAmt: { fontFamily: F.bold, color: C.text, fontSize: 15 },
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
   ringBig: { fontFamily: F.bold, color: C.text, fontSize: 27, marginTop: 2 },
   ringSub: { color: C.sub, fontSize: 13, marginTop: 2 },
   mood: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 12 },
-  setBtn: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 18, marginTop: 14 },
+  setBtn: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 18, paddingVertical: 10, paddingHorizontal: 18, marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   setText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   stats: { flexDirection: 'row', marginTop: 12 },
   stat: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, paddingVertical: 14, alignItems: 'center', marginHorizontal: 3 },
@@ -503,7 +503,7 @@ const styles = StyleSheet.create({
   picks: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 10 },
   pick: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, marginRight: 8, marginBottom: 8 },
   pickText: { color: C.text, fontSize: 14, fontWeight: '600' },
-  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 10 },
+  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
   remove: { color: C.red, fontSize: 14, textAlign: 'center', marginTop: 14 },
 });

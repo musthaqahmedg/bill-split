@@ -472,7 +472,7 @@ const styles = StyleSheet.create({
   segs: { flexDirection: 'row', marginTop: 12, marginBottom: 6 },
   seg: { flex: 1, height: 8, borderRadius: 4, backgroundColor: C.cardHi, marginRight: 4 },
   segOn: { backgroundColor: C.lime },
-  requestBtn: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginTop: 12 },
+  requestBtn: { backgroundColor: C.pink, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginTop: 12, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   requestText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   settleTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   settleTitle: { fontSize: 11, fontWeight: '900', letterSpacing: 1.2, color: C.pink },

@@ -464,7 +464,7 @@ export default function NightMode({ party, visible, onClose, onChat, onSplit, on
 
 const styles = StyleSheet.create({
   liveBtns: { flexDirection: 'row', marginBottom: 6 },
-  liveBtn: { flex: 1, backgroundColor: C.violet, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginHorizontal: 3 },
+  liveBtn: { flex: 1, backgroundColor: C.violet, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginHorizontal: 3, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   liveBtnText: { color: C.onLime, fontSize: 13, fontWeight: '800' },
   liveMine: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.green + '1F', borderRadius: 14, padding: 10, marginBottom: 6 },
   liveMineText: { color: C.text, fontSize: 13, fontWeight: '600', flex: 1 },
@@ -481,8 +481,8 @@ const styles = StyleSheet.create({
   statusOn: { backgroundColor: C.lime, borderColor: C.lime },
   bigTitle: { fontFamily: F.display, color: C.text, fontSize: 32, marginTop: 4 },
   posters: { flexDirection: 'row', marginTop: 16 },
-  poster: { flex: 1, borderRadius: 20, padding: 14, marginHorizontal: 3, minHeight: 120 },
-  posterKicker: { color: C.onLime, fontSize: 10, fontWeight: '900', letterSpacing: 1, opacity: 0.7 },
+  poster: { flex: 1, borderRadius: 20, padding: 14, marginHorizontal: 3, minHeight: 120, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  posterKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, letterSpacing: 1, opacity: 0.7 },
   posterBig: { fontFamily: F.display, color: C.onLime, fontSize: 28, marginTop: 6 },
   posterMid: { fontFamily: F.display, color: C.onLime, fontSize: 16, lineHeight: 20, marginTop: 6 },
   posterSub: { color: C.onLime, fontSize: 12, fontWeight: '700', marginTop: 6, opacity: 0.8 },
@@ -517,7 +517,7 @@ const styles = StyleSheet.create({
   homeText: { color: C.onLime, fontSize: 19, fontWeight: '900' },
   homeSub: { color: C.onLime, opacity: 0.75, fontSize: 12, marginTop: 3, fontWeight: '700' },
   input: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, color: C.text, fontSize: 16, marginBottom: 10 },
-  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 4 },
+  saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 4, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
   option: { borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 15, marginBottom: 10 },
   optionText: { color: C.text, fontSize: 16, fontWeight: '700' },

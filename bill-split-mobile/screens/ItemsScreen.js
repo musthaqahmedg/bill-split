@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   countNum: { color: C.text, fontSize: 15, fontWeight: '800', width: 30, textAlign: 'center' },
   countAmt: { color: C.faint, fontSize: 13, width: 64, textAlign: 'right' },
   count: { color: C.faint, textAlign: 'center', marginVertical: 10 },
-  button: { backgroundColor: C.lime, padding: 16, borderRadius: 18, alignItems: 'center' },
+  button: { backgroundColor: C.lime, padding: 16, borderRadius: 18, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   disabled: { backgroundColor: C.disabled },
   buttonText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
 
@@ -312,5 +312,5 @@ const styles = StyleSheet.create({
   infoTagText: { fontSize: 14, fontWeight: '700', color: C.text },
   infoAbout: { fontSize: 16, color: C.sub, lineHeight: 22 },
   infoNote: { fontSize: 12, color: C.faint, marginTop: 14 },
-  infoBtn: { backgroundColor: C.lime, padding: 14, borderRadius: 14, alignItems: 'center', marginTop: 18 },
+  infoBtn: { backgroundColor: C.lime, padding: 14, borderRadius: 14, alignItems: 'center', marginTop: 18, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
 });

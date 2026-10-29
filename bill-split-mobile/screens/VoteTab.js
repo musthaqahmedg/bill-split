@@ -73,7 +73,7 @@ export default function VoteTab({ party }) {
 const styles = StyleSheet.create({
   lead: { color: C.sub, fontSize: 14, lineHeight: 20, marginBottom: 12 },
   quick: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 6 },
-  chip: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, marginBottom: 8 },
+  chip: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, marginBottom: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   chipOutline: { borderWidth: 1, borderColor: C.border },
   chipText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   empty: { alignItems: 'center', paddingVertical: 24 },

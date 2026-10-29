@@ -441,7 +441,7 @@ const styles = StyleSheet.create({
   bdayGate: { backgroundColor: 'rgba(236,72,153,0.12)', borderWidth: 1, borderColor: 'rgba(236,72,153,0.5)', borderRadius: 16, padding: 14, marginBottom: 10 },
   bdayGateTitle: { color: C.text, fontSize: 15, fontWeight: '700' },
   bdayToday: { backgroundColor: 'rgba(236,72,153,0.1)', borderRadius: 14, paddingHorizontal: 8 },
-  treatBtn: { backgroundColor: C.pink, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 10 },
+  treatBtn: { backgroundColor: C.pink, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   treatText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   accept: { backgroundColor: C.accent, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 12, marginRight: 10 },
   acceptText: { color: '#fff', fontSize: 13, fontWeight: '600' },

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // A poll inside the chat: tap an option to vote, tap it again to take your vote back
 export default function PollCard({ poll, myId, sender, onVote }) {
@@ -36,7 +36,7 @@ export default function PollCard({ poll, myId, sender, onVote }) {
 
 const styles = StyleSheet.create({
   card: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
-  kicker: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  kicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11, letterSpacing: 1.2 },
   q: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 4, marginBottom: 8 },
   opt: { borderWidth: 1, borderColor: C.border, borderRadius: 14, marginBottom: 6, overflow: 'hidden', paddingVertical: 9, paddingHorizontal: 12 },
   optOn: { borderColor: C.lime, borderWidth: 1.5 },

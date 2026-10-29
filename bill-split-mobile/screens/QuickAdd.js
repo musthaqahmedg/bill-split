@@ -102,6 +102,6 @@ const styles = StyleSheet.create({
   quickBtn: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14, marginHorizontal: 4 },
   quickText: { color: C.text, fontSize: 14, fontWeight: '700' },
   note: { backgroundColor: C.bg, borderWidth: 1, borderColor: C.border, borderRadius: 14, padding: 12, color: C.text, fontSize: 14, marginTop: 14 },
-  save: { backgroundColor: C.lime, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12, overflow: 'hidden' },
+  save: { backgroundColor: C.lime, borderRadius: 18, padding: 16, alignItems: 'center', marginTop: 12, overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
 });

@@ -41,4 +41,8 @@ export const F = {
   italic: 'Unbounded_800ExtraBold',
   bold: 'Unbounded_700Bold',
   logo: 'Unbounded_800ExtraBold',
+  pixel: 'Silkscreen_400Regular', // 🕹️ small pixel labels (v14 sticker pop)
 };
+
+// 🏷️ Sticker shadow (v14): a hard light edge under the right + bottom of a card or button, like a sticker
+export const STICK = { borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' };

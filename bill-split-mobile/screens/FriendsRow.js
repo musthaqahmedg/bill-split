@@ -5,7 +5,7 @@ import { activeLabel } from '../services/active';
 import { friendsAtParties, myFriends } from '../services/friends';
 import { friendsBirthdays, whenText } from '../services/birthday';
 import { avatarUrl } from '../services/profile';
-import { C } from '../services/theme';
+import { C, F } from '../services/theme';
 
 // Home: "Your circle" card. Overlapping faces, who's vibing now, and ＋ to add friends.
 export default function FriendsRow({ onOpen, onAdd }) {
@@ -96,8 +96,8 @@ export default function FriendsRow({ onOpen, onAdd }) {
 const styles = StyleSheet.create({
   card: { backgroundColor: C.card, borderRadius: 22, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: C.border },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  kicker: { color: C.text, fontSize: 12, fontWeight: '900', letterSpacing: 1.2 },
-  activePill: { backgroundColor: C.lime + '22', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  kicker: { fontFamily: F.pixel, color: C.text, fontSize: 12, letterSpacing: 1.2 },
+  activePill: { backgroundColor: C.lime + '22', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   activeText: { color: C.lime, fontSize: 11, fontWeight: '900' },
   count: { color: C.faint, fontSize: 12, fontWeight: '700' },
   bday: { color: C.pink, fontSize: 13, fontWeight: '700', marginTop: 6 },

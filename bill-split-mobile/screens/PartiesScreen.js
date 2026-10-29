@@ -166,8 +166,8 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
                 <Text style={[styles.quickText, { color: C.onLime }]}>New plan</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onMemories || onNearby} activeOpacity={0.85}>
-                <Text style={styles.quickEmoji}>🎞️</Text>
-                <Text style={styles.quickText}>Memories</Text>
+                <Text style={styles.quickEmoji}>🧭</Text>
+                <Text style={styles.quickText}>Nearby</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.quickBtn, styles.quickAlt]} onPress={onGroups} activeOpacity={0.85}>
                 <Text style={styles.quickEmoji}>👥</Text>
@@ -232,14 +232,14 @@ const styles = StyleSheet.create({
   whenPill: { backgroundColor: C.accent + '33', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
   whenPast: { backgroundColor: C.cardHi },
   whenText: { color: C.accentSoft, fontSize: 11, fontWeight: '800' },
-  livePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.lime + '22', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  livePill: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.lime + '22', borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   liveDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: C.lime, marginRight: 5 },
   liveText: { color: C.lime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   roundIcon: { fontSize: 19 },
   gap: { marginLeft: 8 },
   quick: { flexDirection: 'row', marginBottom: 14 },
-  quickBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 14, alignItems: 'center' },
+  quickBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 18, paddingVertical: 14, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   quickAlt: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, marginLeft: 8 },
   quickEmoji: { fontSize: 22 },
   quickText: { color: C.text, fontSize: 13, fontWeight: '700', marginTop: 4 },

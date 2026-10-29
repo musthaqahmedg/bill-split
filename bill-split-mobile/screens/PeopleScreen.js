@@ -285,6 +285,6 @@ const styles = StyleSheet.create({
   sheetButtons: { flexDirection: 'row', marginTop: 16 },
   cancelBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', borderWidth: 1, borderColor: C.border, marginRight: 10 },
   cancelText: { color: C.sub, fontSize: 16, fontWeight: '700' },
-  doneBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.pink },
+  doneBtn: { flex: 1, padding: 14, borderRadius: 14, alignItems: 'center', backgroundColor: C.pink, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   doneOff: { backgroundColor: '#4A3440' },
 });

@@ -173,7 +173,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: C.bg },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 58, paddingHorizontal: 22 },
-  pill: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10 },
+  pill: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   pillText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
   skipText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
   slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   bottom: { paddingHorizontal: 22, paddingBottom: 36 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
   dot: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginHorizontal: 4 },
-  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden' },
+  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   buttonText: { color: C.onLime, fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
   note: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 12 },
 });
