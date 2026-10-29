@@ -99,3 +99,28 @@ export function nightsStats(plans, now = new Date()) {
   }).length;
   return { nights: past.length, month, week, favDay, squad };
 }
+
+// ⏰ When the night starts: the plan's day + the first stop's time ("9:30 PM"), or null if we don't know
+export function startTime(p, now = new Date()) {
+  const d = planDay(p && p.party_date, p && p.created_at, now);
+  const first = (Array.isArray(p && p.stops) ? p.stops : []).find((x) => x && x.time);
+  if (!d || !first) return null;
+  const m = String(first.time).trim().toLowerCase().match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (!m) return null;
+  let h = +m[1];
+  const min = +(m[2] || 0);
+  if (h > 23 || min > 59) return null;
+  if (m[3] === 'pm' && h < 12) h += 12;
+  if (m[3] === 'am' && h === 12) h = 0;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, min);
+}
+
+// "02:14:09" until it starts (null once started or more than a day away)
+export function untilStart(p, now = new Date()) {
+  const t = startTime(p, now);
+  if (!t) return null;
+  const s = Math.floor((t - now) / 1000);
+  if (s <= 0 || s > 24 * 3600) return null;
+  const two = (n) => String(n).padStart(2, '0');
+  return { h: two(Math.floor(s / 3600)), m: two(Math.floor((s % 3600) / 60)), s: two(s % 60) };
+}

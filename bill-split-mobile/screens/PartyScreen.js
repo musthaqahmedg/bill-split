@@ -19,7 +19,7 @@ import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
-import { countdown, planBucket } from '../services/when';
+import { countdown, planBucket, untilStart } from '../services/when';
 import VoteTab from './VoteTab';
 import InviteSheet from './InviteSheet';
 
@@ -267,6 +267,7 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
               <Text style={styles.meta}>📍 {details}{party.place ? '  ›' : ''}</Text>
             </TouchableOpacity>
           ) : null}
+          <Countdown party={party} />
           <TouchableOpacity style={styles.nightBtn} onPress={() => setNightOpen(true)} activeOpacity={0.85}>
             <Text style={styles.nightEmoji}>🌙</Text>
             <View style={styles.flex}>
@@ -462,6 +463,30 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
   );
 }
 
+// ⏳ "Doors open in 02:14:09" (v14), ticking every second, only when the night starts within a day
+function Countdown({ party }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => tick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const u = untilStart(party);
+  if (!u) return null;
+  return (
+    <View style={styles.count}>
+      <Text style={styles.countKicker}>DOORS OPEN IN</Text>
+      <View style={styles.countRow}>
+        {[[u.h, 'HRS'], [u.m, 'MIN'], [u.s, 'SEC']].map(([v, l]) => (
+          <View key={l} style={styles.countBox}>
+            <Text style={styles.countNum}>{v}</Text>
+            <Text style={styles.countLabel}>{l}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 
 const styles = StyleSheet.create({
@@ -477,6 +502,12 @@ const styles = StyleSheet.create({
   kickerText: { fontFamily: F.pixel, color: C.sub, fontSize: 11, letterSpacing: 0.8 },
   title: { fontFamily: F.display, fontSize: 28, lineHeight: 34, color: C.text, marginTop: 8 },
   meta: { color: C.sub, fontSize: 14, marginTop: 4 },
+  count: { backgroundColor: C.violet, borderRadius: 20, padding: 14, marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  countKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
+  countRow: { flexDirection: 'row', marginTop: 8 },
+  countBox: { flex: 1, backgroundColor: C.onLime, borderRadius: 14, paddingVertical: 8, alignItems: 'center', marginRight: 6 },
+  countNum: { fontFamily: F.display, color: '#fff', fontSize: 26 },
+  countLabel: { fontFamily: F.pixel, color: C.sub, fontSize: 9, marginTop: 2 },
   nightBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.lime, borderRadius: 20, padding: 14, marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   nightEmoji: { fontSize: 26, marginRight: 12 },
   nightTitle: { color: C.onLime, fontSize: 15, fontWeight: '900', letterSpacing: 0.5 },

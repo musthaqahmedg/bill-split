@@ -385,3 +385,13 @@ test('your nights: weekday chart, favourite day and squad', async () => {
   assert.deepEqual(s.squad[0], { name: 'Arun', count: 2 });
   assert.equal(s.squad.length, 3);
 });
+
+test('doors open in: countdown from the first stop time', async () => {
+  const { startTime, untilStart } = await import('../services/when.js');
+  const now = new Date(2026, 9, 29, 19, 15, 51);
+  const p = { party_date: 'Thu, 29 Oct', created_at: new Date(2026, 9, 20).toISOString(), stops: [{ name: 'Neon Rooftop', time: '9:30 PM' }] };
+  assert.equal(+startTime(p, now), +new Date(2026, 9, 29, 21, 30));
+  assert.deepEqual(untilStart(p, now), { h: '02', m: '14', s: '09' });
+  assert.equal(untilStart({ ...p, stops: [{ name: 'x' }] }, now), null);
+  assert.equal(untilStart(p, new Date(2026, 9, 29, 22, 0)), null); // already started
+});

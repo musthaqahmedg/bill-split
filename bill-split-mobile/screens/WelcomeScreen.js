@@ -3,7 +3,6 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { C, F, G } from '../services/theme';
-import NightSky from '../components/NightSky';
 
 // 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
@@ -11,7 +10,7 @@ const SLIDES = [
     hero: '🪩',
     stickers: ['🎉', '🎶', '✨', '🍕'],
     kicker: 'YOUR NIGHT, SORTED',
-    lines: ['PULL UP.', 'LINK UP.', 'VIBE OUT.'],
+    lines: ['Where the', 'night comes', 'alive.'],
     body: 'Plan the night, move as a squad, split the damage and get home safe. All with your people.',
     chips: ['💬 no group chat chaos', '🧾 bills split in seconds', '🏠 get home safe'],
   },
@@ -109,7 +108,14 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 
   return (
     <View style={styles.page}>
-      <NightSky height={420} />
+      <LinearGradient colors={['#FFE14D', '#FFB86B', '#FF7DBA']} start={{ x: 0, y: 0 }} end={{ x: 0.4, y: 1 }} style={StyleSheet.absoluteFill} />
+      {/* 💬 speech-bubble stickers (v14) */}
+      <View pointerEvents="none" style={[styles.bubble, { top: 108, left: 22, backgroundColor: C.cyan, transform: [{ rotate: '-4deg' }] }]}>
+        <Text style={styles.bubbleText}>Join the squad? :)</Text>
+      </View>
+      <View pointerEvents="none" style={[styles.bubble, { top: 150, right: 22, backgroundColor: C.pink, transform: [{ rotate: '5deg' }] }]}>
+        <Text style={styles.bubbleText}>THAT'S LIT!</Text>
+      </View>
       <View style={styles.topRow}>
         <View style={styles.pill}>
           <Text style={styles.pillText}>⚡ {SLIDES[page].kicker}</Text>
@@ -162,7 +168,7 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
           })}
         </View>
         <TouchableOpacity style={styles.button} onPress={last ? go : next} disabled={busy} activeOpacity={0.85}>
-          {busy ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.buttonText}>{last ? "LET'S GO – START THE NIGHT →" : 'NEXT →'}</Text>}
+          {busy ? <ActivityIndicator color={C.lime} /> : <Text style={styles.buttonText}>{last ? "LET'S GO – START THE NIGHT →" : 'NEXT →'}</Text>}
         </TouchableOpacity>
         <Text style={styles.note}>{last ? 'No sign-up needed. Save your account later.' : ' '}</Text>
       </View>
@@ -171,29 +177,31 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: C.bg },
+  page: { flex: 1, backgroundColor: '#FFE14D' },
+  bubble: { position: 'absolute', zIndex: 5, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12, borderWidth: 2, borderColor: C.onLime, borderRightWidth: 4, borderBottomWidth: 5 },
+  bubbleText: { color: C.onLime, fontSize: 13, fontWeight: '900' },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 58, paddingHorizontal: 22 },
-  pill: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  pillText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.8 },
-  skipText: { color: C.accentSoft, fontSize: 14, fontWeight: '600' },
+  pill: { backgroundColor: '#fff', borderRadius: 14, paddingVertical: 5, paddingHorizontal: 10, borderWidth: 2, borderColor: C.onLime },
+  pillText: { fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
+  skipText: { color: C.onLime, fontSize: 14, fontWeight: '800', textDecorationLine: 'underline' },
   slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   cluster: { height: 190, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  halo: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: C.accent },
-  heroBubble: { width: 116, height: 116, borderRadius: 58, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  halo: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: '#fff' },
+  heroBubble: { width: 116, height: 116, borderRadius: 58, backgroundColor: C.violet, borderWidth: 2, borderColor: C.onLime, borderRightWidth: 4, borderBottomWidth: 5, alignItems: 'center', justifyContent: 'center' },
   heroEmoji: { fontSize: 60 },
-  sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
+  sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: '#fff', borderWidth: 2, borderColor: C.onLime, borderRightWidth: 3, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },
   stickerEmoji: { fontSize: 28 },
   headline: { marginTop: 4 },
-  line: { fontFamily: F.display, color: C.text, fontSize: 37, lineHeight: 42, letterSpacing: -0.5 },
-  lineGold: { color: C.violet },
-  body: { color: C.sub, fontSize: 15, lineHeight: 22, marginTop: 14 },
+  line: { fontFamily: F.display, color: C.onLime, fontSize: 37, lineHeight: 42, letterSpacing: -0.5 },
+  lineGold: { color: C.onLime },
+  body: { color: 'rgba(14,14,18,0.8)', fontSize: 15, lineHeight: 22, marginTop: 14, fontWeight: '600' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 16 },
-  chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 11, marginRight: 8, marginBottom: 8 },
-  chipText: { color: C.text, fontSize: 12, fontWeight: '600' },
+  chip: { backgroundColor: '#fff', borderWidth: 2, borderColor: C.onLime, borderRightWidth: 3, borderBottomWidth: 4, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 11, marginRight: 8, marginBottom: 8 },
+  chipText: { color: C.onLime, fontSize: 12, fontWeight: '800' },
   bottom: { paddingHorizontal: 22, paddingBottom: 36 },
   dots: { flexDirection: 'row', justifyContent: 'center', marginBottom: 18 },
-  dot: { height: 8, borderRadius: 4, backgroundColor: C.accentSoft, marginHorizontal: 4 },
-  button: { backgroundColor: C.lime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  buttonText: { color: C.onLime, fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
-  note: { color: C.faint, fontSize: 13, textAlign: 'center', marginTop: 12 },
+  dot: { height: 8, borderRadius: 4, backgroundColor: C.onLime, marginHorizontal: 4 },
+  button: { backgroundColor: C.onLime, padding: 17, borderRadius: 18, alignItems: 'center', overflow: 'hidden', borderRightWidth: 4, borderBottomWidth: 5, borderRightColor: C.pink, borderBottomColor: C.pink },
+  buttonText: { color: C.lime, fontSize: 16, fontWeight: '900', letterSpacing: 0.3 },
+  note: { color: 'rgba(14,14,18,0.7)', fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 12 },
 });

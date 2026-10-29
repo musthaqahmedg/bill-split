@@ -88,16 +88,16 @@ export default function PartyChatScreen({ partyId, onBack }) {
     } catch (e) {}
   };
 
-  const send = async () => {
-    const body = text.trim();
+  const send = async (quick) => {
+    const body = (typeof quick === 'string' ? quick : text).trim();
     if (!body || sending) return;
     setSending(true);
-    setText('');
+    if (typeof quick !== 'string') setText('');
     try {
       const saved = await sendMessage({ partyId, memberId: me && me.id, senderName: myName || 'Host', body });
       if (saved) setMessages((list) => (list.some((x) => x.id === saved.id) ? list : [...list, saved]));
     } catch (e) {
-      setText(body);
+      if (typeof quick !== 'string') setText(body);
     } finally {
       setSending(false);
     }
@@ -213,6 +213,14 @@ export default function PartyChatScreen({ partyId, onBack }) {
         onCreate={(question, options) => createPoll({ token, memberId: me && me.id, question, options })}
       />
 
+      {/* 🏷️ Quick sticker replies (v14) */}
+      <View style={styles.stickers}>
+        {[['HOT! 🔥', C.lime], ['OK! 👌', C.cyan], ['THANKS 🙏', '#FFB347'], ["THAT'S LIT! 🤟", C.pink]].map(([t, col]) => (
+          <TouchableOpacity key={t} style={[styles.stick, { backgroundColor: col }]} onPress={() => send(t)} disabled={sending} activeOpacity={0.8}>
+            <Text style={styles.stickText}>{t}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
       <View style={styles.inputRow}>
         <TouchableOpacity style={styles.pollBtn} onPress={() => setPollOpen(true)} disabled={!token}>
           <Text style={styles.pollText}>📊</Text>
@@ -267,6 +275,9 @@ const styles = StyleSheet.create({
   emptyEmoji: { fontSize: 44 },
   emptyText: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 8 },
   emptySub: { color: C.faint, fontSize: 14, marginTop: 4 },
+  stickers: { flexDirection: 'row', paddingHorizontal: 10, paddingTop: 8, backgroundColor: C.bg },
+  stick: { flex: 1, borderRadius: 12, paddingVertical: 8, alignItems: 'center', marginHorizontal: 3, transform: [{ rotate: '-2deg' }], borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  stickText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 10, paddingBottom: 28, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg },
   input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 16, color: C.text, maxHeight: 120 },
   pollBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
