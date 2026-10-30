@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
-import { FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Animated, Easing, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { listExpenses } from '../services/expenses';
+import { getNights, stats as nightStats } from '../services/safety';
+import { myFriends } from '../services/friends';
+import { activeLabel } from '../services/active';
+import { supabase } from '../services/supabaseClient';
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { billBalance, homeBalance } from '../services/settle';
-import { monthKey, monthLabel, moneySummary } from '../services/money';
+import { monthKey, monthLabel, moneySummary, todaySummary } from '../services/money';
 import { C, F } from '../services/theme';
 import NightSky from '../components/NightSky';
 import FriendsRow from './FriendsRow';
@@ -17,6 +22,28 @@ const hello = () => {
   const h = new Date().getHours();
   return h < 5 ? 'Up late' : h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 };
+// 📣 v14: lime strip that scrolls forever at the top of Home
+const STRIP = 'VIBE OUT ✦ PULL UP ✦ LINK UP ✦ ';
+function Marquee() {
+  const x = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    const a = Animated.loop(Animated.timing(x, { toValue: 1, duration: 9000, easing: Easing.linear, useNativeDriver: true }));
+    a.start();
+    return () => a.stop();
+  }, []);
+  return (
+    <View style={styles.strip}>
+      <Animated.Text style={[styles.stripText, { transform: [{ translateX: x.interpolate({ inputRange: [0, 1], outputRange: [0, -260] }) }] }]}>
+        {STRIP.repeat(6)}
+      </Animated.Text>
+    </View>
+  );
+}
+const clockText = () => {
+  const d = new Date();
+  return `${d.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()} ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`;
+};
+
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
@@ -26,6 +53,15 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [loading, setLoading] = useState(true);
   const [showArchived, setShowArchived] = useState(false);
   const [name, setName] = useState('');
+  const [expenses, setExpenses] = useState([]);
+  const [budget, setBudget] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [outNow, setOutNow] = useState(0);
+  const [clock, setClock] = useState(clockText());
+  useEffect(() => {
+    const t = setInterval(() => setClock(clockText()), 30000);
+    return () => clearInterval(t);
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -43,6 +79,12 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     getProfile()
       .then((p) => setName(((p && p.name) || '').split(' ')[0]))
       .catch(() => {});
+    // 💰 tonight's budget, 🔥 streak, 🟢 friends out now (all optional, never block Home)
+    listExpenses().then(setExpenses).catch(() => {});
+    supabase.auth.getUser().then(({ data }) => data && data.user && supabase.from('profiles').select('monthly_budget').eq('id', data.user.id).maybeSingle())
+      .then((res) => setBudget((res && res.data && res.data.monthly_budget) || 0)).catch(() => {});
+    getNights().then((n) => setStreak(nightStats(n).current)).catch(() => {});
+    myFriends().then((l) => setOutNow((l || []).filter((f) => f.status === 'accepted' && activeLabel(f.last_seen) && activeLabel(f.last_seen).now).length)).catch(() => {});
   }, [load]);
 
   const archived = bills.filter((b) => b.status === 'archived');
@@ -106,13 +148,48 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     );
   };
 
+  const t = todaySummary(bills, expenses, budget);
+  const budgetCard = (
+    <TouchableOpacity style={styles.budget} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
+      <View style={styles.budgetTop}>
+        <Text style={styles.budgetKicker}>TONIGHT'S BUDGET</Text>
+        <View style={styles.dayPill}>
+          <Text style={styles.dayText}>DAY {new Date().getDate()}</Text>
+        </View>
+      </View>
+      {budget ? (
+        <>
+          <View style={styles.budgetRow}>
+            <Text style={[styles.budgetBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={styles.spentLabel}>SPENT</Text>
+              <Text style={styles.spent}>-{inr(t.today)}</Text>
+            </View>
+          </View>
+          <View style={styles.budgetTrack}>
+            <View style={[styles.budgetFill, { width: `${t.allowance ? Math.min(100, Math.round((t.today / t.allowance) * 100)) : 0}%` }, t.left < 0 && { backgroundColor: C.red }]} />
+          </View>
+        </>
+      ) : (
+        <View style={styles.budgetRow}>
+          <Text style={styles.budgetBig}>{inr(t.today)}</Text>
+          <Text style={styles.setBudget}>Set a budget ›</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+
   const header = (
     <View>
+      {!showArchived ? <Marquee /> : null}
       <View style={styles.header}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.logo}>VIBEOUT</Text>
-          <Text style={styles.hello}>{hello()}{name ? `, ${name}` : ''} 👋</Text>
-          <Text style={styles.title}>{showArchived ? 'Archived' : "What's the vibe\ntonight? ✨"}</Text>
+          <Text style={styles.clock}>{clock}</Text>
+          {outNow ? (
+            <View style={styles.outPill}>
+              <Text style={styles.outText}>{outNow} out now</Text>
+            </View>
+          ) : null}
         </View>
         {onNotifications ? (
           <TouchableOpacity style={styles.bell} onPress={onNotifications}>
@@ -131,7 +208,10 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         ) : null}
       </View>
 
-      {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} /> : null}
+      <Text style={styles.title}>{showArchived ? 'Archived' : "What's the 🔥 vibe\ntonight?"}</Text>
+      {name && !showArchived ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
+
+      {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} budget={budgetCard} streak={streak} /> : null}
 
       {/* ⚡ Fast settlement (Final UX): what's open, snap a new bill, or settle the oldest one */}
       {!showArchived ? (
@@ -236,8 +316,25 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: C.bg },
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  hello: { color: C.sub, fontSize: 15, fontWeight: '500' },
-  title: { fontFamily: F.display, fontSize: 24, color: C.text, marginTop: 2 },
+  hello: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: 12 },
+  title: { fontFamily: F.display, fontSize: 30, lineHeight: 36, color: C.text, marginTop: 2 },
+  strip: { marginHorizontal: -20, marginTop: -14, marginBottom: 16, backgroundColor: C.lime, paddingVertical: 7, overflow: 'hidden', transform: [{ rotate: '-2deg' }] },
+  stripText: { fontFamily: F.display, color: C.onLime, fontSize: 13, letterSpacing: 0.5, width: 2400, flexWrap: 'nowrap' },
+  clock: { fontFamily: F.pixel, color: C.sub, fontSize: 13 },
+  outPill: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 12, marginTop: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  outText: { color: C.onLime, fontSize: 13, fontWeight: '900' },
+  budget: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 14 },
+  budgetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  budgetKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
+  dayPill: { backgroundColor: C.cardHi, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  dayText: { fontFamily: F.pixel, color: C.text, fontSize: 10 },
+  budgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 },
+  budgetBig: { fontFamily: F.display, color: C.lime, fontSize: 34 },
+  spentLabel: { fontFamily: F.pixel, color: C.faint, fontSize: 10 },
+  spent: { fontFamily: F.bold, color: C.pink, fontSize: 17, marginTop: 2 },
+  setBudget: { color: C.lime, fontSize: 14, fontWeight: '800', marginBottom: 6 },
+  budgetTrack: { height: 8, borderRadius: 4, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 12 },
+  budgetFill: { height: '100%', borderRadius: 4, backgroundColor: C.lime },
   bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   bellIcon: { fontSize: 20 },
   bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },

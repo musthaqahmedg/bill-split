@@ -7,8 +7,8 @@ import { C, F, G } from '../services/theme';
 // 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
   {
-    hero: '🪩',
-    stickers: ['🎉', '🎶', '✨', '🍕'],
+    hero: '🤟',
+    stickers: ['😎', '🎶', '✨', '🪩'],
     kicker: 'YOUR NIGHT, SORTED',
     lines: ['Where the', 'night comes', 'alive.'],
     body: 'Plan the night, move as a squad, split the damage and get home safe. All with your people.',
@@ -60,7 +60,10 @@ function Stickers({ hero, stickers }) {
   ];
   return (
     <View style={styles.cluster}>
-      <Animated.View style={[styles.halo, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.25, 0.6] }) }]} />
+      {/* 🌈 v14 rainbow glow behind the hero */}
+      <Animated.View style={[styles.halo, { opacity: glow.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1] }), transform: [{ scale: glow.interpolate({ inputRange: [0, 1], outputRange: [0.95, 1.05] }) }] }]}>
+        <LinearGradient colors={['#7DF9FF', '#C77DFF', '#FF4FA0', '#FFB86B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      </Animated.View>
       <View style={styles.heroBubble}>
         <Text style={styles.heroEmoji}>{hero}</Text>
       </View>
@@ -116,6 +119,11 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
       <View pointerEvents="none" style={[styles.bubble, { top: 150, right: 22, backgroundColor: C.pink, transform: [{ rotate: '5deg' }] }]}>
         <Text style={styles.bubbleText}>THAT'S LIT!</Text>
       </View>
+      {page === 0 ? (
+        <View pointerEvents="none" style={[styles.bubble, { top: 200, left: 30, backgroundColor: '#fff', transform: [{ rotate: '-6deg' }] }]}>
+          <Text style={styles.bubbleText}>pull up? 😎</Text>
+        </View>
+      ) : null}
       <View style={styles.topRow}>
         <View style={styles.pill}>
           <Text style={styles.pillText}>⚡ {SLIDES[page].kicker}</Text>
@@ -186,9 +194,9 @@ const styles = StyleSheet.create({
   skipText: { color: C.onLime, fontSize: 14, fontWeight: '800', textDecorationLine: 'underline' },
   slide: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   cluster: { height: 190, alignItems: 'center', justifyContent: 'center', marginBottom: 18 },
-  halo: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: '#fff' },
+  halo: { position: 'absolute', width: 180, height: 180, borderRadius: 90, overflow: 'hidden' },
   heroBubble: { width: 116, height: 116, borderRadius: 58, backgroundColor: C.violet, borderWidth: 2, borderColor: C.onLime, borderRightWidth: 4, borderBottomWidth: 5, alignItems: 'center', justifyContent: 'center' },
-  heroEmoji: { fontSize: 60 },
+  heroEmoji: { textShadowColor: 'rgba(0,0,0,0.25)', textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0, fontSize: 60 },
   sticker: { position: 'absolute', width: 58, height: 58, borderRadius: 18, backgroundColor: '#fff', borderWidth: 2, borderColor: C.onLime, borderRightWidth: 3, borderBottomWidth: 4, alignItems: 'center', justifyContent: 'center' },
   stickerEmoji: { fontSize: 28 },
   headline: { marginTop: 4 },

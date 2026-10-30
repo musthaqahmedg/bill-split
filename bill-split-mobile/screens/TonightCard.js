@@ -12,7 +12,7 @@ import { countdown, planBucket } from '../services/when';
 // 🌙 Home "Tonight": vibe chips to start a plan, your next plan, and its live vibe-check poll (Gautham's Home design)
 const VIBES = ['nightout', 'party', 'birthday', 'house', 'movie', 'trip', 'daytrip', 'match'];
 
-export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
+export default function TonightCard({ onPlan, onOpenPlan, refreshKey, budget = null, streak = 0 }) {
   const [next, setNext] = useState(null);
   const [poll, setPoll] = useState(null);
   const [recapParty, setRecapParty] = useState(null); // 🎬 morning-after story
@@ -65,6 +65,8 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
         })}
       </ScrollView>
 
+      {budget}
+
       {/* 🟢 Live night strip (Final UX): your plan is on today */}
       {next && planBucket(next) === 'live' ? (
         <TouchableOpacity style={styles.live} onPress={() => onOpenPlan(next.id)} activeOpacity={0.85}>
@@ -109,6 +111,19 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
         </TouchableOpacity>
       ) : null}
 
+      {/* 🤟 v14 tiles: start Night Mode + your safe-night streak */}
+      <View style={styles.tiles}>
+        <TouchableOpacity style={[styles.tile, { backgroundColor: C.lime }]} onPress={() => (next ? onOpenPlan(next.id) : onPlan('nightout'))} activeOpacity={0.85}>
+          <Text style={styles.tileEmoji}>🤟</Text>
+          <Text style={styles.tileTitle}>{next ? 'Start Night\nMode' : 'Plan a\nnight'}</Text>
+        </TouchableOpacity>
+        <View style={[styles.tile, { backgroundColor: C.violet }]}>
+          <Text style={styles.tileKicker}>NIGHT STREAK</Text>
+          <Text style={styles.tileBig}>{streak}</Text>
+          <Text style={styles.tileSub}>{streak ? 'safe nights in a row 🔥' : 'get home safe to start'}</Text>
+        </View>
+      </View>
+
       {/* 🗳️ Vibe check: the latest poll in your next plan, vote right here */}
       {poll ? (
         <View style={styles.pollWrap}>
@@ -123,6 +138,13 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey }) {
 
 const styles = StyleSheet.create({
   chips: { marginBottom: 14, marginHorizontal: -2 },
+  tiles: { flexDirection: 'row', marginBottom: 14 },
+  tile: { flex: 1, borderRadius: 22, padding: 14, minHeight: 130, marginHorizontal: 3, justifyContent: 'flex-end', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  tileEmoji: { position: 'absolute', top: 10, left: 12, fontSize: 40 },
+  tileTitle: { fontFamily: F.display, color: C.onLime, fontSize: 19, lineHeight: 22 },
+  tileKicker: { position: 'absolute', top: 14, left: 14, fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
+  tileBig: { fontFamily: F.display, color: C.onLime, fontSize: 48, lineHeight: 52, textShadowColor: C.lime, textShadowOffset: { width: 3, height: 3 }, textShadowRadius: 0 },
+  tileSub: { color: C.onLime, opacity: 0.75, fontSize: 11, fontWeight: '700' },
   chip: { backgroundColor: 'transparent', borderWidth: 1.5, borderRadius: 18, paddingVertical: 8, paddingHorizontal: 13, marginHorizontal: 3 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '600' },
   next: { backgroundColor: C.lime, borderRadius: 22, padding: 16, marginBottom: 14, overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
