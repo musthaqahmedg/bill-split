@@ -14,6 +14,7 @@ import { computeSplit } from '../services/splitEngine';
 import { show } from '../services/names';
 import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
+import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
 
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -30,6 +31,7 @@ export default function SplitScreen({
   const [wholeOpen, setWholeOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false); // ℹ️ how tax & service were split
   const [itemsOpen, setItemsOpen] = useState(false); // 🧾 who had what, item by item
+  const [feedbackFor, setFeedbackFor] = useState(undefined); // 💬 bill id to ask about (undefined = closed)
   const [tip, setTip] = useState(Number(bill && bill.tip) || 0); // 💁 optional tip on top
 
   // Pairs: who is this person paired with?
@@ -131,8 +133,9 @@ export default function SplitScreen({
         await updateBill(editingBillId, payload);
         Alert.alert('Updated! ✏️', 'Your changes are saved.', [{ text: 'OK', onPress: onDone }]);
       } else {
-        await saveBill(payload);
-        Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [{ text: 'OK', onPress: onDone }]);
+        const saved = await saveBill(payload);
+        if (await shouldAskFeedback()) setFeedbackFor((saved && saved.id) || null);
+        else Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [{ text: 'OK', onPress: onDone }]);
       }
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -479,7 +482,8 @@ export default function SplitScreen({
           </View>
         </View>
       </Modal>
-    </View>
+    <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(); }} />
+      </View>
   );
 }
 

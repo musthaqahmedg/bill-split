@@ -8,6 +8,15 @@ import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
+import OfflineBanner from './components/OfflineBanner';
+import { Alert as RNAlert } from 'react-native';
+// 📴 Friendlier pop-ups when the internet drops: "Network request failed" → plain words
+{
+  const show = RNAlert.alert;
+  const NET = /network request failed|failed to fetch|fetch failed|load failed|networkerror|timed? ?out/i;
+  RNAlert.alert = (title: any, message?: any, ...rest: any[]) =>
+    NET.test(String(message || '')) ? show('📴 No internet', "You're offline. Check your connection and try again.", ...rest) : show(title, message, ...rest);
+}
 import BugSheet from './screens/BugSheet';
 import TabBar from './screens/TabBar';
 import BugBubble from './screens/BugBubble';
@@ -954,6 +963,7 @@ function Root() {
       </Animated.View>
       <View {...edge.panHandlers} style={{ position: 'absolute', left: 0, top: 90, bottom: 0, width: 22 }} />
       <NotificationBanner key={uid || 'none'} enabled={!!uid} />
+      <OfflineBanner />
       {tester ? <BugBubble onPress={() => setBug(true)} /> : null}
       <BugSheet visible={bug} onClose={() => setBug(false)} screen={history.current[history.current.length - 1]} />
     </View>
