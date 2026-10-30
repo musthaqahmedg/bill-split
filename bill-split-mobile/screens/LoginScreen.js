@@ -1,4 +1,3 @@
-import { LinearGradient } from '../components/SafeGradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useEffect, useState } from 'react';
 import {
@@ -179,8 +178,7 @@ export default function LoginScreen({ onLoginSuccess, onBack, onGuest, linking: 
           )}
 
           <TouchableOpacity style={styles.button} onPress={handleSendOtp} disabled={loading}>
-            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Send code</Text>}
+            {loading ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.buttonText}>Send code</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => switchMethod(method === 'email' ? 'phone' : 'email')}>
@@ -243,8 +241,7 @@ export default function LoginScreen({ onLoginSuccess, onBack, onGuest, linking: 
             maxLength={8}
           />
           <TouchableOpacity style={styles.button} onPress={handleVerifyOtp} disabled={loading}>
-            <LinearGradient colors={G.hot} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Let's go</Text>}
+            {loading ? <ActivityIndicator color={C.onLime} /> : <Text style={styles.buttonText}>Let's go</Text>}
           </TouchableOpacity>
           <TouchableOpacity onPress={handleSendOtp} disabled={loading}>
             <Text style={styles.link}>Didn't get it? Send again</Text>
@@ -276,7 +273,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: F.display, fontSize: 30, textAlign: 'center', color: C.text, marginTop: 8 },
   subtitle: { fontSize: 16, color: C.accentSoft, marginTop: 6, marginBottom: 40, textAlign: 'center' },
   label: { color: C.sub, fontSize: 14, marginBottom: 8 },
-  quick: { backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.accent, borderRadius: 14, padding: 16, marginBottom: 20, alignItems: 'center' },
+  quick: { backgroundColor: C.cardHi, borderWidth: 1, borderColor: C.lime, borderRadius: 14, padding: 16, marginBottom: 20, alignItems: 'center' },
   quickTitle: { color: C.sub, fontSize: 13 },
   quickEmail: { color: C.text, fontSize: 17, fontWeight: '800', marginTop: 4 },
   hint: { color: C.faint, fontSize: 13, marginBottom: 10 },
@@ -286,7 +283,7 @@ const styles = StyleSheet.create({
   input: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, padding: 15, marginBottom: 15, borderRadius: 14, fontSize: 17, color: C.text },
   phoneInput: { flex: 1 },
   otpInput: { textAlign: 'center', fontSize: 24, letterSpacing: 8 },
-  button: { backgroundColor: C.accent, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 6, overflow: 'hidden' },
-  buttonText: { color: '#fff', fontSize: 17, fontWeight: '800' },
+  button: { backgroundColor: C.lime, padding: 16, borderRadius: 14, alignItems: 'center', marginTop: 6, overflow: 'hidden', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  buttonText: { color: C.onLime, fontSize: 17, fontWeight: '800' },
   link: { color: C.accentSoft, textAlign: 'center', marginTop: 18, fontSize: 15 },
 });
