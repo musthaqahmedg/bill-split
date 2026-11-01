@@ -395,3 +395,12 @@ test('doors open in: countdown from the first stop time', async () => {
   assert.equal(untilStart({ ...p, stops: [{ name: 'x' }] }, now), null);
   assert.equal(untilStart(p, new Date(2026, 9, 29, 22, 0)), null); // already started
 });
+
+test('budget warning stages: 80% and 100%', async () => {
+  const { budgetStage } = await import('../services/money.js');
+  assert.equal(budgetStage(7999, 10000), 0);
+  assert.equal(budgetStage(8000, 10000), 80);
+  assert.equal(budgetStage(9999, 10000), 80);
+  assert.equal(budgetStage(10000, 10000), 100);
+  assert.equal(budgetStage(500, 0), 0);
+});

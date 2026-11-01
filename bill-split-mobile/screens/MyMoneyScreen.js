@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { listBills, listBillsDetailed } from '../services/bills';
 import { listExpenses, removeExpense } from '../services/expenses';
 import QuickAdd from './QuickAdd';
@@ -22,6 +22,7 @@ export default function MyMoneyScreen({ onBack }) {
   const [adding, setAdding] = useState(false);
   const [addCat, setAddCat] = useState(null); // quick-add chip that opened the sheet
   const [budget, setBudget] = useState(0);
+  const [warn, setWarn] = useState(true); // ⚠️ warn at 80% / 100%
   const [month, setMonth] = useState(monthKey(new Date()));
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -47,8 +48,9 @@ export default function MyMoneyScreen({ onBack }) {
       listExpenses().then(setExpenses).catch(() => setExpenses([]));
       const id = u && u.data && u.data.user ? u.data.user.id : null;
       if (id) {
-        const { data } = await supabase.from('profiles').select('monthly_budget').eq('id', id).maybeSingle();
+        const { data } = await supabase.from('profiles').select('monthly_budget, budget_warn').eq('id', id).maybeSingle();
         setBudget((data && data.monthly_budget) || 0);
+        setWarn(!data || data.budget_warn !== false);
       }
     } catch (e) {
       setBills([]);
@@ -391,6 +393,23 @@ export default function MyMoneyScreen({ onBack }) {
                 </TouchableOpacity>
               ))}
             </View>
+            <View style={styles.warnRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.warnTitle}>⚠️ Warn me at 80%</Text>
+                <Text style={styles.warnSub}>A heads-up at 80% and when it's used up</Text>
+              </View>
+              <Switch
+                value={warn}
+                trackColor={{ true: C.lime, false: C.border }}
+                onValueChange={async (v) => {
+                  setWarn(v);
+                  try {
+                    const { data: u } = await supabase.auth.getUser();
+                    await supabase.from('profiles').update({ budget_warn: v }).eq('id', u.user.id);
+                  } catch (e) {}
+                }}
+              />
+            </View>
             <TouchableOpacity style={styles.saveBtn} onPress={() => saveBudget(draft)}>
               <Text style={styles.saveText}>Save budget</Text>
             </TouchableOpacity>
@@ -505,5 +524,8 @@ const styles = StyleSheet.create({
   pickText: { color: C.text, fontSize: 14, fontWeight: '600' },
   saveBtn: { backgroundColor: C.lime, borderRadius: 18, padding: 15, alignItems: 'center', marginTop: 10, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   saveText: { color: C.onLime, fontSize: 16, fontWeight: '800' },
+  warnRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.bg, borderRadius: 14, padding: 12, marginTop: 6 },
+  warnTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  warnSub: { color: C.faint, fontSize: 12, marginTop: 2 },
   remove: { color: C.red, fontSize: 14, textAlign: 'center', marginTop: 14 },
 });

@@ -215,3 +215,10 @@ export function todaySummary(bills, expenses, budget, now = new Date()) {
   const allowance = b ? Math.max(0, Math.floor((b - before) / daysLeft)) : 0;
   return { today, before, daysLeft, allowance, left: allowance - today, base: b ? Math.floor(b / daysInMonth) : 0 };
 }
+
+// 💰 Night Budget warning stage: 0 (fine), 80 (getting close) or 100 (used up)
+export function budgetStage(spent, budget) {
+  if (!budget || budget <= 0) return 0;
+  const pct = spent / budget;
+  return pct >= 1 ? 100 : pct >= 0.8 ? 80 : 0;
+}

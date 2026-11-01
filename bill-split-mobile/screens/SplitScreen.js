@@ -15,6 +15,7 @@ import { show } from '../services/names';
 import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
+import { checkBudgetWarning } from '../services/budgetWarn';
 
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -134,6 +135,7 @@ export default function SplitScreen({
         Alert.alert('Updated! ✏️', 'Your changes are saved.', [{ text: 'OK', onPress: onDone }]);
       } else {
         const saved = await saveBill(payload);
+        setTimeout(checkBudgetWarning, 1500); // ⚠️ 80% / 100% of the Night Budget
         if (await shouldAskFeedback()) setFeedbackFor((saved && saved.id) || null);
         else Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [{ text: 'OK', onPress: onDone }]);
       }
