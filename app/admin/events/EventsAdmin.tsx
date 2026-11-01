@@ -15,6 +15,14 @@ const pad = (n: number) => String(n).padStart(2, '0');
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const dayOf = (v: string) => { if (!v) return ''; if (/^\d{4}-\d{2}-\d{2}T/.test(v) && v.length <= 16) return v.slice(0, 10); const d = new Date(v); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const timeOf = (v: string) => { if (!v) return ''; if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) return v.slice(11, 16); const d = new Date(v); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+// quick picks: Today, Tomorrow, this Fri, this Sat
+const ymd = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const quickDays = (): [string, string][] => {
+  const now = new Date();
+  const add = (n: number) => { const d = new Date(now); d.setDate(d.getDate() + n); return d; };
+  const next = (dow: number) => add((dow - now.getDay() + 7) % 7);
+  return [['Today', ymd(now)], ['Tomorrow', ymd(add(1))], [`Fri ${next(5).getDate()}`, ymd(next(5))], [`Sat ${next(6).getDate()}`, ymd(next(6))]];
+};
 const join = (day: string, time: string) => (day ? `${day}T${time}` : '');
 const TIMES: [string, string][] = Array.from({ length: 20 }, (_, i) => { const h = (10 + Math.floor(i / 1)) % 24; return [`${pad(h)}:00`, `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`] as [string, string]; }).concat([['21:30', '9:30 PM'], ['22:30', '10:30 PM']]);
 // 🏙️ city → map point (so nobody types latitude/longitude)
@@ -106,7 +114,21 @@ export default function EventsAdmin() {
             <p style={S.muted}>Only use posters the organiser has given you permission to use.</p>
           </L>
           <div style={S.two}>
-            <L t="📅 Date"><input style={S.in} type="date" value={dayOf(f.start_at)} onChange={(e) => setForm({ ...f, start_at: join(e.target.value, timeOf(f.start_at) || '21:00') })} /></L>
+            <L t="📅 Date">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+                {quickDays().map(([label, d]) => (
+                  <button key={label} type="button" style={dayOf(f.start_at) === d ? S.chipOn : S.chip} onClick={() => setForm({ ...f, start_at: join(d, timeOf(f.start_at) || '21:00') })}>{label}</button>
+                ))}
+              </div>
+              <input
+                style={{ ...S.in, colorScheme: 'dark', cursor: 'pointer' }}
+                type="date"
+                min={today()}
+                value={dayOf(f.start_at)}
+                onClick={(e) => { try { (e.currentTarget as any).showPicker(); } catch (er) {} }}
+                onChange={(e) => setForm({ ...f, start_at: join(e.target.value, timeOf(f.start_at) || '21:00') })}
+              />
+            </L>
             <L t="🕘 Time">
               <select style={S.in} value={timeOf(f.start_at) || '21:00'} onChange={(e) => setForm({ ...f, start_at: join(dayOf(f.start_at) || today(), e.target.value) })}>
                 {TIMES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
@@ -197,11 +219,13 @@ const S: Record<string, CSSProperties> = {
   card: { background: '#1A1A21', border: '1px solid #2E2E39', borderRadius: 18, padding: 18, marginBottom: 12 },
   two: { display: 'flex', gap: 12, flexWrap: 'wrap' },
   label: { color: '#ABABBC', fontSize: 13, marginBottom: 6 },
-  in: { width: '100%', boxSizing: 'border-box', background: '#0E0E12', color: '#F7F7F9', border: '1px solid #2E2E39', borderRadius: 12, padding: '10px 12px', fontSize: 15, marginBottom: 8 },
+  in: { colorScheme: 'dark', width: '100%', boxSizing: 'border-box', background: '#0E0E12', color: '#F7F7F9', border: '1px solid #2E2E39', borderRadius: 12, padding: '10px 12px', fontSize: 15, marginBottom: 8 },
   primary: { background: '#E2FF3B', color: '#0E0E12', border: 0, borderRadius: 14, padding: '12px 18px', fontWeight: 800, fontSize: 15, cursor: 'pointer' },
   link: { background: 'none', border: 0, color: '#E2FF3B', fontWeight: 700, cursor: 'pointer', marginLeft: 10, fontSize: 14 },
   muted: { color: '#76768A', fontSize: 13, margin: '4px 0' },
   err: { color: '#F87171', fontSize: 14 },
+  chip: { background: '#24242D', color: '#F7F7F9', border: '1px solid #2E2E39', borderRadius: 12, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' },
+  chipOn: { background: '#E2FF3B', color: '#0E0E12', border: '1px solid #E2FF3B', borderRadius: 12, padding: '8px 12px', fontWeight: 800, cursor: 'pointer' },
   check: { display: 'block', color: '#F7F7F9', fontSize: 16, margin: '6px 0 12px', cursor: 'pointer' },
   pill: { background: '#24242D', borderRadius: 8, padding: '2px 8px', fontSize: 12, marginLeft: 6 },
 };
