@@ -137,6 +137,9 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       } else if (d.party_id) {
         setOpenPartyId(d.party_id);
         setScreen(d.chat ? 'partyChat' : 'party');
+      } else if (d.events) {
+        setOpenEventId('all'); // 🔥 weekend alert → Home shows all events near you
+        setScreen('home');
       } else if (d.event_id) {
         setOpenEventId(d.event_id); // 🎉 event alert → Home opens that event's pop-up
         setScreen('home');

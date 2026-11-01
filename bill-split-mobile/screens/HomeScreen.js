@@ -66,8 +66,13 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     if (!openEventId) return;
     let off = false;
     (async () => {
-      const ev = events.find((e) => e.id === openEventId) || (await getEvent(openEventId).catch(() => null));
-      if (!off && ev && ev.status !== 'cancelled') setPop({ list: [ev], start: 0 });
+      if (openEventId === 'all') {
+        const list = events.length ? events : await eventsNear().catch(() => []);
+        if (!off && list.length) setPop({ list, start: 0 });
+      } else {
+        const ev = events.find((e) => e.id === openEventId) || (await getEvent(openEventId).catch(() => null));
+        if (!off && ev && ev.status !== 'cancelled') setPop({ list: [ev], start: 0 });
+      }
       onEventOpened && onEventOpened();
     })();
     return () => { off = true; };
