@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { deleteParty, getParty, partyLink, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
@@ -258,6 +258,9 @@ export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit
 
       <ScrollView style={styles.list} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" refreshControl={<RefreshControl refreshing={refreshing} onRefresh={reload} tintColor={C.lime} />} stickyHeaderIndices={[1]}>
         <View>
+          {party.event && party.event.poster_url ? (
+            <Image source={{ uri: party.event.poster_url }} style={styles.evCover} resizeMode="cover" accessibilityLabel="Event poster" />
+          ) : null}
           <View style={[styles.kickerPill, bucket === 'live' && styles.kickerLive]}>
             <Text style={[styles.kickerText, bucket === 'live' && { color: C.onLime }]}>{bucket === 'live' ? '● LIVE TONIGHT' : `${kindOf(party.kind).emoji} ${when.toUpperCase()}`}</Text>
           </View>
@@ -490,6 +493,7 @@ function Countdown({ party }) {
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 
 const styles = StyleSheet.create({
+  evCover: { width: '100%', height: 180, borderRadius: 20, marginBottom: 14, backgroundColor: C.card, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   flex: { flex: 1 },

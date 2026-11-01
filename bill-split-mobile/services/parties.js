@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
+    .select('*, event:events(poster_url), party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -47,7 +47,7 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null }) {
+export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null, eventId = null }) {
   track('newParty', 'created a plan', kind + ': ' + title);
   const { data: party, error: e1 } = await supabase
     .from('parties')
@@ -55,6 +55,7 @@ export async function createParty({ title, kind = 'party', party_date, place, bu
       title: title.trim(),
       kind,
       group_id: groupId,
+      event_id: eventId, // 🎉 made from a big event → its poster is the room cover
       party_date: party_date.trim() || null,
       place: place.trim() || null,
       budget: Math.round(Number(budget) || 0),

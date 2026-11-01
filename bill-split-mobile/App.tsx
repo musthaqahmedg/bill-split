@@ -712,6 +712,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         initialPlace={planPlace}
         initialTitle={planEvent ? planEvent.title : null}
         initialDate={planEvent ? planEvent.start_at : null}
+        eventId={planEvent ? planEvent.id : null}
         group={editPlan ? null : planGroup}
         editing={editPlan}
         onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : planPlace ? 'discover' : 'parties')}

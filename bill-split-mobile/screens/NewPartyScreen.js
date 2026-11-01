@@ -98,7 +98,7 @@ const STEPS = [
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null, initialPlace = null, initialTitle = null, initialDate = null }) {
+export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null, initialPlace = null, initialTitle = null, initialDate = null, eventId = null }) {
   const [menuFor, setMenuFor] = useState(null); // 📋 menu of the chosen place
   // editing = an existing plan: the form starts filled in and saves changes instead of creating
   const ex = editing;
@@ -251,7 +251,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         await updateParty(ex, { title, kind, party_date: date, place, budget, people, mode, special, phones, emails });
         onCreated(ex.id);
       } else {
-        const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null });
+        const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null, eventId: ex ? null : eventId });
         AsyncStorage.removeItem(DRAFT).catch(() => {});
         onCreated(party.id);
       }
