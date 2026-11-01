@@ -10,7 +10,19 @@ type Ev = {
   city: string | null; lat: number | null; lng: number | null; price_from: number | null; booking_url: string | null;
   status: 'draft' | 'published' | 'sold_out' | 'cancelled'; is_featured: boolean;
 };
-const blank: Ev = { title: '', poster_url: null, start_at: '', end_at: null, venue_name: '', city: 'Palakkad', lat: null, lng: null, price_from: null, booking_url: null, status: 'draft', is_featured: true };
+const blank: Ev = { title: '', poster_url: null, start_at: '', end_at: null, venue_name: '', city: 'Palakkad', lat: 10.7867, lng: 76.6548, price_from: null, booking_url: null, status: 'draft', is_featured: true };
+const pad = (n: number) => String(n).padStart(2, '0');
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const dayOf = (v: string) => { if (!v) return ''; if (/^\d{4}-\d{2}-\d{2}T/.test(v) && v.length <= 16) return v.slice(0, 10); const d = new Date(v); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const timeOf = (v: string) => { if (!v) return ''; if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(v)) return v.slice(11, 16); const d = new Date(v); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const join = (day: string, time: string) => (day ? `${day}T${time}` : '');
+const TIMES: [string, string][] = Array.from({ length: 20 }, (_, i) => { const h = (10 + Math.floor(i / 1)) % 24; return [`${pad(h)}:00`, `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`] as [string, string]; }).concat([['21:30', '9:30 PM'], ['22:30', '10:30 PM']]);
+// 🏙️ city → map point (so nobody types latitude/longitude)
+const CITIES: Record<string, [number, number]> = {
+  Palakkad: [10.7867, 76.6548], Kochi: [9.9312, 76.2673], Thrissur: [10.5276, 76.2144], Kozhikode: [11.2588, 75.7804],
+  Thiruvananthapuram: [8.5241, 76.9366], Coimbatore: [11.0168, 76.9558], Bengaluru: [12.9716, 77.5946], Chennai: [13.0827, 80.2707],
+  Hyderabad: [17.385, 78.4867], Mumbai: [19.076, 72.8777], Delhi: [28.6139, 77.209], Goa: [15.2993, 74.124],
+};
 const local = (iso: string | null) => (iso ? new Date(new Date(iso).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : '');
 
 export default function EventsAdmin() {
@@ -53,7 +65,7 @@ export default function EventsAdmin() {
   const save = async () => {
     if (!form) return;
     setMsg('');
-    if (!form.title.trim() || !form.venue_name.trim() || !form.start_at) return setMsg('Title, venue and start time are needed');
+    if (!form.title.trim() || !form.venue_name.trim() || !dayOf(form.start_at)) return setMsg('Please add a title, venue and date');
     if (form.booking_url && !/^https:\/\//i.test(form.booking_url)) return setMsg('Booking link must start with https://');
     setBusy(true);
     const row = { ...form, start_at: new Date(form.start_at).toISOString(), end_at: form.end_at ? new Date(form.end_at).toISOString() : null, updated_at: new Date().toISOString() };
@@ -68,7 +80,6 @@ export default function EventsAdmin() {
     await sb.from('events').delete().eq('id', id);
     load();
   };
-  const here = () => navigator.geolocation?.getCurrentPosition((p) => form && setForm({ ...form, lat: +p.coords.latitude.toFixed(6), lng: +p.coords.longitude.toFixed(6) }));
 
   if (!ready) return <Page><p style={S.muted}>Loading…</p></Page>;
   if (!user) return <Page><Login /></Page>;
@@ -88,40 +99,34 @@ export default function EventsAdmin() {
       {f ? (
         <div style={S.card}>
           <h2 style={S.h2}>{f.id ? 'Edit event' : 'New event'}</h2>
-          <L t="Title"><input style={S.in} value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder="Halloween Night" /></L>
-          <L t="Poster (portrait works best)">
+          <L t="🎉 Event name"><input style={S.in} value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder="Halloween Night" /></L>
+          <L t="🖼️ Poster (tall image works best)">
             {f.poster_url ? <img src={f.poster_url} alt="" style={{ height: 160, borderRadius: 12, display: 'block', marginBottom: 8 }} /> : null}
             <input type="file" accept="image/*" onChange={(e) => e.target.files && e.target.files[0] && upload(e.target.files[0])} />
             <p style={S.muted}>Only use posters the organiser has given you permission to use.</p>
           </L>
           <div style={S.two}>
-            <L t="Starts"><input style={S.in} type="datetime-local" value={local(f.start_at) || f.start_at} onChange={(e) => setForm({ ...f, start_at: e.target.value })} /></L>
-            <L t="Ends (optional)"><input style={S.in} type="datetime-local" value={local(f.end_at) || ''} onChange={(e) => setForm({ ...f, end_at: e.target.value || null })} /></L>
-          </div>
-          <div style={S.two}>
-            <L t="Venue"><input style={S.in} value={f.venue_name} onChange={(e) => setForm({ ...f, venue_name: e.target.value })} /></L>
-            <L t="City"><input style={S.in} value={f.city || ''} onChange={(e) => setForm({ ...f, city: e.target.value || null })} /></L>
-          </div>
-          <div style={S.two}>
-            <L t="Latitude"><input style={S.in} value={f.lat ?? ''} onChange={(e) => setForm({ ...f, lat: e.target.value ? +e.target.value : null })} /></L>
-            <L t="Longitude"><input style={S.in} value={f.lng ?? ''} onChange={(e) => setForm({ ...f, lng: e.target.value ? +e.target.value : null })} /></L>
-          </div>
-          <button style={S.link} onClick={here}>📍 Use my current location</button>
-          <div style={S.two}>
-            <L t="Price from (₹, 0 = free)"><input style={S.in} inputMode="numeric" value={f.price_from ?? ''} onChange={(e) => setForm({ ...f, price_from: e.target.value === '' ? null : +e.target.value.replace(/\D/g, '') })} /></L>
-            <L t="Booking link (https://…)"><input style={S.in} value={f.booking_url || ''} onChange={(e) => setForm({ ...f, booking_url: e.target.value || null })} /></L>
-          </div>
-          <div style={S.two}>
-            <L t="Status">
-              <select style={S.in} value={f.status} onChange={(e) => setForm({ ...f, status: e.target.value as Ev['status'] })}>
-                <option value="draft">Draft (hidden)</option>
-                <option value="published">Published</option>
-                <option value="sold_out">Sold out</option>
-                <option value="cancelled">Cancelled (hidden)</option>
+            <L t="📅 Date"><input style={S.in} type="date" value={dayOf(f.start_at)} onChange={(e) => setForm({ ...f, start_at: join(e.target.value, timeOf(f.start_at) || '21:00') })} /></L>
+            <L t="🕘 Time">
+              <select style={S.in} value={timeOf(f.start_at) || '21:00'} onChange={(e) => setForm({ ...f, start_at: join(dayOf(f.start_at) || today(), e.target.value) })}>
+                {TIMES.map(([v, label]) => <option key={v} value={v}>{label}</option>)}
               </select>
             </L>
-            <L t="Pop-up"><label style={{ color: '#ddd' }}><input type="checkbox" checked={f.is_featured} onChange={(e) => setForm({ ...f, is_featured: e.target.checked })} /> Show as a big event</label></L>
           </div>
+          <div style={S.two}>
+            <L t="📍 Venue"><input style={S.in} value={f.venue_name} onChange={(e) => setForm({ ...f, venue_name: e.target.value })} placeholder="e.g. Quarter Restobar" /></L>
+            <L t="🏙️ City">
+              <select style={S.in} value={f.city || 'Palakkad'} onChange={(e) => { const c = CITIES[e.target.value]; setForm({ ...f, city: e.target.value, lat: c[0], lng: c[1] }); }}>
+                {Object.keys(CITIES).map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </L>
+          </div>
+          <div style={S.two}>
+            <L t="💸 Price from (₹, 0 = free)"><input style={S.in} inputMode="numeric" value={f.price_from ?? ''} onChange={(e) => setForm({ ...f, price_from: e.target.value === '' ? null : +e.target.value.replace(/\D/g, '') })} placeholder="999" /></L>
+            <L t="🔗 Ticket link (optional)"><input style={S.in} value={f.booking_url || ''} onChange={(e) => setForm({ ...f, booking_url: e.target.value || null })} placeholder="https://…" /></L>
+          </div>
+          <label style={S.check}><input type="checkbox" checked={f.status === 'published' || f.status === 'sold_out'} onChange={(e) => setForm({ ...f, status: e.target.checked ? 'published' : 'draft' })} /> ✅ Show in the app now</label>
+          <label style={S.check}><input type="checkbox" checked={f.status === 'sold_out'} onChange={(e) => setForm({ ...f, status: e.target.checked ? 'sold_out' : 'published' })} /> 🚫 Sold out</label>
           {msg ? <p style={S.err}>{msg}</p> : null}
           <button style={S.primary} onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save event'}</button>
           <button style={S.link} onClick={() => { setForm(null); setMsg(''); }}>Cancel</button>
@@ -197,5 +202,6 @@ const S: Record<string, CSSProperties> = {
   link: { background: 'none', border: 0, color: '#E2FF3B', fontWeight: 700, cursor: 'pointer', marginLeft: 10, fontSize: 14 },
   muted: { color: '#76768A', fontSize: 13, margin: '4px 0' },
   err: { color: '#F87171', fontSize: 14 },
+  check: { display: 'block', color: '#F7F7F9', fontSize: 16, margin: '6px 0 12px', cursor: 'pointer' },
   pill: { background: '#24242D', borderRadius: 8, padding: '2px 8px', fontSize: 12, marginLeft: 6 },
 };
