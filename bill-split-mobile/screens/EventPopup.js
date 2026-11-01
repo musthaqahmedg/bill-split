@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, FlatList, Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { eventKm, eventWhen } from '../services/events';
+import { eventKm, eventWhen, goingInfo, goingText, setGoing } from '../services/events';
 import { C, F } from '../services/theme';
 
 // 🎉 Big event pop-up: poster card, venue + distance + "From ₹X", Book now, swipe for more, Remind me later
@@ -22,6 +22,36 @@ function Poster({ uri, h }) {
         </Animated.View>
       ) : null}
       {uri ? <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" onLoad={() => setLoaded(true)} /> : null}
+    </View>
+  );
+}
+
+// 🙋 "I'm going" + which friends are going
+function Going({ id }) {
+  const [info, setInfo] = useState(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    goingInfo(id).then(setInfo).catch(() => {});
+  }, [id]);
+  if (!info) return <View style={{ height: 40, marginTop: 10 }} />;
+  const toggle = async () => {
+    if (busy) return;
+    const on = !info.going;
+    setBusy(true);
+    setInfo({ ...info, going: on, total: info.total + (on ? 1 : -1) });
+    try {
+      await setGoing(id, on);
+    } catch (e) {
+      setInfo(info);
+    }
+    setBusy(false);
+  };
+  return (
+    <View style={styles.goingRow}>
+      <TouchableOpacity style={[styles.goingBtn, info.going && styles.goingOn]} onPress={toggle} activeOpacity={0.85}>
+        <Text style={[styles.goingBtnText, info.going && { color: C.onLime }]}>{info.going ? '✅ Going' : "🙋 I'm going"}</Text>
+      </TouchableOpacity>
+      <Text style={styles.goingText} numberOfLines={2}>{goingText(info)}</Text>
     </View>
   );
 }
@@ -87,6 +117,7 @@ export default function EventPopup({ visible, events, start = 0, onClose, onRemi
                           ) : null}
                         </View>
                         <Text style={styles.title} numberOfLines={2}>{e.title}</Text>
+                        <Going id={e.id} />
                         <TouchableOpacity style={[styles.book, sold && styles.sold]} onPress={() => book(e)} disabled={sold} activeOpacity={0.85}>
                           <Text style={[styles.bookText, sold && { color: C.faint }]}>{sold ? 'SOLD OUT' : 'Book now'}</Text>
                         </TouchableOpacity>
@@ -141,5 +172,10 @@ const styles = StyleSheet.create({
   dotOn: { width: 22, backgroundColor: C.lime },
   remind: { borderWidth: 2, borderColor: '#fff', borderRadius: 22, paddingVertical: 10, paddingHorizontal: 22, marginTop: 16 },
   remindText: { color: '#fff', fontSize: 14, fontWeight: '800' },
+  goingRow: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  goingBtn: { borderWidth: 2, borderColor: C.lime, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 12, marginRight: 10 },
+  goingOn: { backgroundColor: C.lime },
+  goingBtnText: { color: C.lime, fontSize: 13, fontWeight: '900' },
+  goingText: { flex: 1, color: C.sub, fontSize: 13, fontWeight: '600' },
   later: { color: C.sub, fontSize: 14, textAlign: 'center', marginTop: 12 },
 });

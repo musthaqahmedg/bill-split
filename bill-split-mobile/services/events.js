@@ -98,3 +98,31 @@ export async function remindLater(ids, now = Date.now()) {
 export const eventWhen = (e) =>
   new Date(e.start_at).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 export const eventKm = (km) => (km == null ? null : km < 1 ? `${Math.round(km * 1000)} m away` : `${km.toFixed(km < 10 ? 1 : 0)} km away`);
+
+// 🙋 Who's going: me, total, and my friends' names
+export async function goingInfo(eventId) {
+  const { data, error } = await supabase.rpc('event_going_info', { p_event: eventId });
+  if (error) throw error;
+  const r = (data && data[0]) || {};
+  return { going: !!r.going, total: r.total || 0, friends: r.friends || [] };
+}
+export async function setGoing(eventId, on) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Please log in');
+  const q = on
+    ? supabase.from('event_going').upsert({ event_id: eventId, user_id: user.id }, { onConflict: 'event_id,user_id', ignoreDuplicates: true })
+    : supabase.from('event_going').delete().eq('event_id', eventId).eq('user_id', user.id);
+  const { error } = await q;
+  if (error) throw error;
+}
+// "Anu & Rahul are going" · "Anu, Rahul + 3 more going" · "12 people going"
+export function goingText({ total, friends, going }) {
+  const others = Math.max(0, total - friends.length - (going ? 1 : 0));
+  if (friends.length) {
+    const names = friends.slice(0, 2);
+    const more = friends.length - names.length + others;
+    return `${names.join(names.length === 2 && !more ? ' & ' : ', ')}${more ? ` + ${more} more` : ''} going`;
+  }
+  if (others) return `${others} ${others === 1 ? 'person' : 'people'} going${going ? ' + you' : ''}`;
+  return going ? "You're going 🎉" : 'Be the first to say you’re going';
+}
