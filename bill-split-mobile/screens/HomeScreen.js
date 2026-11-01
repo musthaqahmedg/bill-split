@@ -47,7 +47,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -191,6 +191,11 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
             </View>
           ) : null}
         </View>
+        {onMenu ? (
+          <TouchableOpacity style={[styles.bell, { marginRight: 8 }]} onPress={onMenu}>
+            <Text style={styles.bellIcon}>☰</Text>
+          </TouchableOpacity>
+        ) : null}
         {onNotifications ? (
           <TouchableOpacity style={styles.bell} onPress={onNotifications}>
             <Text style={styles.bellIcon}>🔔</Text>

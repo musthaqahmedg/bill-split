@@ -42,6 +42,8 @@ import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
+import MenuScreen from './screens/MenuScreen';
+import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
 import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
@@ -184,6 +186,14 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null); // 📍 place picked in Discover → "Add to plan"
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
+  // 🧭 First-time guided tour (once, on Home)
+  const [showTour, setShowTour] = useState(false);
+  const tourChecked = useRef(false);
+  useEffect(() => {
+    if (screen !== 'home' || tourChecked.current) return;
+    tourChecked.current = true;
+    tourDone().then((done) => !done && setTimeout(() => setShowTour(true), 1200));
+  }, [screen]);
   useEffect(() => {
     if (screen !== 'newParty') setPlanPlace(null); // a Discover place only prefills the plan started from it
   }, [screen]);
@@ -421,6 +431,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1 }}>{page}</View>
+      <Tour visible={showTour && screen === 'home'} onDone={() => setShowTour(false)} />
       <TabBar
         current={screen}
         onTab={(t: string) => {
@@ -771,6 +782,33 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  if (screen === 'menu') {
+    return (
+      <MenuScreen
+        onBack={() => setScreen('home')}
+        go={(k: string) => {
+          if (k === 'plan') {
+            setPlanKind(null);
+            setPlanGroup(null);
+            setEditPlan(null);
+            setScreen('newParty');
+          } else if (k === 'scan') startNewBill();
+          else if (k === 'tour') {
+            resetTour();
+            setScreen('home');
+            setShowTour(true);
+          } else if (k === 'friends') {
+            setFriendsAdd(false);
+            setScreen('friends');
+          } else {
+            const to: any = { rooms: 'parties', nearby: 'discover', groups: 'groups', money: 'money', spend: 'money', memories: 'memories', notifications: 'notifications', profile: 'profile', yourData: 'yourData', help: 'help' };
+            setScreen(to[k] || 'home');
+          }
+        }}
+      />
+    );
+  }
+
   if (screen === 'notifications') {
     return <NotificationsScreen onBack={() => setScreen('home')} />;
   }
@@ -833,6 +871,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       onNewBill={startNewBill}
       onLogout={logout}
       onProfile={() => setScreen('profile')}
+      onMenu={() => setScreen('menu')}
       onParties={() => setScreen('parties')}
       onNotifications={() => setScreen('notifications')}
       onFriends={(add: boolean) => {
