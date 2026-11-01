@@ -137,6 +137,9 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       } else if (d.party_id) {
         setOpenPartyId(d.party_id);
         setScreen(d.chat ? 'partyChat' : 'party');
+      } else if (d.event_id) {
+        setOpenEventId(d.event_id); // 🎉 event alert → Home opens that event's pop-up
+        setScreen('home');
       } else if (d.money) {
         setScreen('money'); // 😂 VibeOut voice: money check-ins
       } else if (d.plan) {
@@ -185,6 +188,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [openEventId, setOpenEventId] = useState<any>(null); // 🎉 tapped an event alert
   const [planEvent, setPlanEvent] = useState<any>(null); // 🎉 big event → party room // 📍 place picked in Discover → "Add to plan"
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
   // 🧭 First-time guided tour (once, on Home)
@@ -858,6 +862,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   return (
     <HomeScreen
+      openEventId={openEventId}
+      onEventOpened={() => setOpenEventId(null)}
       guest={guest}
       onSaveAccount={() => setScreen('saveAccount')}
       onMoney={() => setScreen('money')}

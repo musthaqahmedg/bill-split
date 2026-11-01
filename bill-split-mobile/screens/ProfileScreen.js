@@ -13,12 +13,16 @@ import { getShowActive, setShowActive } from '../services/active';
 import { getFunNotifs, getPushPreview, setFunNotifs, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C, F } from '../services/theme';
+import { CITIES, getEventAlerts, setEventAlerts } from '../services/events';
 
 export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount, onYourData, onMoney }) {
   const [showActive, setShowActiveState] = useState(true);
   const [preview, setPreview] = useState(true);
   const [fun, setFun] = useState(true);
+  const [evAlerts, setEvAlerts] = useState({ on: true, city: null });
+  const [cityOpen, setCityOpen] = useState(false);
   useEffect(() => {
+    getEventAlerts().then(setEvAlerts).catch(() => {});
     getFunNotifs().then(setFun).catch(() => {});
     getShowActive().then(setShowActiveState).catch(() => {});
     getPushPreview().then(setPreview).catch(() => {});
@@ -29,6 +33,17 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
       await setFunNotifs(on);
     } catch (e) {
       setFun(!on);
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
+  // 🎉 big event alerts: on/off + city
+  const saveEv = async (patch) => {
+    const before = evAlerts;
+    setEvAlerts({ ...evAlerts, ...patch });
+    try {
+      await setEventAlerts(patch);
+    } catch (e) {
+      setEvAlerts(before);
       Alert.alert("Couldn't save", e.message);
     }
   };
@@ -212,6 +227,31 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
           </View>
           <Switch value={fun} onValueChange={toggleFun} trackColor={{ true: C.green }} />
         </View>
+
+        <View style={[styles.activeRow, { marginBottom: evAlerts.on ? 8 : 16, marginTop: -4 }]}>
+          <View style={styles.activeText}>
+            <Text style={styles.activeTitle}>🎉 Big event alerts</Text>
+            <Text style={styles.activeSub}>A heads-up when a big party or concert is added in your city. We only keep the city name, never your exact location.</Text>
+          </View>
+          <Switch value={evAlerts.on} onValueChange={(on) => saveEv({ on })} trackColor={{ true: C.green }} />
+        </View>
+        {evAlerts.on ? (
+          <View style={{ marginBottom: 16 }}>
+            <TouchableOpacity style={[styles.input, styles.bdayRow]} onPress={() => setCityOpen(!cityOpen)}>
+              <Text style={evAlerts.city ? styles.bdayText : styles.bdayEmpty}>{evAlerts.city ? `🏙️ ${evAlerts.city}` : '🏙️ Pick your city'}</Text>
+              <Text style={styles.bdayChange}>{cityOpen ? 'Close' : 'Change'}</Text>
+            </TouchableOpacity>
+            {cityOpen ? (
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+                {Object.keys(CITIES).map((c) => (
+                  <TouchableOpacity key={c} onPress={() => { saveEv({ city: c }); setCityOpen(false); }} style={{ paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, marginRight: 6, marginBottom: 6, backgroundColor: evAlerts.city === c ? C.lime : C.card, borderWidth: 1, borderColor: evAlerts.city === c ? C.lime : C.border }}>
+                    <Text style={{ color: evAlerts.city === c ? C.onLime : C.text, fontWeight: '700', fontSize: 13 }}>{c}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <Text style={styles.label}>Birthday</Text>
         <TouchableOpacity style={[styles.input, styles.bdayRow]} onPress={() => setBdayOpen(true)}>

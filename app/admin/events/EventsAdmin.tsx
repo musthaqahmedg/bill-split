@@ -183,6 +183,7 @@ export default function EventsAdmin() {
             <L t="🔗 Ticket link (optional)"><input style={S.in} value={f.booking_url || ''} onChange={(e) => setForm({ ...f, booking_url: e.target.value || null })} placeholder="https://…" /></L>
           </div>
           <label style={S.check}><input type="checkbox" checked={f.status === 'published' || f.status === 'sold_out'} onChange={(e) => setForm({ ...f, status: e.target.checked ? 'published' : 'draft' })} /> ✅ Show in the app now</label>
+          {f.status === 'published' && !(f as any).notified_at ? <div style={{ fontSize: 13, opacity: 0.75, margin: '-4px 0 10px 26px' }}>📣 Saving sends a phone alert to users in {f.city || 'this city'} (only once per event)</div> : null}
           <label style={S.check}><input type="checkbox" checked={f.status === 'sold_out'} onChange={(e) => setForm({ ...f, status: e.target.checked ? 'sold_out' : 'published' })} /> 🚫 Sold out</label>
           {msg ? <p style={S.err}>{msg}</p> : null}
           <button style={S.primary} onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Save event'}</button>

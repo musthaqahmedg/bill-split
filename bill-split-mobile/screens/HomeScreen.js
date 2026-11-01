@@ -5,7 +5,7 @@ import { getNights, stats as nightStats } from '../services/safety';
 import { myFriends } from '../services/friends';
 import { activeLabel } from '../services/active';
 import { supabase } from '../services/supabaseClient';
-import { eventKm, eventsNear, eventsToPop, eventWhen, markSeen, remindLater } from '../services/events';
+import { eventKm, eventsNear, eventsToPop, eventWhen, getEvent, markSeen, remindLater } from '../services/events';
 import { tourDone } from '../components/Tour';
 import EventPopup from './EventPopup';
 import { listBills } from '../services/bills';
@@ -50,7 +50,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,6 +61,17 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [streak, setStreak] = useState(0);
   const [outNow, setOutNow] = useState(0);
   const [events, setEvents] = useState([]); // 🎉 big events near you
+  // 🔔 opened from an event alert → show that event's pop-up
+  useEffect(() => {
+    if (!openEventId) return;
+    let off = false;
+    (async () => {
+      const ev = events.find((e) => e.id === openEventId) || (await getEvent(openEventId).catch(() => null));
+      if (!off && ev && ev.status !== 'cancelled') setPop({ list: [ev], start: 0 });
+      onEventOpened && onEventOpened();
+    })();
+    return () => { off = true; };
+  }, [openEventId]);
   const [pop, setPop] = useState(null); // { list, start } when the pop-up is open
   const [clock, setClock] = useState(clockText());
   useEffect(() => {

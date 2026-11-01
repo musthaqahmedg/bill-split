@@ -15,7 +15,59 @@ export async function eventsNear({ ask = false, radiusKm = 25 } = {}) {
     p_city: loc.status === 'granted' ? null : 'Palakkad', // no location → the default city
   });
   if (error) throw error;
+  if (loc.status === 'granted') saveMyCity(loc.coords.lat, loc.coords.lon); // city name only, for event alerts
   return data || [];
+}
+
+// 🏙️ Cities we cover (same list as the admin page). We only ever save the city NAME, never your exact location.
+export const CITIES = {
+  Palakkad: [10.7867, 76.6548], Kochi: [9.9312, 76.2673], Thrissur: [10.5276, 76.2144], Kozhikode: [11.2588, 75.7804],
+  Thiruvananthapuram: [8.5241, 76.9366], Coimbatore: [11.0168, 76.9558], Bengaluru: [12.9716, 77.5946], Chennai: [13.0827, 80.2707],
+  Hyderabad: [17.385, 78.4867], Mumbai: [19.076, 72.8777], Delhi: [28.6139, 77.209], Goa: [15.2993, 74.124],
+};
+const rad = (d) => (d * Math.PI) / 180;
+export function nearestCity(lat, lon, maxKm = 60) {
+  let best = null;
+  let bestKm = Infinity;
+  Object.entries(CITIES).forEach(([name, [la, lo]]) => {
+    const a = Math.sin(rad(la - lat) / 2) ** 2 + Math.cos(rad(lat)) * Math.cos(rad(la)) * Math.sin(rad(lo - lon) / 2) ** 2;
+    const km = 12742 * Math.asin(Math.sqrt(a));
+    if (km < bestKm) { bestKm = km; best = name; }
+  });
+  return bestKm <= maxKm ? best : null;
+}
+async function saveMyCity(lat, lon) {
+  try {
+    const city = nearestCity(lat, lon);
+    if (!city || (await AsyncStorage.getItem('vo_event_city')) === city) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.from('profiles').update({ event_city: city }).eq('id', user.id);
+    if (!error) AsyncStorage.setItem('vo_event_city', city).catch(() => {});
+  } catch (e) {}
+}
+
+// 🔔 Event alerts setting (Profile): on/off + which city
+export async function getEventAlerts() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { on: true, city: null };
+  const { data } = await supabase.from('profiles').select('event_alerts, event_city').eq('id', user.id).maybeSingle();
+  return { on: data ? data.event_alerts !== false : true, city: (data && data.event_city) || null };
+}
+export async function setEventAlerts(patch) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const row = {};
+  if ('on' in patch) row.event_alerts = patch.on;
+  if ('city' in patch) row.event_city = patch.city;
+  const { error } = await supabase.from('profiles').update(row).eq('id', user.id);
+  if (error) throw error;
+  if ('city' in patch) AsyncStorage.setItem('vo_event_city', patch.city || '').catch(() => {});
+}
+
+// One event by id (opening an event alert)
+export async function getEvent(id) {
+  const { data } = await supabase.from('events').select('*').eq('id', id).maybeSingle();
+  return data;
 }
 
 async function seenMap() {
