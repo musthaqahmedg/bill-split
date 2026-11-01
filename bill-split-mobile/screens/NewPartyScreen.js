@@ -98,14 +98,14 @@ const STEPS = [
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null, initialPlace = null }) {
+export default function NewPartyScreen({ onBack, onCreated, group = null, editing = null, initialKind = null, initialPlace = null, initialTitle = null, initialDate = null }) {
   const [menuFor, setMenuFor] = useState(null); // 📋 menu of the chosen place
   // editing = an existing plan: the form starts filled in and saves changes instead of creating
   const ex = editing;
   const exMembers = (ex && ex.party_members) || [];
-  const [title, setTitle] = useState(ex ? ex.title : '');
+  const [title, setTitle] = useState(ex ? ex.title : initialTitle || ''); // 🎉 prefilled from a big event
   const [kind, setKind] = useState(ex ? ex.kind || 'party' : initialKind || 'party'); // birthday, trip, movie…
-  const [dateObj, setDateObj] = useState(null); // picked from the calendar
+  const [dateObj, setDateObj] = useState(initialDate ? new Date(initialDate) : null); // picked from the calendar (or the event's day)
   const [showCal, setShowCal] = useState(false);
   const [place, setPlace] = useState(ex ? ex.place || '' : initialPlace || ''); // 📍 prefilled from Discover
   const [budget, setBudget] = useState(ex ? String(Math.round(ex.budget || 0)) : '');

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Easing, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listExpenses } from '../services/expenses';
 import { getNights, stats as nightStats } from '../services/safety';
 import { myFriends } from '../services/friends';
 import { activeLabel } from '../services/active';
 import { supabase } from '../services/supabaseClient';
+import { eventKm, eventsNear, eventsToPop, eventWhen, markSeen, remindLater } from '../services/events';
+import { tourDone } from '../components/Tour';
+import EventPopup from './EventPopup';
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
@@ -47,7 +50,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +60,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [budget, setBudget] = useState(0);
   const [streak, setStreak] = useState(0);
   const [outNow, setOutNow] = useState(0);
+  const [events, setEvents] = useState([]); // 🎉 big events near you
+  const [pop, setPop] = useState(null); // { list, start } when the pop-up is open
   const [clock, setClock] = useState(clockText());
   useEffect(() => {
     const t = setInterval(() => setClock(clockText()), 30000);
@@ -84,6 +89,15 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     supabase.auth.getUser().then(({ data }) => data && data.user && supabase.from('profiles').select('monthly_budget').eq('id', data.user.id).maybeSingle())
       .then((res) => setBudget((res && res.data && res.data.monthly_budget) || 0)).catch(() => {});
     getNights().then((n) => setStreak(nightStats(n).current)).catch(() => {});
+    // 🎉 big events near you: pop up the ones not seen yet (after the first-time tour); offline → skip quietly
+    eventsNear()
+      .then(async (list) => {
+        setEvents(list);
+        if (!(await tourDone())) return;
+        const fresh = await eventsToPop(list);
+        if (fresh.length) setPop({ list: fresh, start: 0, auto: true });
+      })
+      .catch(() => {});
     myFriends().then((l) => setOutNow((l || []).filter((f) => f.status === 'accepted' && activeLabel(f.last_seen) && activeLabel(f.last_seen).now).length)).catch(() => {});
   }, [load]);
 
@@ -218,6 +232,29 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       <Text style={styles.title}>{showArchived ? 'Archived' : "What's the 🔥 vibe\ntonight?"}</Text>
       {name && !showArchived ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
 
+      {/* 🎉 Events near you */}
+      {!showArchived && events.length ? (
+        <View style={{ marginBottom: 14 }}>
+          <Text style={styles.evKicker}>🎉 BIG EVENTS NEAR YOU</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
+            {events.map((e, i) => (
+              <TouchableOpacity key={e.id} style={styles.evCard} onPress={() => setPop({ list: events, start: i })} activeOpacity={0.85}>
+                <View style={styles.evPoster}>
+                  {e.poster_url ? <Image source={{ uri: e.poster_url }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Text style={{ fontSize: 34 }}>🎉</Text>}
+                  {e.status === 'sold_out' ? (
+                    <View style={styles.evSold}>
+                      <Text style={styles.evSoldText}>SOLD OUT</Text>
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.evTitle} numberOfLines={1}>{e.title}</Text>
+                <Text style={styles.evMeta} numberOfLines={1}>{[eventWhen(e), eventKm(e.km)].filter(Boolean).join(' · ')}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      ) : null}
+
       {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} budget={budgetCard} streak={streak} /> : null}
 
       {/* ⚡ Fast settlement (Final UX): what's open, snap a new bill, or settle the oldest one */}
@@ -290,6 +327,16 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   return (
     <View style={styles.container}>
       <NightSky height={300} />
+      {pop ? (
+        <EventPopup
+          visible
+          events={pop.list}
+          start={pop.start}
+          onClose={() => { if (pop.auto) markSeen(pop.list.map((e) => e.id)); setPop(null); }}
+          onRemind={() => { remindLater(pop.list.map((e) => e.id)); setPop(null); }}
+          onPlanEvent={(e) => { markSeen([e.id]); setPop(null); onPlanEvent && onPlanEvent(e); }}
+        />
+      ) : null}
       <FlatList
         data={visible}
         keyExtractor={(item) => item.id}
@@ -330,6 +377,13 @@ const styles = StyleSheet.create({
   clock: { fontFamily: F.pixel, color: C.sub, fontSize: 13 },
   outPill: { alignSelf: 'flex-start', backgroundColor: C.lime, borderRadius: 14, paddingVertical: 5, paddingHorizontal: 12, marginTop: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   outText: { color: C.onLime, fontSize: 13, fontWeight: '900' },
+  evKicker: { fontFamily: F.pixel, color: C.pink, fontSize: 11, marginBottom: 8 },
+  evCard: { width: 150, marginRight: 10 },
+  evPoster: { height: 190, borderRadius: 18, backgroundColor: '#3B1FE0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.lime },
+  evSold: { position: 'absolute', bottom: 8, left: 8, backgroundColor: C.onLime, borderRadius: 8, paddingVertical: 3, paddingHorizontal: 7 },
+  evSoldText: { fontFamily: F.pixel, color: C.pink, fontSize: 10 },
+  evTitle: { color: C.text, fontSize: 14, fontWeight: '800', marginTop: 6 },
+  evMeta: { color: C.faint, fontSize: 11, marginTop: 1 },
   budget: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 14 },
   budgetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   budgetKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
