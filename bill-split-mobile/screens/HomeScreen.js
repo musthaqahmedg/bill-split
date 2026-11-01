@@ -192,8 +192,10 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           ) : null}
         </View>
         {onMenu ? (
-          <TouchableOpacity style={[styles.bell, { marginRight: 8 }]} onPress={onMenu}>
-            <Text style={styles.bellIcon}>☰</Text>
+          <TouchableOpacity style={[styles.bell, styles.menuBtn]} onPress={onMenu} accessibilityLabel="Menu">
+            <View style={styles.bar} />
+            <View style={[styles.bar, { width: 14, marginVertical: 4 }]} />
+            <View style={styles.bar} />
           </TouchableOpacity>
         ) : null}
         {onNotifications ? (
@@ -342,6 +344,8 @@ const styles = StyleSheet.create({
   budgetFill: { height: '100%', borderRadius: 4, backgroundColor: C.lime },
   bell: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center' },
   bellIcon: { fontSize: 20 },
+  menuBtn: { marginRight: 8, backgroundColor: C.lime, borderColor: C.lime },
+  bar: { width: 20, height: 3, borderRadius: 2, backgroundColor: C.onLime },
   bellBadge: { position: 'absolute', top: -3, right: -3, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },
   bellBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
 
