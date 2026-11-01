@@ -6,7 +6,7 @@ import { C, F } from '../services/theme';
 // 🎉 Big event pop-up: poster card, venue + distance + "From ₹X", Book now, swipe for more, Remind me later
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-function Poster({ uri }) {
+function Poster({ uri, h }) {
   const [loaded, setLoaded] = useState(false);
   const glow = useRef(new Animated.Value(0.4)).current;
   useEffect(() => {
@@ -15,7 +15,7 @@ function Poster({ uri }) {
     return () => a.stop();
   }, []);
   return (
-    <View style={styles.poster}>
+    <View style={[styles.poster, { height: h }]}>
       {!loaded ? (
         <Animated.View style={[styles.skeleton, { opacity: glow }]}>
           <Text style={styles.skelText}>{uri ? 'LOADING…' : '🎉'}</Text>
@@ -27,8 +27,9 @@ function Poster({ uri }) {
 }
 
 export default function EventPopup({ visible, events, start = 0, onClose, onRemind, onPlanEvent }) {
-  const { width } = Dimensions.get('window');
+  const { width, height } = Dimensions.get('window');
   const cardW = Math.min(width - 48, 360);
+  const posterH = Math.min(Math.round(cardW * 1.1), Math.round(height * 0.42)); // fits small phones too
   const [page, setPage] = useState(start);
   const [booked, setBooked] = useState(null); // event they tapped Book on → offer a party room
 
@@ -59,6 +60,7 @@ export default function EventPopup({ visible, events, start = 0, onClose, onRemi
             <FlatList
               data={events}
               horizontal
+              style={{ flexGrow: 0 }}
               pagingEnabled
               snapToInterval={width}
               initialScrollIndex={Math.min(start, Math.max(0, events.length - 1))}
@@ -71,7 +73,7 @@ export default function EventPopup({ visible, events, start = 0, onClose, onRemi
                 return (
                   <View style={{ width, alignItems: 'center' }}>
                     <View style={[styles.card, { width: cardW }]}>
-                      <Poster uri={e.poster_url} />
+                      <Poster uri={e.poster_url} h={posterH} />
                       <View style={styles.body}>
                         <View style={styles.row}>
                           <View style={{ flex: 1, marginRight: 8 }}>
@@ -117,7 +119,7 @@ export default function EventPopup({ visible, events, start = 0, onClose, onRemi
 const styles = StyleSheet.create({
   dim: { flex: 1, backgroundColor: 'rgba(8,8,12,0.88)', justifyContent: 'center', alignItems: 'center' },
   card: { backgroundColor: C.card, borderRadius: 24, borderWidth: 3, borderColor: C.lime, overflow: 'hidden' },
-  poster: { height: 380, backgroundColor: '#2A1B5E' },
+  poster: { backgroundColor: '#2A1B5E' },
   skeleton: { ...StyleSheet.absoluteFillObject, alignItems: 'center', justifyContent: 'center', backgroundColor: '#3B1FE0' },
   skelText: { fontFamily: F.pixel, color: C.lime, fontSize: 16 },
   body: { padding: 16 },
