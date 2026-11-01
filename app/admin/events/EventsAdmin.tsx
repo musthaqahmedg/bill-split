@@ -1,6 +1,6 @@
 'use client';
 
-import { CSSProperties, useEffect, useState } from 'react';
+import { CSSProperties, useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseBrowser';
 
 // 🎉 Big events admin: add / edit / remove the events that pop up in the app. Admins only (checked here AND by database rules).
@@ -26,6 +26,8 @@ const quickDays = (): [string, string][] => {
 const join = (day: string, time: string) => (day ? `${day}T${time}` : '');
 const TIMES: [string, string][] = Array.from({ length: 20 }, (_, i) => { const h = (10 + Math.floor(i / 1)) % 24; return [`${pad(h)}:00`, `${h % 12 || 12}:00 ${h < 12 ? 'AM' : 'PM'}`] as [string, string]; }).concat([['21:30', '9:30 PM'], ['22:30', '10:30 PM']]);
 // 🏙️ city → map point (so nobody types latitude/longitude)
+// 🎉 common event names (plus your past events) shown as suggestions
+const NAME_IDEAS = ['DJ Night', 'Live Music Night', 'Bollywood Night', 'Retro Night', 'Karaoke Night', 'Comedy Night', 'Sufi Night', 'EDM Night', 'Halloween Night', 'Christmas Party', "New Year's Eve Party", 'Valentine\'s Night', 'Holi Party', 'Onam Celebration', 'Diwali Night', 'Football Screening', 'Cricket Screening', 'Open Mic', 'Rooftop Party', 'Pool Party'];
 const CITIES: Record<string, [number, number]> = {
   Palakkad: [10.7867, 76.6548], Kochi: [9.9312, 76.2673], Thrissur: [10.5276, 76.2144], Kozhikode: [11.2588, 75.7804],
   Thiruvananthapuram: [8.5241, 76.9366], Coimbatore: [11.0168, 76.9558], Bengaluru: [12.9716, 77.5946], Chennai: [13.0827, 80.2707],
@@ -42,6 +44,19 @@ export default function EventsAdmin() {
   const [form, setForm] = useState<Ev | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState('');
+  const [venues, setVenues] = useState<{ id: string; name: string; area?: string; lat: number; lon: number }[]>([]);
+  const vTimer = useRef<any>(null);
+  // 📍 venue suggestions: real places near the chosen city (free OpenStreetMap search via our "places" function)
+  const findVenues = (q: string, f: Ev) => {
+    clearTimeout(vTimer.current);
+    if (q.trim().length < 2) return setVenues([]);
+    vTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await sb.functions.invoke('places', { body: { lat: f.lat, lon: f.lng, q: q.trim(), category: 'all' } });
+        setVenues(((data && data.places) || []).slice(0, 6));
+      } catch (e) { setVenues([]); }
+    }, 400);
+  };
 
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => { setUser(data.session ? data.session.user : null); setReady(true); });
@@ -107,7 +122,12 @@ export default function EventsAdmin() {
       {f ? (
         <div style={S.card}>
           <h2 style={S.h2}>{f.id ? 'Edit event' : 'New event'}</h2>
-          <L t="🎉 Event name"><input style={S.in} value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder="Halloween Night" /></L>
+          <L t="🎉 Event name">
+            <input style={S.in} list="ev-names" value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder="Start typing… e.g. DJ Night" />
+            <datalist id="ev-names">
+              {Array.from(new Set([...list.map((e) => e.title), ...NAME_IDEAS])).map((n) => <option key={n} value={n} />)}
+            </datalist>
+          </L>
           <L t="🖼️ Poster (tall image works best)">
             {f.poster_url ? <img src={f.poster_url} alt="" style={{ height: 160, borderRadius: 12, display: 'block', marginBottom: 8 }} /> : null}
             <input type="file" accept="image/*" onChange={(e) => e.target.files && e.target.files[0] && upload(e.target.files[0])} />
@@ -136,7 +156,18 @@ export default function EventsAdmin() {
             </L>
           </div>
           <div style={S.two}>
-            <L t="📍 Venue"><input style={S.in} value={f.venue_name} onChange={(e) => setForm({ ...f, venue_name: e.target.value })} placeholder="e.g. Quarter Restobar" /></L>
+            <L t="📍 Venue">
+              <input style={S.in} value={f.venue_name} onChange={(e) => { setForm({ ...f, venue_name: e.target.value }); findVenues(e.target.value, f); }} placeholder="Start typing the place name…" autoComplete="off" />
+              {venues.length ? (
+                <div style={S.sugg}>
+                  {venues.map((v) => (
+                    <div key={v.id} style={S.suggRow} onClick={() => { setForm({ ...f, venue_name: v.name, lat: v.lat, lng: v.lon }); setVenues([]); }}>
+                      📍 <b>{v.name}</b>{v.area ? <span style={{ opacity: 0.6 }}> · {v.area}</span> : null}
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </L>
             <L t="🏙️ City">
               <select style={S.in} value={f.city || 'Palakkad'} onChange={(e) => { const c = CITIES[e.target.value]; setForm({ ...f, city: e.target.value, lat: c[0], lng: c[1] }); }}>
                 {Object.keys(CITIES).map((c) => <option key={c} value={c}>{c}</option>)}
@@ -224,6 +255,8 @@ const S: Record<string, CSSProperties> = {
   link: { background: 'none', border: 0, color: '#E2FF3B', fontWeight: 700, cursor: 'pointer', marginLeft: 10, fontSize: 14 },
   muted: { color: '#76768A', fontSize: 13, margin: '4px 0' },
   err: { color: '#F87171', fontSize: 14 },
+  sugg: { background: '#24242D', border: '1px solid #2E2E39', borderRadius: 12, marginTop: 6, overflow: 'hidden' },
+  suggRow: { padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #2E2E39', fontSize: 14 },
   chip: { background: '#24242D', color: '#F7F7F9', border: '1px solid #2E2E39', borderRadius: 12, padding: '8px 12px', fontWeight: 700, cursor: 'pointer' },
   chipOn: { background: '#E2FF3B', color: '#0E0E12', border: '1px solid #E2FF3B', borderRadius: 12, padding: '8px 12px', fontWeight: 800, cursor: 'pointer' },
   check: { display: 'block', color: '#F7F7F9', fontSize: 16, margin: '6px 0 12px', cursor: 'pointer' },
