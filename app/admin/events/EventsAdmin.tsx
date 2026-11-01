@@ -28,6 +28,7 @@ const TIMES: [string, string][] = Array.from({ length: 20 }, (_, i) => { const h
 // 🏙️ city → map point (so nobody types latitude/longitude)
 // 🎉 common event names (plus your past events) shown as suggestions
 const NAME_IDEAS = ['DJ Night', 'Live Music Night', 'Bollywood Night', 'Retro Night', 'Karaoke Night', 'Comedy Night', 'Sufi Night', 'EDM Night', 'Halloween Night', 'Christmas Party', "New Year's Eve Party", 'Valentine\'s Night', 'Holi Party', 'Onam Celebration', 'Diwali Night', 'Football Screening', 'Cricket Screening', 'Open Mic', 'Rooftop Party', 'Pool Party'];
+const VENUE_IDEAS = ['the club or pub name', 'a rooftop lounge', 'a hotel ballroom', 'a café', 'a convention hall', 'a restobar', 'a stadium or ground'];
 const CITIES: Record<string, [number, number]> = {
   Palakkad: [10.7867, 76.6548], Kochi: [9.9312, 76.2673], Thrissur: [10.5276, 76.2144], Kozhikode: [11.2588, 75.7804],
   Thiruvananthapuram: [8.5241, 76.9366], Coimbatore: [11.0168, 76.9558], Bengaluru: [12.9716, 77.5946], Chennai: [13.0827, 80.2707],
@@ -46,6 +47,9 @@ export default function EventsAdmin() {
   const [msg, setMsg] = useState('');
   const [venues, setVenues] = useState<{ id: string; name: string; area?: string; lat: number; lon: number }[]>([]);
   const vTimer = useRef<any>(null);
+  // grey example text keeps rotating so it's clear what to type
+  const [tick, setTick] = useState(0);
+  useEffect(() => { const t = setInterval(() => setTick((n) => n + 1), 2000); return () => clearInterval(t); }, []);
   // 📍 venue suggestions: real places near the chosen city (free OpenStreetMap search via our "places" function)
   const findVenues = (q: string, f: Ev) => {
     clearTimeout(vTimer.current);
@@ -123,7 +127,7 @@ export default function EventsAdmin() {
         <div style={S.card}>
           <h2 style={S.h2}>{f.id ? 'Edit event' : 'New event'}</h2>
           <L t="🎉 Event name">
-            <input style={S.in} list="ev-names" value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder="Start typing… e.g. DJ Night" />
+            <input style={S.in} list="ev-names" value={f.title} onChange={(e) => setForm({ ...f, title: e.target.value })} placeholder={`e.g. ${NAME_IDEAS[tick % NAME_IDEAS.length]}`} />
             <datalist id="ev-names">
               {Array.from(new Set([...list.map((e) => e.title), ...NAME_IDEAS])).map((n) => <option key={n} value={n} />)}
             </datalist>
@@ -157,7 +161,7 @@ export default function EventsAdmin() {
           </div>
           <div style={S.two}>
             <L t="📍 Venue">
-              <input style={S.in} value={f.venue_name} onChange={(e) => { setForm({ ...f, venue_name: e.target.value }); findVenues(e.target.value, f); }} placeholder="Start typing the place name…" autoComplete="off" />
+              <input style={S.in} value={f.venue_name} onChange={(e) => { setForm({ ...f, venue_name: e.target.value }); findVenues(e.target.value, f); }} placeholder={`e.g. ${VENUE_IDEAS[tick % VENUE_IDEAS.length]}`} autoComplete="off" />
               {venues.length ? (
                 <div style={S.sugg}>
                   {venues.map((v) => (
