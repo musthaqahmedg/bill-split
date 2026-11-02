@@ -8,6 +8,7 @@ import { supabase } from '../services/supabaseClient';
 import { eventKm, eventsNear, eventsToPop, eventWhen, getEvent, markSeen, remindLater } from '../services/events';
 import { tourDone } from '../components/Tour';
 import EventPopup from './EventPopup';
+import { VIBES } from './PullUpScreen';
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
@@ -50,7 +51,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened, onPullUp }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -257,6 +258,17 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       <Text style={styles.title}>{showArchived ? 'Archived' : "What's the 🔥 vibe\ntonight?"}</Text>
       {name && !showArchived ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
 
+      {/* 🤟 What's the vibe? one tap → "Pull up?" (pick people → spot → lock it in) */}
+      {!showArchived && onPullUp ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ paddingRight: 8 }}>
+          {VIBES.map((v, i) => (
+            <TouchableOpacity key={v.key} style={[styles.vibe, { backgroundColor: [C.lime, C.pink, C.violet, C.cyan, '#FFD84D', '#FF8A3D'][i % 6] }]} onPress={() => onPullUp(v.key)} activeOpacity={0.85}>
+              <Text style={styles.vibeText}>{v.emoji} {v.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      ) : null}
+
       {/* ⚡ Quick buttons (new UX): split · ride home · invite · budget */}
       {!showArchived ? (
         <View style={styles.quick}>
@@ -413,6 +425,8 @@ const styles = StyleSheet.create({
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   hello: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: 12 },
+  vibe: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  vibeText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, marginBottom: 16 },
   qBtn: { width: '23.5%', borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   qEmoji: { fontSize: 24 },

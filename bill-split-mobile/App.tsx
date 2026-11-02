@@ -45,6 +45,7 @@ import MemoriesScreen from './screens/MemoriesScreen';
 import MenuScreen from './screens/MenuScreen';
 import NightTabScreen from './screens/NightTabScreen';
 import SquadScreen from './screens/SquadScreen';
+import PullUpScreen from './screens/PullUpScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
@@ -193,6 +194,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [pullVibe, setPullVibe] = useState('predrinks'); // 🤟 Pull up? flow
   const [autoNight, setAutoNight] = useState(false); // 🪩 Night tab → open the room in Night Mode
   useEffect(() => {
     if (screen !== 'party' && autoNight) setAutoNight(false);
@@ -763,6 +765,20 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  if (screen === 'pullUp') {
+    return (
+      <PullUpScreen
+        key={pullVibe}
+        initialVibe={pullVibe}
+        onBack={() => setScreen('home')}
+        onCreated={(id: any) => {
+          setCelebrate(true);
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+      />
+    );
+  }
   if (screen === 'squad') {
     return (
       <SquadScreen
@@ -772,12 +788,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         }}
         onRooms={() => setScreen('parties')}
         onMemories={() => setScreen('memories')}
-        onPlan={() => {
-          setPlanKind(null);
-          setPlanGroup(null);
-          setEditPlan(null);
-          setScreen('newParty');
-        }}
+        onPlan={() => setScreen('pullUp')}
       />
     );
   }
@@ -793,12 +804,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setOpenPartyId(id);
           setScreen('party');
         }}
-        onPlan={() => {
-          setPlanKind(null);
-          setPlanGroup(null);
-          setEditPlan(null);
-          setScreen('newParty');
-        }}
+        onPlan={() => setScreen('pullUp')}
       />
     );
   }
@@ -912,6 +918,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   return (
     <HomeScreen
+      onPullUp={(v: any) => {
+        setPullVibe(v);
+        setScreen('pullUp');
+      }}
       openEventId={openEventId}
       onEventOpened={() => setOpenEventId(null)}
       guest={guest}
