@@ -11,7 +11,7 @@ import QuickAdd from './QuickAdd';
 const TABS = [
   { key: 'home', icon: '🌙', label: 'Tonight' },
   { key: 'discover', icon: '🧭', label: 'Discover' },
-  { key: 'parties', icon: '👥', label: 'Squad' },
+  { key: 'squad', icon: '👥', label: 'Squad', also: ['parties'] },
   { key: 'night', icon: '🪩', label: 'Night' },
   { key: 'money', icon: '👤', label: 'Me', also: ['memories'] },
 ];

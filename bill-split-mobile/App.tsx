@@ -44,6 +44,7 @@ import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
 import MenuScreen from './screens/MenuScreen';
 import NightTabScreen from './screens/NightTabScreen';
+import SquadScreen from './screens/SquadScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
@@ -441,7 +442,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
-  const TAB_PAGES = ['home', 'discover', 'parties', 'night', 'money', 'memories'];
+  const TAB_PAGES = ['home', 'discover', 'squad', 'parties', 'night', 'money', 'memories'];
   const page = renderPage();
   if (!TAB_PAGES.includes(screen)) return page;
   return (
@@ -762,6 +763,24 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  if (screen === 'squad') {
+    return (
+      <SquadScreen
+        onOpen={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+        onRooms={() => setScreen('parties')}
+        onMemories={() => setScreen('memories')}
+        onPlan={() => {
+          setPlanKind(null);
+          setPlanGroup(null);
+          setEditPlan(null);
+          setScreen('newParty');
+        }}
+      />
+    );
+  }
   if (screen === 'night') {
     return (
       <NightTabScreen
