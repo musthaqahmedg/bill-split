@@ -171,7 +171,7 @@ export default function PartiesScreen({ onBack, onNewParty, onOpenParty, onGroup
                 <Text style={styles.chipText}>👥 Groups</Text>
               </TouchableOpacity>
             </View>
-            <Text style={styles.section}>YOUR ROOMS</Text>
+            <Text style={styles.roomsKicker}>YOUR ROOMS</Text>
             <View style={styles.tabs}>
               {TABS.map((t) => (
                 <TouchableOpacity key={t.key} style={[styles.tab, current === t.key && styles.tabOn]} onPress={() => setTab(t.key)} activeOpacity={0.85}>
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
   chips: { flexDirection: 'row', marginTop: 10 },
   chip: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 8, paddingHorizontal: 14, marginRight: 8 },
   chipText: { color: C.text, fontSize: 14, fontWeight: '800' },
-  section: { fontFamily: F.pixel, color: C.sub, fontSize: 11, marginTop: 20, marginBottom: 10 },
+  roomsKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11, marginTop: 20, marginBottom: 10 },
   emojiSmall: { fontSize: 20, marginRight: 8 },
   tag: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingVertical: 4, paddingHorizontal: 8, marginLeft: 8 },
   tagText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
