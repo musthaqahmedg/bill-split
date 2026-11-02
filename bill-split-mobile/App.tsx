@@ -43,6 +43,7 @@ import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
 import MenuScreen from './screens/MenuScreen';
+import NightTabScreen from './screens/NightTabScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
@@ -191,6 +192,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [autoNight, setAutoNight] = useState(false); // 🪩 Night tab → open the room in Night Mode
+  useEffect(() => {
+    if (screen !== 'party' && autoNight) setAutoNight(false);
+  }, [screen]);
   const [openEventId, setOpenEventId] = useState<any>(null); // 🎉 tapped an event alert
   const [planEvent, setPlanEvent] = useState<any>(null); // 🎉 big event → party room // 📍 place picked in Discover → "Add to plan"
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
@@ -436,7 +441,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
-  const TAB_PAGES = ['home', 'parties', 'money', 'memories'];
+  const TAB_PAGES = ['home', 'discover', 'parties', 'night', 'money', 'memories'];
   const page = renderPage();
   if (!TAB_PAGES.includes(screen)) return page;
   return (
@@ -731,6 +736,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       <Celebrate visible={celebrate} onDone={() => setCelebrate(false)} />
       <PartyScreen
         partyId={openPartyId}
+        autoNight={autoNight}
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
@@ -756,6 +762,27 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  if (screen === 'night') {
+    return (
+      <NightTabScreen
+        onStart={(id: any) => {
+          setOpenPartyId(id);
+          setAutoNight(true); // 🌙 open straight into Night Mode
+          setScreen('party');
+        }}
+        onOpen={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('party');
+        }}
+        onPlan={() => {
+          setPlanKind(null);
+          setPlanGroup(null);
+          setEditPlan(null);
+          setScreen('newParty');
+        }}
+      />
+    );
+  }
   if (screen === 'discover') {
     return (
       <NearbyScreen

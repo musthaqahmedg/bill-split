@@ -5,7 +5,7 @@ import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C, F } from '../services/theme';
 
 // 🧭 First-time guided tour: a few quick tips that spotlight the main buttons. Skip anytime, replay from Menu.
-const KEY = 'vo_tour_done_v1';
+const KEY = 'vo_tour_done_v2'; // v2: new tabs (Nov) → everyone sees the tour once more
 export const tourDone = async () => {
   try {
     return (await AsyncStorage.getItem(KEY)) === 'yes';
@@ -19,11 +19,12 @@ const finish = () => AsyncStorage.setItem(KEY, 'yes').catch(() => {});
 // tab: which bottom tab to spotlight (0–4), or null for a centred card
 const STEPS = [
   { tab: null, emoji: '👋', title: 'Welcome to VibeOut', body: 'A 20-second tour of where everything lives.' },
-  { tab: 2, emoji: '📷', title: 'Snap a bill', body: 'Scan any bill, tap who had what, and we split it to the rupee.' },
-  { tab: 1, emoji: '🎉', title: 'Rooms', body: 'Plan a night with your squad: vote on the place, chat, split, get home safe.' },
-  { tab: 3, emoji: '👛', title: 'Money', body: 'Set a budget for tonight and see what you spend going out. Only you see it.' },
-  { tab: 4, emoji: '📸', title: 'Memories', body: 'Every night saved as a story, with photos and awards.' },
-  { tab: null, emoji: '🗂️', title: 'Everything else', body: 'Tap the lime menu button (three lines) at the top of Home to see every feature in one place.' },
+  { tab: null, emoji: '🧾', title: 'Quick buttons', body: 'On Tonight: split a bill, get a ride home, invite friends or check your budget in one tap.' },
+  { tab: 1, emoji: '🧭', title: 'Discover', body: 'Cafés, clubs, rooftops and big events near you.' },
+  { tab: 2, emoji: '👥', title: 'Squad', body: 'Your rooms: plan a night with friends, vote on the place, chat and split.' },
+  { tab: 3, emoji: '🪩', title: 'Night', body: 'On the night: squad radar, bill so far, and get home safe.' },
+  { tab: 4, emoji: '👤', title: 'Me', body: 'Your budget, spends and memories. Only you see your money.' },
+  { tab: null, emoji: '🗂️', title: 'Everything else', body: 'Tap the lime menu button (three lines) at the top of Tonight to see every feature in one place.' },
 ];
 
 export default function Tour({ visible, onDone }) {
@@ -48,7 +49,7 @@ export default function Tour({ visible, onDone }) {
   const bottom = Math.max((initialWindowMetrics && initialWindowMetrics.insets.bottom) || 0, Platform.OS === 'ios' ? 20 : 10);
   // tab bar: 5 equal slots; the camera button sits a little higher
   const ringX = s.tab === null ? null : (W / 5) * (s.tab + 0.5);
-  const ringY = s.tab === null ? null : H - bottom - (s.tab === 2 ? 34 : 26);
+  const ringY = s.tab === null ? null : H - bottom - 26;
   const close = () => {
     finish();
     onDone();

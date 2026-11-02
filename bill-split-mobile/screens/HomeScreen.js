@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, FlatList, Image, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Animated, Easing, FlatList, Image, Linking, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listExpenses } from '../services/expenses';
 import { getNights, stats as nightStats } from '../services/safety';
 import { myFriends } from '../services/friends';
@@ -209,6 +209,15 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     </TouchableOpacity>
   );
 
+  // 🚕 Ride home: open a cab app (the app opens if installed, otherwise its website)
+  const rideHome = () =>
+    Alert.alert('🚕 Ride home', 'Pick a cab app', [
+      { text: 'Uber', onPress: () => Linking.openURL('https://m.uber.com/ul/?action=setPickup&pickup=my_location').catch(() => {}) },
+      { text: 'Ola', onPress: () => Linking.openURL('https://book.olacabs.com/').catch(() => {}) },
+      { text: 'Rapido', onPress: () => Linking.openURL('https://www.rapido.bike/').catch(() => {}) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+
   const header = (
     <View>
       {!showArchived ? <Marquee /> : null}
@@ -247,6 +256,23 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
 
       <Text style={styles.title}>{showArchived ? 'Archived' : "What's the 🔥 vibe\ntonight?"}</Text>
       {name && !showArchived ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
+
+      {/* ⚡ Quick buttons (new UX): split · ride home · invite · budget */}
+      {!showArchived ? (
+        <View style={styles.quick}>
+          {[
+            ['🧾', 'SPLIT\nBILL', C.pink, onNewBill],
+            ['🚕', 'RIDE\nHOME', C.cyan, rideHome],
+            ['💌', 'INVITE', C.violet, onFriends && !guest ? () => onFriends(true) : onSaveAccount],
+            ['👛', 'BUDGET', '#FFD84D', onMoney],
+          ].map(([e, label, bg, go]) => (
+            <TouchableOpacity key={label} style={[styles.qBtn, { backgroundColor: bg }]} onPress={go} activeOpacity={0.85}>
+              <Text style={styles.qEmoji}>{e}</Text>
+              <Text style={styles.qLabel}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
 
       {/* 🎉 Events near you */}
       {!showArchived && events.length ? (
@@ -387,6 +413,10 @@ const styles = StyleSheet.create({
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
   hello: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: 12 },
+  quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, marginBottom: 16 },
+  qBtn: { width: '23.5%', borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  qEmoji: { fontSize: 24 },
+  qLabel: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, textAlign: 'center', marginTop: 4, lineHeight: 12 },
   title: { fontFamily: F.display, fontSize: 30, lineHeight: 36, color: C.text, marginTop: 2 },
   strip: { marginHorizontal: -20, marginTop: -14, marginBottom: 16, backgroundColor: C.lime, paddingVertical: 7, overflow: 'hidden', transform: [{ rotate: '-2deg' }] },
   stripText: { fontFamily: F.display, color: C.onLime, fontSize: 13, letterSpacing: 0.5, width: 2400, flexWrap: 'nowrap' },

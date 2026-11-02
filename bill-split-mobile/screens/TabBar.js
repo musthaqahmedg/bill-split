@@ -6,14 +6,14 @@ import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C, F, G } from '../services/theme';
 import QuickAdd from './QuickAdd';
 
-// 📱 Bottom tabs (v14 sticker pop): Tonight · Rooms · 📷 Scan · Money · Memories
-// Tap 📷 to scan a bill straight away; long-press it for more (plan / spend).
+// 📱 Bottom tabs (new UX, Nov): Tonight · Discover · Squad · Night · Me
+// Split a bill now lives in the quick buttons on Tonight (and the Menu).
 const TABS = [
   { key: 'home', icon: '🌙', label: 'Tonight' },
-  { key: 'parties', icon: '🎉', label: 'Rooms' },
-  { key: 'plus' },
-  { key: 'money', icon: '👛', label: 'Money' },
-  { key: 'memories', icon: '📸', label: 'Memories' },
+  { key: 'discover', icon: '🧭', label: 'Discover' },
+  { key: 'parties', icon: '👥', label: 'Squad' },
+  { key: 'night', icon: '🪩', label: 'Night' },
+  { key: 'money', icon: '👤', label: 'Me', also: ['memories'] },
 ];
 
 const tap = () => {
@@ -25,6 +25,7 @@ const tap = () => {
 export default function TabBar({ current, onTab, onPlan, onBill }) {
   const [menu, setMenu] = useState(false);
   const [spend, setSpend] = useState(false); // 💸 quick add
+  const on = (t) => t.key === current || (t.also || []).includes(current);
   const bottom = Math.max((initialWindowMetrics && initialWindowMetrics.insets.bottom) || 0, Platform.OS === 'ios' ? 20 : 10);
 
   return (
@@ -57,9 +58,9 @@ export default function TabBar({ current, onTab, onPlan, onBill }) {
               onTab(t.key);
             }}
           >
-            <Text style={[styles.icon, t.key !== current && styles.iconOff]}>{t.icon}</Text>
-            <Text style={[styles.label, t.key === current && styles.labelOn]}>{t.label}</Text>
-            {t.key === current ? <View style={styles.dot} /> : null}
+            <Text style={[styles.icon, !on(t) && styles.iconOff]}>{t.icon}</Text>
+            <Text style={[styles.label, on(t) && styles.labelOn]}>{t.label}</Text>
+            {on(t) ? <View style={styles.dot} /> : null}
           </TouchableOpacity>
         )
       )}

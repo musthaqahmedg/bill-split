@@ -25,9 +25,9 @@ import InviteSheet from './InviteSheet';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
+export default function PartyScreen({ partyId, autoNight = false, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
   const [gamesOpen, setGamesOpen] = useState(false);
-  const [nightOpen, setNightOpen] = useState(false); // 🌙 Night Mode
+  const [nightOpen, setNightOpen] = useState(autoNight); // 🌙 Night Mode
   const [barOpen, setBarOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false); // 📨 QR + link
   const [tab, setTab] = useState('overview'); // 🗂️ Overview · Plan · Vote · Chat · Split
