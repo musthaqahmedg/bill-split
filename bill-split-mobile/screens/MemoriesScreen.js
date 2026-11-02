@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, RefreshControl, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import NightSky from '../components/NightSky';
 import { getParty, listParties } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
@@ -7,12 +7,22 @@ import { C, F } from '../services/theme';
 import { nightsStats } from '../services/when';
 import { show } from '../services/names';
 import MorningRecap from './MorningRecap';
+import StreakCard from './StreakCard';
+import { listAllPhotos } from '../services/photos';
+import { eventWhen, myGoingEvents } from '../services/events';
 
 // 📸 Memories (v12): every night you've had, as a highlight reel. Tap one to replay its story.
 export default function MemoriesScreen({ onOpenPlan, onBack }) {
   const [plans, setPlans] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [recap, setRecap] = useState(null);
+  const [tab, setTab] = useState('all'); // all · photos · events
+  const [photos, setPhotos] = useState(null);
+  const [going, setGoing] = useState(null);
+  useEffect(() => {
+    if (tab === 'photos' && photos === null) listAllPhotos().then(setPhotos).catch(() => setPhotos([]));
+    if (tab === 'events' && going === null) myGoingEvents().then(setGoing).catch(() => setGoing([]));
+  }, [tab]);
 
   const load = useCallback(async () => {
     try {
@@ -66,10 +76,11 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
     <View style={styles.page}>
       <NightSky height={260} />
       <FlatList
-        data={rest}
+        key={tab}
+        data={tab === 'photos' ? photos || [] : tab === 'events' ? going || [] : rest}
         keyExtractor={(p) => p.id}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        numColumns={tab === 'events' ? 1 : tab === 'photos' ? 3 : 2}
+        columnWrapperStyle={tab === 'events' ? undefined : { justifyContent: tab === 'photos' ? 'flex-start' : 'space-between' }}
         refreshControl={<RefreshControl refreshing={refreshing} tintColor={C.accentSoft} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
         ListHeaderComponent={
           <View>
@@ -79,10 +90,34 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
               </TouchableOpacity>
             ) : null}
             <Text style={styles.logo}>● MEMORY VAULT</Text>
-            <Text style={styles.title}>
-              <Text style={styles.titleItalic}>Memories</Text>
-            </Text>
+            <Text style={styles.bigTitle}>MEMORIES</Text>
+            <View style={styles.tabs}>
+              {[['all', 'All'], ['photos', 'Photos'], ['events', 'Events']].map(([k, label]) => (
+                <TouchableOpacity key={k} style={[styles.tab, tab === k && styles.tabOn]} onPress={() => setTab(k)} activeOpacity={0.85}>
+                  <Text style={[styles.tabText, tab === k && { color: C.onLime }]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {tab === 'photos' ? (
+              photos === null ? <ActivityIndicator color={C.lime} style={{ marginTop: 20 }} /> : !photos.length ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyEmoji}>📷</Text>
+                  <Text style={styles.emptyText}>No photos yet</Text>
+                  <Text style={styles.lead}>Add photos inside any room and they collect here.</Text>
+                </View>
+              ) : null
+            ) : tab === 'events' ? (
+              going === null ? <ActivityIndicator color={C.lime} style={{ marginTop: 20 }} /> : !going.length ? (
+                <View style={styles.empty}>
+                  <Text style={styles.emptyEmoji}>🎟️</Text>
+                  <Text style={styles.emptyText}>No events yet</Text>
+                  <Text style={styles.lead}>Tap 🙋 I'm going on a big event and it's saved here.</Text>
+                </View>
+              ) : null
+            ) : (
+            <>
             <Text style={styles.lead}>Every night, saved. Tap to replay the story.</Text>
+            <StreakCard refreshKey={0} />
             {(() => {
               const st = nightsStats(plans);
               if (!st.nights) return null;
@@ -129,9 +164,28 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
               </View>
             )}
             {rest.length ? <Text style={styles.section}>All nights</Text> : null}
+            </>
+            )}
           </View>
         }
-        renderItem={({ item, index }) => <Poster p={item} i={index + 1} />}
+        renderItem={({ item, index }) =>
+          tab === 'photos' ? (
+            <Image source={{ uri: item.url }} style={styles.photo} />
+          ) : tab === 'events' ? (
+            <View style={styles.ticket}>
+              <View style={styles.ticketPoster}>
+                {item.poster_url ? <Image source={{ uri: item.poster_url }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Text style={{ fontSize: 30 }}>🎉</Text>}
+              </View>
+              <View style={{ flex: 1, padding: 12 }}>
+                <Text style={styles.ticketKicker}>{new Date(item.start_at) < new Date() ? 'WENT' : "I'M GOING"}</Text>
+                <Text style={styles.ticketTitle} numberOfLines={2}>{item.title}</Text>
+                <Text style={styles.ticketMeta} numberOfLines={1}>{eventWhen(item)} · {item.venue_name}</Text>
+              </View>
+            </View>
+          ) : (
+            <Poster p={item} i={index + 1} />
+          )
+        }
         contentContainerStyle={styles.pad}
         showsVerticalScrollIndicator={false}
       />
@@ -141,6 +195,17 @@ export default function MemoriesScreen({ onOpenPlan, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  bigTitle: { fontFamily: F.display, color: C.text, fontSize: 40, marginTop: 4 },
+  tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, marginTop: 12, marginBottom: 12 },
+  tab: { flex: 1, borderRadius: 12, paddingVertical: 9, alignItems: 'center' },
+  tabOn: { backgroundColor: C.lime },
+  tabText: { color: C.sub, fontSize: 14, fontWeight: '800' },
+  photo: { width: '32%', aspectRatio: 1, borderRadius: 12, marginRight: '2%', marginBottom: 6, backgroundColor: C.card },
+  ticket: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 18, overflow: 'hidden', marginBottom: 10, borderWidth: 2, borderColor: C.lime, borderStyle: 'dashed' },
+  ticketPoster: { width: 86, backgroundColor: '#2A1B5E', alignItems: 'center', justifyContent: 'center' },
+  ticketKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 10 },
+  ticketTitle: { fontFamily: F.bold, color: C.text, fontSize: 16, marginTop: 4 },
+  ticketMeta: { color: C.sub, fontSize: 12, marginTop: 4 },
   page: { flex: 1, backgroundColor: C.bg },
   center: { alignItems: 'center', justifyContent: 'center' },
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },

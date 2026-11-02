@@ -69,3 +69,10 @@ export async function deletePhoto(photo) {
   const { error } = await supabase.from('party_photos').delete().eq('id', photo.id);
   if (error) throw error;
 }
+
+// 📸 Memories → Photos: every photo from every plan you're in (the database only returns plans you're part of)
+export async function listAllPhotos(limit = 120) {
+  const { data, error } = await supabase.from('party_photos').select('id, party_id, path, created_at').order('created_at', { ascending: false }).limit(limit);
+  if (error) throw error;
+  return (data || []).map((p) => ({ ...p, url: photoUrl(p.path) }));
+}

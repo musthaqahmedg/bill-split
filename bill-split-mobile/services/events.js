@@ -126,3 +126,10 @@ export function goingText({ total, friends, going }) {
   if (others) return `${others} ${others === 1 ? 'person' : 'people'} going${going ? ' + you' : ''}`;
   return going ? "You're going 🎉" : 'Be the first to say you’re going';
 }
+
+// 🎟️ Memories → Events: events you tapped "I'm going" on (newest first)
+export async function myGoingEvents() {
+  const { data, error } = await supabase.from('event_going').select('created_at, event:events(id, title, start_at, venue_name, poster_url, status, city)').order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map((r) => r.event).filter(Boolean).sort((a, b) => new Date(b.start_at) - new Date(a.start_at));
+}
