@@ -404,3 +404,22 @@ test('budget warning stages: 80% and 100%', async () => {
   assert.equal(budgetStage(10000, 10000), 100);
   assert.equal(budgetStage(500, 0), 0);
 });
+
+test('tonight budget overrides the monthly allowance; week sums Mon→today', async () => {
+  const { todaySummary, weekSummary } = await import('../services/money.js');
+  const now = new Date(2026, 10, 4, 22, 0); // Wed 4 Nov 2026
+  const exp = [
+    { spent_at: new Date(2026, 10, 4, 20).toISOString(), amount: 400 }, // today
+    { spent_at: new Date(2026, 10, 2, 20).toISOString(), amount: 300 }, // Mon
+    { spent_at: new Date(2026, 10, 1, 20).toISOString(), amount: 999 }, // Sun (last week)
+  ];
+  const t = todaySummary([], exp, 30000, now, 1500);
+  assert.equal(t.allowance, 1500);
+  assert.equal(t.left, 1100);
+  assert.equal(t.tonightSet, true);
+  assert.equal(todaySummary([], exp, 0, now, 0).allowance, 0);
+  const w = weekSummary([], exp, 2000, now);
+  assert.equal(w.spent, 700);
+  assert.equal(w.left, 1300);
+  assert.equal(w.day, 3);
+});

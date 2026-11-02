@@ -3,7 +3,9 @@ import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, S
 import { listBills, listBillsDetailed } from '../services/bills';
 import { listExpenses, removeExpense } from '../services/expenses';
 import QuickAdd from './QuickAdd';
-import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor, todaySummary } from '../services/money';
+import SetBudgetSheet from './SetBudgetSheet';
+import { getBudgets } from '../services/budget';
+import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor, todaySummary, weekSummary } from '../services/money';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { homeBalance } from '../services/settle';
@@ -30,6 +32,9 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
   const [warn, setWarn] = useState(true); // ⚠️ warn at 80% / 100%
   const [month, setMonth] = useState(monthKey(new Date()));
   const [editing, setEditing] = useState(false);
+  const [budgets, setBudgets] = useState({ month: 0, week: 0, tonight: 0, warn: true });
+  const [editTab, setEditTab] = useState('month');
+  const openBudget = (tab) => { setEditTab(tab); setEditing(true); };
   const [draft, setDraft] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   // 💡 the "what else could this be" ideas change every few seconds, so it never feels the same
@@ -53,9 +58,10 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
       listExpenses().then(setExpenses).catch(() => setExpenses([]));
       const id = u && u.data && u.data.user ? u.data.user.id : null;
       if (id) {
-        const { data } = await supabase.from('profiles').select('monthly_budget, budget_warn').eq('id', id).maybeSingle();
-        setBudget((data && data.monthly_budget) || 0);
-        setWarn(!data || data.budget_warn !== false);
+        const bs = await getBudgets();
+        setBudgets(bs);
+        setBudget(bs.month || 0);
+        setWarn(bs.warn);
       }
     } catch (e) {
       setBills([]);
@@ -137,22 +143,25 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
         {/* ⚡ Tonight: today's allowance + quick add */}
         {isNow ? (
           (() => {
-            const t = todaySummary(bills, expenses, budget);
+            const t = todaySummary(bills, expenses, budget, new Date(), budgets.tonight);
             return (
               <View style={styles.today}>
                 <View style={styles.heroTop}>
                   <Text style={styles.todayKicker}>TONIGHT</Text>
                   {budget ? <Text style={styles.todayDays}>{t.daysLeft} {t.daysLeft === 1 ? 'day' : 'days'} left this month</Text> : null}
                 </View>
-                {budget ? (
+                {budget || budgets.tonight ? (
                   <>
-                    <Text style={styles.todayLabel}>Left tonight</Text>
+                    <Text style={styles.todayLabel}>Left tonight{t.tonightSet ? ' (tonight’s budget)' : ''}</Text>
                     <Text style={[styles.todayBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
                     <Text style={styles.todaySub}>{inr(t.today)} spent of {inr(t.allowance)} today</Text>
                   </>
                 ) : (
                   <Text style={styles.todaySub}>Spent today: <Text style={styles.b}>{inr(t.today)}</Text>. Set a Night Budget to get a daily allowance.</Text>
                 )}
+                <TouchableOpacity style={styles.tonightBtn} onPress={() => openBudget('tonight')} activeOpacity={0.85}>
+                  <Text style={styles.tonightBtnText}>🎯 {budgets.tonight ? `Tonight: ${inr(budgets.tonight)} · change` : 'Set a budget for tonight'}</Text>
+                </TouchableOpacity>
                 <Text style={styles.quickLabel}>QUICK ADD</Text>
                 <View style={styles.quick}>
                   {[['drinks', C.lime], ['cab', C.pink], ['snacks', '#FFB347'], ['entry', C.violet], ['other', null]].map(([k, col]) => (
@@ -184,7 +193,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
           <View style={styles.heroTop}>
             <Text style={styles.heroLabel}>{isNow ? 'Spent this month' : 'Spent'}</Text>
             {budget ? (
-              <TouchableOpacity onPress={() => { setDraft(String(budget)); setEditing(true); }} hitSlop={8}>
+              <TouchableOpacity onPress={() => openBudget('month')} hitSlop={8}>
                 <Text style={styles.heroLabel}>Budget {inr(budget)} ✏️</Text>
               </TouchableOpacity>
             ) : null}
@@ -204,7 +213,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
               </View>
             </>
           ) : isNow ? (
-            <TouchableOpacity style={styles.setBtn} onPress={() => { setDraft(''); setEditing(true); }}>
+            <TouchableOpacity style={styles.setBtn} onPress={() => openBudget('month')}>
               <Text style={styles.setText}>🎯 Set a monthly Night Budget</Text>
             </TouchableOpacity>
           ) : null}
@@ -250,7 +259,23 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
         {/* 📅 Weekly check-in */}
         {isNow ? (
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>📅 This week</Text>
+            <View style={styles.heroTop}>
+              <Text style={styles.cardTitle}>📅 This week</Text>
+              <TouchableOpacity onPress={() => openBudget('week')} hitSlop={8}>
+                <Text style={styles.spendAdd}>{budgets.week ? `Budget ${inr(budgets.week)} ✏️` : '🎯 Set'}</Text>
+              </TouchableOpacity>
+            </View>
+            {budgets.week ? (() => {
+              const w = weekSummary(bills, expenses, budgets.week);
+              return (
+                <>
+                  <View style={styles.track}>
+                    <View style={[styles.fill, { width: `${Math.min(100, Math.round(w.pct * 100))}%`, backgroundColor: w.pct >= 1 ? C.red : w.pct >= 0.8 ? C.pink : C.lime }]} />
+                  </View>
+                  <Text style={styles.body}>{inr(w.spent)} of {inr(w.budget)} · {w.left >= 0 ? `${inr(w.left)} left` : `${inr(-w.left)} over`} · day {w.day} of 7</Text>
+                </>
+              );
+            })() : null}
             <Text style={styles.body}>
               {s.week.nights
                 ? `${inr(s.week.spent)} across ${s.week.nights} night${s.week.nights === 1 ? '' : 's'} out.`
@@ -394,62 +419,15 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
 
       <QuickAdd visible={adding} onClose={() => { setAdding(false); setAddCat(null); }} onSaved={load} initialCat={addCat} />
 
-      {/* 🎯 Set budget */}
-      <Modal visible={editing} transparent animationType="fade" onRequestClose={() => setEditing(false)}>
-        <Pressable style={styles.overlay} onPress={() => setEditing(false)}>
-          <Pressable style={styles.sheet}>
-            <Text style={styles.sheetTitle}>🎯 Monthly Night Budget</Text>
-            <Text style={styles.body}>How much do you want to spend going out each month?</Text>
-            <TextInput
-              style={styles.input}
-              value={draft}
-              onChangeText={(t) => setDraft(t.replace(/[^0-9]/g, ''))}
-              placeholder="e.g. 5000"
-              placeholderTextColor={C.faint}
-              keyboardType="number-pad"
-              keyboardAppearance="dark"
-              autoFocus
-            />
-            <View style={styles.picks}>
-              {PICKS.map((p) => (
-                <TouchableOpacity key={p} style={styles.pick} onPress={() => setDraft(String(p))}>
-                  <Text style={styles.pickText}>{inr(p)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.warnRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.warnTitle}>⚠️ Warn me at 80%</Text>
-                <Text style={styles.warnSub}>A heads-up at 80% and when it's used up</Text>
-              </View>
-              <Switch
-                value={warn}
-                trackColor={{ true: C.lime, false: C.border }}
-                onValueChange={async (v) => {
-                  setWarn(v);
-                  try {
-                    const { data: u } = await supabase.auth.getUser();
-                    await supabase.from('profiles').update({ budget_warn: v }).eq('id', u.user.id);
-                  } catch (e) {}
-                }}
-              />
-            </View>
-            <TouchableOpacity style={styles.saveBtn} onPress={() => saveBudget(draft)}>
-              <Text style={styles.saveText}>Save budget</Text>
-            </TouchableOpacity>
-            {budget ? (
-              <TouchableOpacity onPress={() => saveBudget(0)}>
-                <Text style={styles.remove}>Remove budget</Text>
-              </TouchableOpacity>
-            ) : null}
-          </Pressable>
-        </Pressable>
-      </Modal>
+      {/* 🎯 Set a budget: tonight · this week · this month */}
+      <SetBudgetSheet visible={editing} onClose={() => setEditing(false)} onSaved={load} budgets={budgets} initialTab={editTab} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  tonightBtn: { borderWidth: 1, borderColor: C.lime, borderRadius: 14, paddingVertical: 10, alignItems: 'center', marginTop: 12 },
+  tonightBtnText: { color: C.lime, fontSize: 14, fontWeight: '800' },
   meRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   meFace: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.violet, alignItems: 'center', justifyContent: 'center', marginRight: 12, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   meFaceText: { fontFamily: F.display, color: C.onLime, fontSize: 22 },

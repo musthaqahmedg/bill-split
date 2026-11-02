@@ -200,7 +200,7 @@ export function habitsSummary(detailedBills, key, expenses = []) {
 
 // 📆 Today's allowance (Final UX "daily allowance"), from the monthly Night Budget only (no income needed):
 // what's left of the budget before today, shared over the days left in the month (today included).
-export function todaySummary(bills, expenses, budget, now = new Date()) {
+export function todaySummary(bills, expenses, budget, now = new Date(), tonight = 0) {
   const key = monthKey(now);
   const sameDay = (d) => d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
   const rows = [
@@ -212,8 +212,10 @@ export function todaySummary(bills, expenses, budget, now = new Date()) {
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const daysLeft = daysInMonth - now.getDate() + 1;
   const b = Math.max(0, Math.round(Number(budget) || 0));
-  const allowance = b ? Math.max(0, Math.floor((b - before) / daysLeft)) : 0;
-  return { today, before, daysLeft, allowance, left: allowance - today, base: b ? Math.floor(b / daysInMonth) : 0 };
+  const t = Math.max(0, Math.round(Number(tonight) || 0));
+  // a budget set just for tonight wins; otherwise what's left of the month, spread over the days left
+  const allowance = t || (b ? Math.max(0, Math.floor((b - before) / daysLeft)) : 0);
+  return { today, before, daysLeft, allowance, left: allowance - today, base: b ? Math.floor(b / daysInMonth) : 0, tonightSet: !!t };
 }
 
 // 💰 Night Budget warning stage: 0 (fine), 80 (getting close) or 100 (used up)
@@ -221,4 +223,16 @@ export function budgetStage(spent, budget) {
   if (!budget || budget <= 0) return 0;
   const pct = spent / budget;
   return pct >= 1 ? 100 : pct >= 0.8 ? 80 : 0;
+}
+
+// 📅 This week (Mon → today): what you spent going out (your bill shares + logged spends)
+export function weekSummary(bills, expenses, budget = 0, now = new Date()) {
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  const rows = [
+    ...(bills || []).map((b) => ({ d: billDate(b), amt: myShare(b) })),
+    ...(expenses || []).map((e) => ({ d: new Date(e.spent_at), amt: Math.round(Number(e.amount) || 0) })),
+  ].filter((r) => r.amt > 0 && r.d >= start && r.d <= now);
+  const spent = rows.reduce((s, r) => s + r.amt, 0);
+  const b = Math.max(0, Math.round(Number(budget) || 0));
+  return { spent, budget: b, left: b - spent, pct: b ? spent / b : 0, day: ((now.getDay() + 6) % 7) + 1 };
 }

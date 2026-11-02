@@ -8,6 +8,7 @@ import { supabase } from '../services/supabaseClient';
 import { eventKm, eventsNear, eventsToPop, eventWhen, getEvent, markSeen, remindLater } from '../services/events';
 import { tourDone } from '../components/Tour';
 import EventPopup from './EventPopup';
+import { getBudgets } from '../services/budget';
 import { VIBES } from './PullUpScreen';
 import { listBills } from '../services/bills';
 import { show } from '../services/names';
@@ -61,6 +62,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [budget, setBudget] = useState(0);
   const [streak, setStreak] = useState(0);
   const [outNow, setOutNow] = useState(0);
+  const [tonightBudget, setTonightBudget] = useState(0); // 🎯 budget set just for tonight
   const [events, setEvents] = useState([]); // 🎉 big events near you
   // 🔔 opened from an event alert → show that event's pop-up
   useEffect(() => {
@@ -103,8 +105,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       .catch(() => {});
     // 💰 tonight's budget, 🔥 streak, 🟢 friends out now (all optional, never block Home)
     listExpenses().then(setExpenses).catch(() => {});
-    supabase.auth.getUser().then(({ data }) => data && data.user && supabase.from('profiles').select('monthly_budget').eq('id', data.user.id).maybeSingle())
-      .then((res) => setBudget((res && res.data && res.data.monthly_budget) || 0)).catch(() => {});
+    getBudgets().then((b) => { setBudget(b.month || 0); setTonightBudget(b.tonight || 0); }).catch(() => {});
     getNights().then((n) => setStreak(nightStats(n).current)).catch(() => {});
     // 🎉 big events near you: pop up the ones not seen yet (after the first-time tour); offline → skip quietly
     eventsNear()
@@ -179,7 +180,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     );
   };
 
-  const t = todaySummary(bills, expenses, budget);
+  const t = todaySummary(bills, expenses, budget, new Date(), tonightBudget);
   const budgetCard = (
     <TouchableOpacity style={styles.budget} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
       <View style={styles.budgetTop}>
@@ -188,7 +189,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           <Text style={styles.dayText}>DAY {new Date().getDate()}</Text>
         </View>
       </View>
-      {budget ? (
+      {budget || tonightBudget ? (
         <>
           <View style={styles.budgetRow}>
             <Text style={[styles.budgetBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
