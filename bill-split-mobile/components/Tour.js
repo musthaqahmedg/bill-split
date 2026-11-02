@@ -5,7 +5,7 @@ import { initialWindowMetrics } from 'react-native-safe-area-context';
 import { C, F } from '../services/theme';
 
 // 🧭 First-time guided tour: a few quick tips that spotlight the main buttons. Skip anytime, replay from Menu.
-const KEY = 'vo_tour_done_v2'; // v2: new tabs (Nov) → everyone sees the tour once more
+const KEY = 'vo_tour_done_v1'; // only new users see the tour
 export const tourDone = async () => {
   try {
     return (await AsyncStorage.getItem(KEY)) === 'yes';
