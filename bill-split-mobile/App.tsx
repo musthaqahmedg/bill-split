@@ -601,7 +601,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'money') {
-    return <MyMoneyScreen />;
+    return <MyMoneyScreen onProfile={() => setScreen('profile')} onMemories={() => setScreen('memories')} onYourData={() => setScreen('yourData')} />;
   }
 
   if (screen === 'yourData') {

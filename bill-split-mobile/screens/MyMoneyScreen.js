@@ -5,6 +5,7 @@ import { listExpenses, removeExpense } from '../services/expenses';
 import QuickAdd from './QuickAdd';
 import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor, todaySummary } from '../services/money';
 import { show } from '../services/names';
+import { getProfile } from '../services/profile';
 import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
 import { C, F } from '../services/theme';
@@ -15,7 +16,11 @@ import NightSky from '../components/NightSky';
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-export default function MyMoneyScreen({ onBack }) {
+export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData }) {
+  const [myName, setMyName] = useState('');
+  useEffect(() => {
+    getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
+  }, []);
   const [bills, setBills] = useState(null);
   const [detailed, setDetailed] = useState([]); // items + claims, for the habits card
   const [expenses, setExpenses] = useState([]); // 💸 quick-add spends
@@ -104,13 +109,64 @@ export default function MyMoneyScreen({ onBack }) {
             <Text style={styles.back}>‹ Back</Text>
           </TouchableOpacity>
         ) : null}
-        <View style={styles.headRow}>
-          <Text style={styles.kicker}>YOUR NUMBERS</Text>
+        {/* 👤 Me (new UX): you, your shortcuts, then your money */}
+        <View style={styles.meRow}>
+          <View style={styles.meFace}>
+            <Text style={styles.meFaceText}>{(myName || 'Me').slice(0, 1).toUpperCase()}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.title}>ME</Text>
+            {myName ? <Text style={styles.meName} numberOfLines={1}>{myName}</Text> : null}
+          </View>
           <View style={styles.privatePill}>
             <Text style={styles.privateText}>🔒 Only you</Text>
           </View>
         </View>
-        <Text style={styles.title}>MY MONEY</Text>
+        <View style={styles.meLinks}>
+          {[
+            ['📸', 'Memories', C.pink, onMemories],
+            ['⚙️', 'Profile', C.lime, onProfile],
+            ['🔒', 'Your data', C.cyan, onYourData],
+          ].filter((x) => x[3]).map(([e, label, bg, go]) => (
+            <TouchableOpacity key={label} style={[styles.meLink, { backgroundColor: bg }]} onPress={go} activeOpacity={0.85}>
+              <Text style={styles.meLinkEmoji}>{e}</Text>
+              <Text style={styles.meLinkText}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {/* ⚡ Tonight: today's allowance + quick add */}
+        {isNow ? (
+          (() => {
+            const t = todaySummary(bills, expenses, budget);
+            return (
+              <View style={styles.today}>
+                <View style={styles.heroTop}>
+                  <Text style={styles.todayKicker}>TONIGHT</Text>
+                  {budget ? <Text style={styles.todayDays}>{t.daysLeft} {t.daysLeft === 1 ? 'day' : 'days'} left this month</Text> : null}
+                </View>
+                {budget ? (
+                  <>
+                    <Text style={styles.todayLabel}>Left tonight</Text>
+                    <Text style={[styles.todayBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
+                    <Text style={styles.todaySub}>{inr(t.today)} spent of {inr(t.allowance)} today</Text>
+                  </>
+                ) : (
+                  <Text style={styles.todaySub}>Spent today: <Text style={styles.b}>{inr(t.today)}</Text>. Set a Night Budget to get a daily allowance.</Text>
+                )}
+                <Text style={styles.quickLabel}>QUICK ADD</Text>
+                <View style={styles.quick}>
+                  {[['drinks', C.lime], ['cab', C.pink], ['snacks', '#FFB347'], ['entry', C.violet], ['other', null]].map(([k, col]) => (
+                    <TouchableOpacity key={k} style={[styles.quickChip, col ? { backgroundColor: col } : styles.quickOther]} onPress={() => { setAddCat(k); setAdding(true); }} activeOpacity={0.85}>
+                      <Text style={[styles.quickText, !col && { color: C.text }]}>{EXPENSE_CATS[k].emoji} {k === 'snacks' ? 'Late-night food' : EXPENSE_CATS[k].label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            );
+          })()
+        ) : null}
+
+        <Text style={[styles.kicker, { marginTop: 18 }]}>YOUR MONEY</Text>
 
         {/* ‹ October 2026 › */}
         <View style={styles.monthRow}>
@@ -160,38 +216,6 @@ export default function MyMoneyScreen({ onBack }) {
             </Text>
           </View>
         </View>
-
-        {/* ⚡ Tonight: today's allowance + quick add */}
-        {isNow ? (
-          (() => {
-            const t = todaySummary(bills, expenses, budget);
-            return (
-              <View style={styles.today}>
-                <View style={styles.heroTop}>
-                  <Text style={styles.todayKicker}>TONIGHT</Text>
-                  {budget ? <Text style={styles.todayDays}>{t.daysLeft} {t.daysLeft === 1 ? 'day' : 'days'} left this month</Text> : null}
-                </View>
-                {budget ? (
-                  <>
-                    <Text style={styles.todayLabel}>Left tonight</Text>
-                    <Text style={[styles.todayBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
-                    <Text style={styles.todaySub}>{inr(t.today)} spent of {inr(t.allowance)} today</Text>
-                  </>
-                ) : (
-                  <Text style={styles.todaySub}>Spent today: <Text style={styles.b}>{inr(t.today)}</Text>. Set a Night Budget to get a daily allowance.</Text>
-                )}
-                <Text style={styles.quickLabel}>QUICK ADD</Text>
-                <View style={styles.quick}>
-                  {[['drinks', C.lime], ['cab', C.pink], ['snacks', '#FFB347'], ['entry', C.violet], ['other', null]].map(([k, col]) => (
-                    <TouchableOpacity key={k} style={[styles.quickChip, col ? { backgroundColor: col } : styles.quickOther]} onPress={() => { setAddCat(k); setAdding(true); }} activeOpacity={0.85}>
-                      <Text style={[styles.quickText, !col && { color: C.text }]}>{EXPENSE_CATS[k].emoji} {k === 'snacks' ? 'Late-night food' : EXPENSE_CATS[k].label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              </View>
-            );
-          })()
-        ) : null}
 
         {/* 🧾 Where it went */}
         {s.spent ? (
@@ -426,6 +450,14 @@ export default function MyMoneyScreen({ onBack }) {
 }
 
 const styles = StyleSheet.create({
+  meRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  meFace: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.violet, alignItems: 'center', justifyContent: 'center', marginRight: 12, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  meFaceText: { fontFamily: F.display, color: C.onLime, fontSize: 22 },
+  meName: { color: C.sub, fontSize: 14, fontWeight: '700' },
+  meLinks: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  meLink: { width: '31.5%', borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  meLinkEmoji: { fontSize: 22 },
+  meLinkText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, marginTop: 4 },
   page: { flex: 1, backgroundColor: C.bg },
   center: { justifyContent: 'center', alignItems: 'center' },
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 40 },
