@@ -6,7 +6,17 @@ import { supabase } from './supabaseClient';
 const SEEN = 'vo_events_seen_v1'; // { [eventId]: 'seen' | remindAfterMs }
 const DAY = 864e5;
 
-export async function eventsNear({ ask = false, radiusKm = 25 } = {}) {
+// 📏 how far away events show (Profile setting, kept on this phone)
+const RADIUS = 'vo_event_radius';
+export const RADII = [10, 25, 50];
+export const getRadius = async () => {
+  const n = Number(await AsyncStorage.getItem(RADIUS).catch(() => null));
+  return RADII.includes(n) ? n : 25;
+};
+export const setRadius = (km) => AsyncStorage.setItem(RADIUS, String(km)).catch(() => {});
+
+export async function eventsNear({ ask = false, radiusKm = null } = {}) {
+  if (!radiusKm) radiusKm = await getRadius();
   const loc = await getMyLocation({ ask });
   const { data, error } = await supabase.rpc('events_near', {
     p_lat: loc.coords.lat,

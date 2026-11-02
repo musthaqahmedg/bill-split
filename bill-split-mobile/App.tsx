@@ -44,6 +44,7 @@ import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
 import MenuScreen from './screens/MenuScreen';
 import NightTabScreen from './screens/NightTabScreen';
+import LocationPrime from './components/LocationPrime';
 import SquadScreen from './screens/SquadScreen';
 import PullUpScreen from './screens/PullUpScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
@@ -446,11 +447,17 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   // 📱 Main pages get the bottom tabs; everything else (bill flow, chats, details) stays full screen
   const TAB_PAGES = ['home', 'discover', 'squad', 'parties', 'night', 'money', 'memories'];
   const page = renderPage();
-  if (!TAB_PAGES.includes(screen)) return page;
+  if (!TAB_PAGES.includes(screen)) return (
+    <>
+      {page}
+      <LocationPrime />
+    </>
+  );
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1 }}>{page}</View>
       <Tour visible={showTour && screen === 'home'} onDone={() => setShowTour(false)} />
+      <LocationPrime />
       <TabBar
         current={screen}
         onTab={(t: string) => {

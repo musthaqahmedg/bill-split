@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Animated, Easing, FlatList, Image, Linking, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { listExpenses } from '../services/expenses';
@@ -108,7 +109,13 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     getBudgets().then((b) => { setBudget(b.month || 0); setTonightBudget(b.tonight || 0); }).catch(() => {});
     getNights().then((n) => setStreak(nightStats(n).current)).catch(() => {});
     // 🎉 big events near you: pop up the ones not seen yet (after the first-time tour); offline → skip quietly
-    eventsNear()
+    // 📍 after the first-time tour, ask for location once (friendly screen first), so events + alerts know your city
+    (async () => {
+      const done = await tourDone();
+      const primed = await AsyncStorage.getItem('vo_loc_primed').catch(() => 'yes');
+      if (done && !primed) AsyncStorage.setItem('vo_loc_primed', 'yes').catch(() => {});
+      return eventsNear({ ask: done && !primed });
+    })()
       .then(async (list) => {
         setEvents(list);
         if (!(await tourDone())) return;

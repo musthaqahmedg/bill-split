@@ -26,6 +26,10 @@ export const EMOJI = {
   beach: '🏖️', peak: '⛰️', park: '🌳', nature_reserve: '🌿', fort: '🏰', castle: '🏰', dam: '🌊', place_of_worship: '🛕',
 };
 
+// 📍 A friendly screen shown before the phone's own permission pop-up (set by components/LocationPrime)
+let primer = null;
+export const setLocationPrimer = (fn) => (primer = fn);
+
 // Where are you?
 // status: 'granted' (using your real location), 'denied' (you said no, we can ask again),
 //         'blocked' (turned off in phone Settings), 'off' (phone location services are off)
@@ -36,6 +40,8 @@ export async function getMyLocation({ ask = true } = {}) {
 
     let perm = await Location.getForegroundPermissionsAsync();
     if (perm.status !== 'granted' && ask && perm.canAskAgain) {
+      // first time: explain why before the system pop-up
+      if (perm.status === 'undetermined' && primer && !(await primer())) return { status: 'denied', coords: PALAKKAD };
       perm = await Location.requestForegroundPermissionsAsync();
     }
     if (perm.status !== 'granted') {

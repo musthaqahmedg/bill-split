@@ -13,7 +13,7 @@ import { getShowActive, setShowActive } from '../services/active';
 import { getFunNotifs, getPushPreview, setFunNotifs, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C, F } from '../services/theme';
-import { CITIES, getEventAlerts, setEventAlerts } from '../services/events';
+import { CITIES, RADII, getEventAlerts, getRadius, setEventAlerts, setRadius } from '../services/events';
 
 export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount, onYourData, onMoney }) {
   const [showActive, setShowActiveState] = useState(true);
@@ -21,8 +21,10 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
   const [fun, setFun] = useState(true);
   const [evAlerts, setEvAlerts] = useState({ on: true, city: null });
   const [cityOpen, setCityOpen] = useState(false);
+  const [radius, setRad] = useState(25);
   useEffect(() => {
     getEventAlerts().then(setEvAlerts).catch(() => {});
+    getRadius().then(setRad).catch(() => {});
     getFunNotifs().then(setFun).catch(() => {});
     getShowActive().then(setShowActiveState).catch(() => {});
     getPushPreview().then(setPreview).catch(() => {});
@@ -241,6 +243,14 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
               <Text style={evAlerts.city ? styles.bdayText : styles.bdayEmpty}>{evAlerts.city ? `🏙️ ${evAlerts.city}` : '🏙️ Pick your city'}</Text>
               <Text style={styles.bdayChange}>{cityOpen ? 'Close' : 'Change'}</Text>
             </TouchableOpacity>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+              <Text style={{ color: C.sub, fontSize: 13, fontWeight: '700', marginRight: 8 }}>📏 Show events within</Text>
+              {RADII.map((km) => (
+                <TouchableOpacity key={km} onPress={() => { setRad(km); setRadius(km); }} style={{ paddingVertical: 6, paddingHorizontal: 10, borderRadius: 12, marginRight: 6, backgroundColor: radius === km ? C.lime : C.card, borderWidth: 1, borderColor: radius === km ? C.lime : C.border }}>
+                  <Text style={{ color: radius === km ? C.onLime : C.text, fontWeight: '800', fontSize: 13 }}>{km} km</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
             {cityOpen ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
                 {Object.keys(CITIES).map((c) => (
