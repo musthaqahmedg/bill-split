@@ -299,10 +299,10 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
                 <View style={[styles.poster, { backgroundColor: C.lime }]}>
                   <Text style={styles.posterKicker}>BUDGET</Text>
                   <Text style={styles.posterBig}>{party.hide_bill ? '🙈' : inr(party.budget)}</Text>
-                  <Text style={styles.posterSub}>{party.split_mode === 'treat' ? "It's a treat 🎁" : party.split_mode === 'free' ? 'Birthday goes free 🎂' : 'Split equally'}</Text>
+                  <Text style={styles.posterSub}>{party.split_mode === 'treat' ? "It's a treat 🎁" : party.split_mode === 'free' ? 'Birthday goes free 🎂' : Number(party.budget) > 0 && going > 0 && !party.hide_bill ? `About ${inr(Math.round(party.budget / going / 10) * 10)} a head` : 'Split equally'}</Text>
                 </View>
                 <View style={[styles.poster, { backgroundColor: C.cyan }]}>
-                  <Text style={styles.posterKicker}>GOING</Text>
+                  <Text style={styles.posterKicker}>{party.kind === 'house' ? 'GUESTS' : 'GOING'}</Text>
                   <Text style={styles.posterBig}>{going}</Text>
                   <Text style={styles.posterSub}>{answered} of {members.length - 1} answered</Text>
                 </View>
@@ -311,10 +311,12 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
               <TouchableOpacity style={styles.invite} onPress={() => setInviteOpen(true)} activeOpacity={0.85}>
                 <Text style={styles.inviteIcon}>👥</Text>
                 <View style={styles.flex}>
-                  <Text style={styles.inviteTitle}>INVITE MORE FRIENDS</Text>
+                  <Text style={styles.inviteTitle}>{party.kind === 'house' ? 'INVITE THE SQUAD' : 'INVITE MORE FRIENDS'}</Text>
                   <Text style={styles.inviteSub}>QR code, link or contacts. Friends answer and chat from it.</Text>
                 </View>
               </TouchableOpacity>
+
+              {party.kind === 'house' ? <BringList party={party} /> : null}
 
               <Text style={styles.section}>The squad · {members.length}</Text>
               {members.map((m, i) => <PersonRow key={m.id} m={m} i={i} />)}
@@ -327,7 +329,7 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
           {tab === 'plan' ? (
             <>
               {!['trip', 'daytrip', 'wedding'].includes(party.kind) && onTakeOut ? <BookingCard party={party} onTakeOut={() => onTakeOut(party)} /> : null}
-              <BringList party={party} />
+              {party.kind !== 'house' ? <BringList party={party} /> : null}
               <View style={styles.tiles}>
                 {['house', 'party', 'birthday', 'bachelor', 'match', 'trip', 'daytrip'].includes(party.kind) && onShop ? (
                   <TouchableOpacity style={[styles.tile, { backgroundColor: C.violet }]} onPress={onShop}>
