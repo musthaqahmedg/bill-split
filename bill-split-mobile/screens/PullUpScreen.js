@@ -5,8 +5,9 @@ import { recentFriends } from '../services/bills';
 import { myFriends } from '../services/friends';
 import { show } from '../services/names';
 import { createParty } from '../services/parties';
-import { findPlaces, getMyLocation, showKm } from '../services/places';
+import { findPlaces, getMyLocation, placeDetails, showKm } from '../services/places';
 import { C, F, STICK } from '../services/theme';
+import BookTable from './BookTable';
 import ContactPicker from './ContactPicker';
 
 // 🤟 "Pull up?" (new UX): the fast way to plan tonight. Vibe → your people → a spot → LOCK IT IN.
@@ -35,6 +36,8 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
   const [spots, setSpots] = useState(null);
   const [spot, setSpot] = useState(null); // null = squad votes later
   const [saving, setSaving] = useState(false);
+  const [wantTable, setWantTable] = useState(false); // 🍽️ also request a table at the spot
+  const [booking, setBooking] = useState(null); // { party, place } → BookTable sheet
 
   useEffect(() => {
     Promise.all([recentFriends(20).catch(() => []), myFriends().catch(() => [])]).then(([recent, app]) => {
@@ -76,6 +79,12 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
         people: ['Me', ...people],
         phones,
       });
+      if (spot && wantTable) {
+        // 🍽️ ask the venue for a table (WhatsApp / call), then open the room
+        const det = await placeDetails([spot.id]).catch(() => ({}));
+        setBooking({ party: { ...party, party_members: [] }, place: { ...spot, phone: (det[spot.id] || {}).phone || null } });
+        return;
+      }
       onCreated(party.id, !spot); // no spot → open the room on the vote
     } catch (e) {
       Alert.alert("Couldn't create", e.message);
@@ -175,6 +184,17 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
               );
             })}
             {spots && !spots.length ? <Text style={styles.muted}>Couldn't find spots nearby. Let the squad vote instead.</Text> : null}
+            {spot ? (
+              <TouchableOpacity style={styles.tableRow} onPress={() => setWantTable(!wantTable)} activeOpacity={0.85}>
+                <View style={[styles.box, wantTable && styles.boxOn]}>
+                  <Text style={styles.boxTick}>{wantTable ? '✓' : ''}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.tableTitle}>🍽️ Request a table at {spot.name}</Text>
+                  <Text style={styles.tableSub}>Pick a time, and we message them on WhatsApp for you</Text>
+                </View>
+              </TouchableOpacity>
+            ) : null}
             <TouchableOpacity style={styles.cta} onPress={lockIn} disabled={saving} activeOpacity={0.85}>
               <Text style={styles.ctaText}>{saving ? 'Creating…' : 'LOCK IT IN 🤟'}</Text>
             </TouchableOpacity>
@@ -182,6 +202,17 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
           </>
         )}
       </ScrollView>
+      <BookTable
+        visible={!!booking}
+        place={booking ? booking.place : null}
+        party={booking ? booking.party : null}
+        guestsDefault={people.length + 1}
+        onClose={() => {
+          const id = booking && booking.party.id;
+          setBooking(null);
+          if (id) onCreated(id, false);
+        }}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -218,5 +249,11 @@ const styles = StyleSheet.create({
   spotEmoji: { fontSize: 26, marginRight: 12 },
   spotName: { color: C.text, fontSize: 16, fontWeight: '800' },
   spotMeta: { color: C.sub, fontSize: 13, marginTop: 2 },
+  tableRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 18, padding: 14, marginTop: 8, borderWidth: 1, borderColor: C.lime },
+  box: { width: 26, height: 26, borderRadius: 8, borderWidth: 2, borderColor: C.lime, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  boxOn: { backgroundColor: C.lime },
+  boxTick: { color: C.onLime, fontSize: 16, fontWeight: '900' },
+  tableTitle: { color: C.text, fontSize: 15, fontWeight: '800' },
+  tableSub: { color: C.sub, fontSize: 12, marginTop: 2 },
   foot: { color: C.sub, fontSize: 13, textAlign: 'center', marginTop: 10 },
 });
