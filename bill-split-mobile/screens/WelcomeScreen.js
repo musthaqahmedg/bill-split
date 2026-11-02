@@ -176,9 +176,9 @@ export default function WelcomeScreen({ onGuest, onSignIn }) {
           })}
         </View>
         <TouchableOpacity style={styles.button} onPress={last ? go : next} disabled={busy} activeOpacity={0.85}>
-          {busy ? <ActivityIndicator color={C.lime} /> : <Text style={styles.buttonText}>{last ? "LET'S GO – START THE NIGHT →" : 'NEXT →'}</Text>}
+          {busy ? <ActivityIndicator color={C.lime} /> : <Text style={styles.buttonText}>{last ? 'GET IN →' : 'NEXT →'}</Text>}
         </TouchableOpacity>
-        <Text style={styles.note}>{last ? 'No sign-up needed. Save your account later.' : ' '}</Text>
+        <Text style={styles.note}>{last ? 'PULL UP. LINK UP. VIBE OUT. · No sign-up needed.' : ' '}</Text>
       </View>
     </View>
   );

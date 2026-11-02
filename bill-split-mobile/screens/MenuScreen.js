@@ -8,34 +8,36 @@ export default function MenuScreen({ go, onBack }) {
     {
       title: 'PLAN THE NIGHT',
       items: [
-        { key: 'plan', emoji: '🎉', name: 'Plan a night', sub: 'Pick a vibe, invite friends', color: C.lime },
-        { key: 'rooms', emoji: '💬', name: 'My rooms', sub: 'Vote, chat, split', color: C.violet },
-        { key: 'nearby', emoji: '🧭', name: 'Nearby', sub: 'Cafés, restaurants, bars', color: C.cyan },
-        { key: 'groups', emoji: '👥', name: 'Groups', sub: 'Your regular squads', color: '#FFB3D9' },
+        { key: 'pullUp', emoji: '🤟', name: 'Pull up tonight', sub: 'Vibe → people → spot', color: C.lime },
+        { key: 'plan', emoji: '🎉', name: 'Plan something big', sub: 'Birthday, trip, wedding…', color: '#FFB3D9' },
+        { key: 'rooms', emoji: '💬', name: 'Rooms', sub: 'Vote, chat, split', color: C.violet },
+        { key: 'nearby', emoji: '🧭', name: 'Discover', sub: 'Cafés, clubs, events', color: C.cyan },
+        { key: 'groups', emoji: '👥', name: 'Groups', sub: 'Your regular squads', color: '#FFD84D' },
+      ],
+    },
+    {
+      title: 'ON THE NIGHT',
+      items: [
+        { key: 'night', emoji: '🪩', name: 'Night mode', sub: 'Radar, bill so far, home safe', color: C.violet },
+        { key: 'squad', emoji: '📍', name: 'Squad status', sub: "Who's on the way", color: '#7CFFB2' },
+        { key: 'rooms', emoji: '🎮', name: 'Party games', sub: 'Inside any room', color: '#FF8A3D' },
       ],
     },
     {
       title: 'SPLIT & MONEY',
       items: [
         { key: 'scan', emoji: '📷', name: 'Snap a bill', sub: 'Split it to the rupee', color: C.pink },
-        { key: 'money', emoji: '👛', name: 'My money', sub: 'Budget and spends', color: '#FFD84D' },
+        { key: 'money', emoji: '🎯', name: 'Budget', sub: 'Tonight, week, month', color: '#FFD84D' },
         { key: 'spend', emoji: '💸', name: 'Add a spend', sub: 'Cab, snacks, entry', color: '#7CFFB2' },
       ],
     },
     {
-      title: 'DURING THE NIGHT',
+      title: 'YOU',
       items: [
-        { key: 'rooms', emoji: '🌙', name: 'Night Mode', sub: 'Open a room, tap Start', color: C.violet },
-        { key: 'rooms', emoji: '🎮', name: 'Party games', sub: 'Inside any room', color: '#FF8A3D' },
-        { key: 'memories', emoji: '📸', name: 'Memories', sub: 'Every night as a story', color: C.lime },
-      ],
-    },
-    {
-      title: 'PEOPLE & YOU',
-      items: [
+        { key: 'memories', emoji: '📸', name: 'Memories', sub: 'Nights, photos, events', color: C.lime },
         { key: 'friends', emoji: '🫶', name: 'Friends', sub: "Who's out tonight", color: C.cyan },
         { key: 'notifications', emoji: '🔔', name: 'Notifications', sub: 'Invites, reminders', color: '#FFB3D9' },
-        { key: 'profile', emoji: '👤', name: 'Profile', sub: 'Name, UPI, settings', color: '#FFD84D' },
+        { key: 'profile', emoji: '👤', name: 'Profile', sub: 'Name, UPI, alerts', color: '#FFD84D' },
         { key: 'yourData', emoji: '🔒', name: 'Your data', sub: 'Privacy, download, delete', color: C.pink },
         { key: 'help', emoji: '💡', name: 'Help & chat', sub: 'Ask us anything', color: '#7CFFB2' },
         { key: 'tour', emoji: '🧭', name: 'Take the tour', sub: '20-second walkthrough', color: C.lime },

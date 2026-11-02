@@ -867,7 +867,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
             setFriendsAdd(false);
             setScreen('friends');
           } else {
-            const to: any = { rooms: 'parties', nearby: 'discover', groups: 'groups', money: 'money', spend: 'money', memories: 'memories', notifications: 'notifications', profile: 'profile', yourData: 'yourData', help: 'help' };
+            const to: any = { pullUp: 'pullUp', squad: 'squad', night: 'night', rooms: 'parties', nearby: 'discover', groups: 'groups', money: 'money', spend: 'money', memories: 'memories', notifications: 'notifications', profile: 'profile', yourData: 'yourData', help: 'help' };
             setScreen(to[k] || 'home');
           }
         }}
