@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = { title: 'Privacy Policy · Vibe Out' };
 
 const CONTACT = 'maginfosystems@gmail.com';
-const UPDATED = '13 October 2026';
+const UPDATED = '2 November 2026';
 
 export default function Privacy() {
   return (
@@ -28,6 +28,9 @@ export default function Privacy() {
           <li><b>Your contacts</b>: never uploaded or stored. When you pick friends from contacts, only the people you choose are added. To find friends already on the app, your phone sends scrambled codes (SHA-256), never the numbers, and nothing is saved.</li>
           <li><b>Guest mode</b>: you can try the app without signing up. Your guest data is kept until you save your account or log out.</li>
           <li><b>Your location</b>, only when you allow it: to show places near you, and to share your live location with a plan&apos;s crew when you turn it on (15 minutes to 8 hours). Only that plan&apos;s crew can see it, and it is deleted as soon as sharing ends. We never track you in the background.</li>
+          <li><b>Your spends and budget</b>: amounts you log in My money (like a cab or snacks) and the monthly budget you set. Only you can see them.</li>
+          <li><b>Big events</b>: if you allow location, we work out your nearest city and save only the <b>city name</b> (never your exact location) so we can alert you about big events there. When you tap “I’m going” on an event, your accepted friends can see your name; everyone else sees only a count. Turn event alerts off any time in Profile.</li>
+          <li><b>Feedback</b>: your answers to the short feedback questions after a bill, so we can improve the app.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
         </ul>
 

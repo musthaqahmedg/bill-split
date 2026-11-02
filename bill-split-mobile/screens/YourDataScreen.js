@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Linking, ScrollView, Share, StyleSheet, Text,
 import { listBills } from '../services/bills';
 import { listParties } from '../services/parties';
 import { getProfile } from '../services/profile';
+import { supabase } from '../services/supabaseClient';
 import { C, F } from '../services/theme';
 
 // 🔒 Your data, in plain words: what we keep, what we never do, who sees what, and your controls
@@ -20,7 +21,9 @@ const KEEP = [
   ['💸', 'Spends you log in your Vault (only you can see them)'],
   ['📍', 'Live location, only while you share it with a plan’s crew (15 min to 8 hours). Deleted the moment it ends'],
   ['💬', 'Messages in your plan chats. They disappear from the app 30 days after the last message, are kept locked away for 1 year (Indian law), then deleted for good'],
-  ['🐞', 'Bug notes you send us'],
+  ['🐞', 'Bug notes and feedback answers you send us'],
+  ['🏙️', 'Your city name (not your exact location), only for big event alerts. Switch off in Profile'],
+  ['🙋', 'Events you tap “I’m going” on. Only your friends see your name'],
 ];
 const WHO = [
   ['🔐', 'Only people in a bill or plan can see it. Everyone else is blocked by the database itself.'],
@@ -36,8 +39,23 @@ export default function YourDataScreen({ onBack, onDelete }) {
   const exportData = async () => {
     setBusy(true);
     try {
-      const [profile, bills, plans] = await Promise.all([getProfile(), listBills(), listParties()]);
-      const data = { exported_at: new Date().toISOString(), profile, bills, plans };
+      // everything else you own (the database only returns your own rows)
+      const { data: { user } } = await supabase.auth.getUser();
+      const mine = async (table, col = null) => {
+        try {
+          let q = supabase.from(table).select('*').limit(5000);
+          if (col && user) q = q.eq(col, user.id); // admins can read all feedback; export only your own
+          const { data } = await q;
+          return data || [];
+        } catch (e) {
+          return [];
+        }
+      };
+      const [profile, bills, plans, spends, going, places, groups, feedback, notifications] = await Promise.all([
+        getProfile(), listBills(), listParties(),
+        mine('expenses'), mine('event_going'), mine('saved_places'), mine('friend_groups'), mine('feedback', 'user_id'), mine('notifications'),
+      ]);
+      const data = { exported_at: new Date().toISOString(), profile, bills, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications };
       await Share.share({ title: 'My Vibe Out data', message: JSON.stringify(data, null, 2) });
     } catch (e) {
       Alert.alert("Couldn't export", e.message);
