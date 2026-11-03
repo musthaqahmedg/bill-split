@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   tabText: { color: C.sub, fontSize: 14, fontWeight: '800' },
   amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 18 },
   rupee: { fontFamily: F.display, color: C.lime, fontSize: 40, marginRight: 4 },
-  amount: { fontFamily: F.display, color: C.text, fontSize: 48, minWidth: 120, textAlign: 'center', padding: 0 },
+  amount: { fontFamily: F.display, color: C.text, fontSize: 48, width: '75%', textAlign: 'center', padding: 0 },
   label: { fontFamily: F.pixel, color: C.sub, fontSize: 11, textAlign: 'center', marginTop: 4 },
   picks: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14 },
   pick: { flex: 1, marginHorizontal: 3, borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 10, alignItems: 'center' },

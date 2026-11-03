@@ -99,7 +99,7 @@ const styles = StyleSheet.create({
   catTextOn: { color: C.text },
   amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   rupee: { color: C.sub, fontSize: 34, fontWeight: '700', marginRight: 4 },
-  amount: { color: C.text, fontSize: 44, fontWeight: '900', minWidth: 80, textAlign: 'center' },
+  amount: { color: C.text, fontSize: 44, fontWeight: '900', width: '70%', textAlign: 'center' }, // fixed width: iOS doesn't grow the box when a quick amount is tapped
   quick: { flexDirection: 'row', justifyContent: 'center', marginTop: 6 },
   quickBtn: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 14, marginHorizontal: 4 },
   quickText: { color: C.text, fontSize: 14, fontWeight: '700' },

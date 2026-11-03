@@ -319,8 +319,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
 
       {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} budget={budgetCard} streak={streak} /> : null}
 
-      {/* ⚡ Fast settlement (Final UX): what's open, snap a new bill, or settle the oldest one */}
-      {!showArchived ? (
+      {/* ⚡ Fast settlement: only when someone owes someone (Split bill + My budget tiles cover the rest) */}
+      {!showArchived && (sum.owed || sum.owe || openBill) ? (
         <View style={styles.settle}>
           <View style={styles.settleTop}>
             <Text style={styles.settleKicker}>{sum.owed || sum.owe ? 'FAST SETTLEMENT' : 'ALL SETTLED ✨'}</Text>
@@ -337,9 +337,6 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
             </View>
           </View>
           <View style={styles.settleBtns}>
-            <TouchableOpacity style={styles.snapBtn} onPress={onNewBill} activeOpacity={0.85}>
-              <Text style={styles.snapText}>📸 Snap bill</Text>
-            </TouchableOpacity>
             <TouchableOpacity
               style={[styles.settleBtn, !openBill && { backgroundColor: C.disabled }]}
               onPress={() => openBill && onOpenBill(openBill.id)}
@@ -349,12 +346,6 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
               <Text style={[styles.settleBtnText, !openBill && { color: C.faint }]}>{openBill ? (openAmt ? `Settle ${inr(openAmt)} ›` : 'Who paid? ›') : 'Nothing to settle'}</Text>
             </TouchableOpacity>
           </View>
-          {onMoney ? (
-            <TouchableOpacity style={styles.moneyRow} onPress={onMoney} activeOpacity={0.8}>
-              <Text style={styles.moneyText}>👛 My money · {inr(moneySummary(bills, monthKey(new Date())).spent)} spent in {monthLabel(monthKey(new Date()))}</Text>
-              <Text style={styles.moneyGo}>›</Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
       ) : null}
 

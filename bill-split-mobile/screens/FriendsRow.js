@@ -26,6 +26,7 @@ export default function FriendsRow({ onOpen, onAdd }) {
 
   if (list === null) return null;
   const requests = list.filter((f) => f.status === 'pending' && f.incoming).length;
+  if (!requests && !list.some((f) => f.status === 'accepted')) return null; // no friends yet → the Invite friends tile does the job
   const friends = list.filter((f) => f.status === 'accepted').map((f) => ({ ...f, st: activeLabel(f.last_seen) }));
   const active = friends.filter((f) => f.st && f.st.now);
   const faces = [...active, ...friends.filter((f) => !(f.st && f.st.now))].slice(0, 4);

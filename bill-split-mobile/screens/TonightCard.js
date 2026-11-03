@@ -52,18 +52,6 @@ export default function TonightCard({ onPlan, onOpenPlan, refreshKey, budget = n
 
   return (
     <View>
-      {/* 🎛️ Vibe chips: one tap to start that kind of plan */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips} contentContainerStyle={{ paddingRight: 8 }}>
-        {VIBES.map((key) => {
-          const v = KINDS.find((x) => x.key === key);
-          if (!v) return null;
-          return (
-            <TouchableOpacity key={key} style={[styles.chip, { borderColor: v.color }]} onPress={() => onPlan(key)} activeOpacity={0.8}>
-              <Text style={styles.chipText}>{v.emoji} {v.label}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
 
       {budget}
 
