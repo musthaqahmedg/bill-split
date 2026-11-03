@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getSelfClaims, setNote, setPaid, setPayer } from '../services/bills';
 import { savedPaidMap, transfers } from '../services/settle';
+import PayUpiSheet from './PayUpiSheet';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
@@ -16,7 +17,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   const [bill, setBill] = useState(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
-  const [myUpi, setMyUpi] = useState(''); // your UPI ID, added to Remind messages
+  const [myUpi, setMyUpi] = useState('');
+  const [payTo, setPayTo] = useState(null); // 💸 { to, amount, participantId } → Pay with UPI sheet // your UPI ID, added to Remind messages
   const [note, setNoteText] = useState(''); // a short note on the bill
   const [savingNote, setSavingNote] = useState(false);
 
@@ -410,6 +412,11 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
                     </TouchableOpacity>
                   ) : (
                     <>
+                      {p.name === 'Me' ? outOf('Me').map((m) => (
+                        <TouchableOpacity key={'pay' + m.to} style={styles.upiBtn} onPress={() => setPayTo({ to: m.to, amount: m.amount, participantId: byName[m.to] ? byName[m.to].id : null })} activeOpacity={0.85}>
+                          <Text style={styles.upiText}>💸 Pay {inr(m.amount)}{outOf('Me').length > 1 ? ` to ${show(m.to)}` : ''} with UPI</Text>
+                        </TouchableOpacity>
+                      )) : null}
                       <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(p)}>
                         <Text style={styles.markText}>{p.name === 'Me' ? "I've paid" : 'Mark paid'}</Text>
                       </TouchableOpacity>
@@ -437,6 +444,17 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           </TouchableOpacity>
         )}
       </ScrollView>
+      <PayUpiSheet
+        visible={!!payTo}
+        onClose={() => setPayTo(null)}
+        to={payTo ? payTo.to : ''}
+        amount={payTo ? payTo.amount : 0}
+        note={bill.restaurant || 'Bill split'}
+        participantId={payTo ? payTo.participantId : null}
+        shareToken={bill.share_token}
+        isCreator={false}
+        onPaid={() => { const me = byName.Me; if (me && !me.paid_at) togglePaid(me); }}
+      />
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
       <ItemInfo item={infoItem} onClose={() => setInfoItem(null)} />
@@ -446,6 +464,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 }
 
 const styles = StyleSheet.create({
+  upiBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, marginBottom: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  upiText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },
   topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
@@ -490,7 +510,7 @@ const styles = StyleSheet.create({
   payerChipText: { color: '#0B2A1F', fontSize: 14, fontWeight: '800' },
   gets: { color: C.green, fontSize: 14, fontWeight: '700', marginBottom: 6 },
   owesLine: { color: C.amber, fontSize: 14, fontWeight: '700', marginBottom: 6 },
-  payRow: { flexDirection: 'row', marginTop: 10 },
+  payRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 10 },
   markBtn: { backgroundColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14, marginRight: 8 },
   markText: { color: '#0B2A1F', fontSize: 14, fontWeight: '800' },
   remindBtn: { borderWidth: 1, borderColor: C.green, borderRadius: 16, paddingVertical: 7, paddingHorizontal: 14 },
