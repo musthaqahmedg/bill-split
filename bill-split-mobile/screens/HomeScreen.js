@@ -281,10 +281,10 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       {!showArchived ? (
         <View style={styles.quick}>
           {[
-            ['🧾', 'SPLIT\nBILL', C.pink, onNewBill],
-            ['🚕', 'RIDE\nHOME', C.cyan, rideHome],
-            ['💌', 'INVITE', C.violet, onFriends && !guest ? () => onFriends(true) : onSaveAccount],
-            ['👛', 'BUDGET', '#FFD84D', onMoney],
+            ['🧾', 'Split\nbill', C.pink, onNewBill],
+            ['🚕', 'Ride\nhome', C.cyan, rideHome],
+            ['💌', 'Invite\nfriends', C.violet, onFriends && !guest ? () => onFriends(true) : onSaveAccount],
+            ['👛', 'My\nbudget', '#FFD84D', onMoney],
           ].map(([e, label, bg, go]) => (
             <TouchableOpacity key={label} style={[styles.qBtn, { backgroundColor: bg }]} onPress={go} activeOpacity={0.85}>
               <Text style={styles.qEmoji}>{e}</Text>
@@ -435,10 +435,10 @@ const styles = StyleSheet.create({
   hello: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: 12 },
   vibe: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   vibeText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
-  quick: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, marginBottom: 16 },
-  qBtn: { width: '23.5%', borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  qEmoji: { fontSize: 24 },
-  qLabel: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, textAlign: 'center', marginTop: 4, lineHeight: 12 },
+  quick: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14, marginBottom: 6 },
+  qBtn: { width: '48.5%', minHeight: 118, borderRadius: 24, padding: 16, marginBottom: 10, justifyContent: 'space-between', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  qEmoji: { fontSize: 34 },
+  qLabel: { fontFamily: F.display, color: C.onLime, fontSize: 19, lineHeight: 22, marginTop: 8 },
   title: { fontFamily: F.display, fontSize: 30, lineHeight: 36, color: C.text, marginTop: 2 },
   strip: { marginHorizontal: -20, marginTop: -14, marginBottom: 16, backgroundColor: C.lime, paddingVertical: 7, overflow: 'hidden', transform: [{ rotate: '-2deg' }] },
   stripText: { fontFamily: F.display, color: C.onLime, fontSize: 13, letterSpacing: 0.5, width: 2400, flexWrap: 'nowrap' },
