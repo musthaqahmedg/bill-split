@@ -300,14 +300,20 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         {step === 0 && (
           <>
         {group ? <Text style={styles.groupTag}>{group.emoji} Planning with {group.name}</Text> : null}
-        <Text style={styles.lead}>Pick the vibe. We'll tune the places and the plan to it.</Text>
+        {initialKind || ex ? (
+          <Text style={styles.lead}>{kindOf(kind).emoji} {kindOf(kind).label} · give it a name.</Text>
+        ) : (
+          <Text style={styles.lead}>Pick the vibe. We'll tune the places and the plan to it.</Text>
+        )}
+        {initialKind || ex ? null : (
         <View style={styles.kinds}>
-          {KINDS.map((k) => (
+          {KINDS.filter((k) => !['hangout', 'table'].includes(k.key)).map((k) => (
             <TouchableOpacity key={k.key} style={[styles.kind, { borderColor: k.color }, kind === k.key && styles.kindOn]} onPress={() => setKind(k.key)}>
               <Text style={[styles.kindText, kind === k.key && styles.kindTextOn]}>{k.emoji} {k.label}</Text>
             </TouchableOpacity>
           ))}
         </View>
+        )}
 
         <Text style={styles.label}>Name</Text>
         <TextInput

@@ -195,6 +195,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [billStart, setBillStart] = useState<any>('home'); // 🧾 where a new bill was started from
   const [billFrom, setBillFrom] = useState<any>(null); // 🧾 where Back goes from a bill (a Space, its chat, or Home)
   const [partyTab, setPartyTab] = useState<any>(null); // 🗂️ which Space tab to open
   const [planFrom, setPlanFrom] = useState('parties'); // where Back goes from the plan form
@@ -231,6 +232,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [nearby, setNearby] = useState<any>({ from: 'parties', category: 'restobars', title: null }); // 📍 Nearby screen
 
   const startNewBill = () => {
+    setBillStart(screen); // ↩️ Back from the scan goes to where you started (Split Bills page, a Space, Home)
     setItems([]);
     setBill(null);
     setPeople([]);
@@ -493,7 +495,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
             setAddingRound(false);
             setScreen('detail');
           } else {
-            setScreen('home');
+            setScreen(['bills', 'party', 'night', 'home', 'money', 'squad'].includes(billStart) ? billStart : 'home');
           }
         }}
         onNext={(scanned: any, billInfo: any) => {

@@ -382,7 +382,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
             <>
               {onSplit ? (
                 <TouchableOpacity style={styles.splitBtn} onPress={() => onSplit(crewNames, party.id)} activeOpacity={0.85}>
-                  <Text style={styles.splitText}>📸 SCAN & SPLIT A BILL</Text>
+                  <Text style={styles.splitText}>📸 SPLIT A NEW BILL</Text>
                   <Text style={styles.splitSub}>The squad is already added</Text>
                 </TouchableOpacity>
               ) : null}

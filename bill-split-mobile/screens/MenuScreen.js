@@ -26,7 +26,7 @@ export default function MenuScreen({ go, onBack }) {
     {
       title: 'SPLIT & MONEY',
       items: [
-        { key: 'scan', emoji: '📷', name: 'Snap a bill', sub: 'Split it to the rupee', color: C.pink },
+        { key: 'scan', emoji: '📷', name: 'Split a bill', sub: 'Pay what you had', color: C.pink },
         { key: 'money', emoji: '🎯', name: 'Budget', sub: 'Tonight, week, month', color: '#FFD84D' },
         { key: 'spend', emoji: '💸', name: 'Add a spend', sub: 'Cab, snacks, entry', color: '#7CFFB2' },
       ],

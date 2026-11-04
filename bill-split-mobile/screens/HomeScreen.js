@@ -237,8 +237,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         <TouchableOpacity style={styles.scanBig} onPress={onNewBill} activeOpacity={0.85}>
           <Text style={styles.scanEmoji}>📸</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.scanTitle}>Scan a new bill</Text>
-            <Text style={styles.scanSub}>AI reads the items, you tap who had what</Text>
+            <Text style={styles.scanTitle}>Split a new bill</Text>
+            <Text style={styles.scanSub}>Snap it, tap who had what, done</Text>
           </View>
           <Text style={styles.scanGo}>›</Text>
         </TouchableOpacity>
@@ -420,14 +420,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>{showArchived ? '📦' : '🧾'}</Text>
               <Text style={styles.emptyText}>{showArchived ? 'No archived bills' : 'No bills yet'}</Text>
-              {!showArchived ? (
-                <>
-                  <Text style={styles.emptySub}>Scan a receipt and we'll work out who pays what</Text>
-                  <TouchableOpacity style={styles.emptyBtn} onPress={onNewBill}>
-                    <Text style={styles.emptyBtnText}>＋ Split a bill</Text>
-                  </TouchableOpacity>
-                </>
-              ) : null}
+              {!showArchived ? <Text style={styles.emptySub}>Your split bills show up here.</Text> : null}
             </View>
           )
         }
