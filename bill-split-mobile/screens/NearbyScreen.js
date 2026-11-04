@@ -285,7 +285,7 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
         place={booking}
         party={bookFor}
         guestsDefault={going}
-        onBooked={() => onBooked && onBooked()}
+        onBooked={(b) => onBooked && onBooked(b)}
       />
     </KeyboardAvoidingView>
   );

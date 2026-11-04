@@ -4,7 +4,7 @@ import {
   Alert, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { NOTE_CHIPS, bookingMessage, createBooking, isBar } from '../services/bookings';
-import { waNumber } from '../services/parties';
+import { createParty, waNumber } from '../services/parties';
 import { C, F } from '../services/theme';
 
 const AGE_KEY = 'vibeout.ageOk';
@@ -61,8 +61,16 @@ export default function BookTable({ visible, onClose, place, party, guestsDefaul
     setSaving(true);
     let b;
     try {
+      // 🗂️ a table booked from Discover gets its own Space ("Table at Cafe Zoe"), so chat, bill and photos link to it
+      let spaceId = party ? party.id : null;
+      if (!spaceId) {
+        try {
+          const sp = await createParty({ title: `Table at ${place.name}`.slice(0, 60), kind: 'table', party_date: day, place: place.name, budget: 0, people: ['Me'] });
+          spaceId = sp.id;
+        } catch (e) {}
+      }
       b = await createBooking({
-        party_id: party ? party.id : null,
+        party_id: spaceId,
         place_name: place.name,
         place_id: place.id || null,
         phone: place.phone || null,

@@ -170,7 +170,7 @@ export function billToFlow(saved) {
 export async function listBills() {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, title, total, bill_date, created_at, status, bill_participants(name, amount_due, paid_amount, paid_at), paid_mode')
+    .select('id, title, total, bill_date, created_at, status, party_id, bill_participants(name, amount_due, paid_amount, paid_at), paid_mode')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;

@@ -198,10 +198,14 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   // 🗂️ Your Spaces: live and upcoming rooms (soonest first)
   const live = sortPlans(plans.filter((p) => planBucket(p) === 'live'), 'upcoming');
   const upcoming = sortPlans(plans.filter((p) => planBucket(p) === 'upcoming'), 'upcoming');
-  const spaces = [...live, ...upcoming].slice(0, 3);
+  const pendingSpaces = plans.filter((p) => planBucket(p) === 'past' && active.some((b) => b.party_id === p.id && (() => { const x = billBalance(b); return x.owed || x.owe || x.open; })()));
+  const spaces = [...live, ...upcoming, ...pendingSpaces].slice(0, 3);
   const goingOf = (p) => (p.party_members || []).filter((m) => m.rsvp === 'in' || m.name === 'Me').length;
   const outOf = (p) => (p.party_members || []).filter((m) => m.live_status === 'omw' || m.live_status === 'here').length;
   const nextLine = (p) => {
+    // a bill in this Space still open → that's the next thing to do
+    const due = active.find((b) => b.party_id === p.id && (() => { const x = billBalance(b); return x.owed || x.owe || x.open; })());
+    if (due) return `🧾 Bill pending · ${(p.party_members || []).length} people`;
     const st = startTime(p);
     const hrs = st ? Math.round((st - new Date()) / 36e5) : null;
     const when = planBucket(p) === 'live' ? (outOf(p) ? `Live · ${outOf(p)} out` : 'Tonight') : st && hrs >= 0 && hrs < 24 ? (hrs < 1 ? 'Starts soon' : `Starts in ${hrs}h`) : countdown(p);

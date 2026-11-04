@@ -28,6 +28,7 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
   const [vibe, setVibe] = useState(VIBES.find((v) => v.key === initialVibe) || VIBES[0]);
   const [step, setStep] = useState(1); // 1 people · 2 spot
   const [day, setDay] = useState(0); // 0 tonight · 1 tomorrow
+  const [spaceName, setSpaceName] = useState(''); // 🗂️ the Space's name (blank → a suggestion)
   const [pool, setPool] = useState([]); // friend names to pick from
   const [people, setPeople] = useState([]); // picked (not including Me)
   const [phones, setPhones] = useState({});
@@ -56,6 +57,7 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
       .catch(() => setSpots([]));
   }, [step, vibe.key]);
 
+  const autoName = `${vibe.label} ${day ? 'tomorrow' : 'tonight'} ${vibe.emoji}`;
   const toggle = (name) => setPeople(people.includes(name) ? people.filter((p) => p !== name) : [...people, name]);
   const addTyped = () => {
     const n = typed.trim();
@@ -71,7 +73,7 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
       const d = new Date();
       d.setDate(d.getDate() + day);
       const party = await createParty({
-        title: `${vibe.label} ${day ? 'tomorrow' : 'tonight'} ${vibe.emoji}`,
+        title: (spaceName.trim() || autoName).slice(0, 60),
         kind: vibe.kind,
         party_date: dayText(d),
         place: spot ? spot.name : '',
@@ -120,6 +122,8 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
 
         {step === 1 ? (
           <>
+            <Text style={styles.nameLabel}>NAME YOUR SPACE</Text>
+            <TextInput style={[styles.input, { flex: 0, marginBottom: 16 }]} value={spaceName} onChangeText={setSpaceName} placeholder={autoName} placeholderTextColor={C.faint} maxLength={60} keyboardAppearance="dark" />
             <Text style={styles.lead}>Who's pulling up? Tap to add. They get the invite instantly.</Text>
             {pool.map((n) => {
               const on = people.includes(n);
@@ -223,6 +227,7 @@ const styles = StyleSheet.create({
   back: { color: C.lime, fontSize: 16, fontWeight: '600', marginBottom: 10 },
   title: { fontFamily: F.display, color: C.text, fontSize: 40 },
   kicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11, marginTop: 4, marginBottom: 14 },
+  nameLabel: { fontFamily: F.pixel, color: C.sub, fontSize: 11, marginBottom: 8 },
   lead: { color: C.sub, fontSize: 15, marginBottom: 12 },
   chip: { borderWidth: 1, borderColor: C.border, backgroundColor: C.card, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 14, marginRight: 8 },
   chipOn: { backgroundColor: C.lime, borderColor: C.lime },

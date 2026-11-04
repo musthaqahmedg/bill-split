@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,6 +8,7 @@ import {
   Text, TextInput, TouchableOpacity,
   View,
 } from 'react-native';
+import { createParty } from '../services/parties';
 import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
@@ -25,6 +26,7 @@ export default function SplitScreen({
   items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
   payment = { mode: 'me' }, onPaymentChange = () => {}, partyId = null,
 }) {
+  const createdSpace = useRef(null); // 🗂️ the Space this bill was saved into
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
   const [sponsor, setSponsor] = useState(null);   // who is covering them
@@ -134,10 +136,26 @@ export default function SplitScreen({
         await updateBill(editingBillId, payload);
         Alert.alert('Updated! ✏️', 'Your changes are saved.', [{ text: 'OK', onPress: onDone }]);
       } else {
-        const saved = await saveBill(payload);
+        // 🗂️ every bill lives in a Space: no room yet → make one from the bill (name, place, people)
+        let spaceId = partyId;
+        if (!spaceId) {
+          try {
+            const sp = await createParty({
+              title: (bill.restaurant || 'Bill split').slice(0, 60),
+              kind: 'hangout',
+              party_date: new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+              place: bill.restaurant || '',
+              budget: 0,
+              people: people.includes('Me') ? people : ['Me', ...people],
+            });
+            spaceId = sp.id;
+          } catch (e) {} // the bill still saves on its own if this fails
+        }
+        createdSpace.current = spaceId;
+        const saved = await saveBill({ ...payload, partyId: spaceId });
         setTimeout(checkBudgetWarning, 1500); // ⚠️ 80% / 100% of the Night Budget
         if (await shouldAskFeedback()) setFeedbackFor((saved && saved.id) || null);
-        else Alert.alert('Saved! 🎉', 'You can find this bill on your home screen.', [{ text: 'OK', onPress: onDone }]);
+        else Alert.alert('Saved! 🎉', 'It\'s in the Space with the chat and the squad.', [{ text: 'OK', onPress: () => onDone(createdSpace.current) }]);
       }
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -484,7 +502,7 @@ export default function SplitScreen({
           </View>
         </View>
       </Modal>
-    <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(); }} />
+    <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(createdSpace.current); }} />
       </View>
   );
 }

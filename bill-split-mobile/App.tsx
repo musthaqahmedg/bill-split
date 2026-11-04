@@ -591,11 +591,12 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         editingBillId={editingBillId}
         partyId={billPartyId}
         onBack={() => setScreen('items')}
-        onDone={() => {
+        onDone={(spaceId: any) => {
           setEditingBillId(null);
           clearDraft();
-          if (billPartyId) {
-            setOpenPartyId(billPartyId); // back to the plan the bill belongs to
+          const to = billPartyId || spaceId; // 🗂️ back to the Space the bill lives in
+          if (to) {
+            setOpenPartyId(to);
             setBillPartyId(null);
             setScreen('party');
             return;
@@ -851,7 +852,14 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         initialCategory={nearby.category}
         title={nearby.title}
         bookFor={nearby.bookFor}
-        onBooked={() => nearby.bookFor && setScreen('party')}
+        onBooked={(b: any) => {
+          // back to the plan, or into the new Space made for this table
+          if (nearby.bookFor) return setScreen('party');
+          if (b && b.party_id) {
+            setOpenPartyId(b.party_id);
+            setScreen('party');
+          }
+        }}
         onBack={() => setScreen(nearby.from)}
       />
     );

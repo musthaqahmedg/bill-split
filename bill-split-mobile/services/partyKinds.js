@@ -18,6 +18,10 @@ export const KINDS = [
     ideas: ["Shafil's wedding 💍", 'Wedding gift pool 🎁', 'Haldi + sangeet 💃'] },
   { key: 'bachelor', color: '#E879F9', emoji: '🥂', label: 'Bachelor', places: ['bars', 'stays', 'all'],
     ideas: ['Bachelor party 🥂', 'Last night of freedom 😎', 'Bachelorette 👑'] },
+  { key: 'hangout', color: '#55E0F0', emoji: '☕', label: 'Hangout', places: ['cafes', 'food', 'all'],
+    ideas: ['Sunday cafe hangout ☕', 'Lunch with the gang 🍛', 'Chai and chill 🫖'] },
+  { key: 'table', color: '#FFD84D', emoji: '🍽️', label: 'Table', places: ['food', 'restobars', 'cafes'],
+    ideas: ['Dinner at Cafe Zoe 🍽️', 'Friday dinner 🍝', 'Team lunch 🥗'] },
   { key: 'match', color: '#60A5FA', emoji: '⚽', label: 'Match night', places: ['bars', 'food', 'cafes'],
     ideas: ['Match night ⚽', 'IPL final watch 🏏', 'World Cup screening 🏆'] },
 ];
