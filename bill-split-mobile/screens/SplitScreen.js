@@ -12,6 +12,7 @@ import { createParty } from '../services/parties';
 import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
+import WhySheet from './WhySheet';
 import { show } from '../services/names';
 import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
@@ -26,7 +27,8 @@ export default function SplitScreen({
   items, people, nonDrinkers = [], pairs = [], claims, payers = [], onPayersChange, bill, editingBillId, onBack, onDone,
   payment = { mode: 'me' }, onPaymentChange = () => {}, partyId = null,
 }) {
-  const createdSpace = useRef(null); // 🗂️ the Space this bill was saved into
+  const createdSpace = useRef(null);
+  const [why, setWhy] = useState(null); // 🤔 whose "Why do I owe?" is open // 🗂️ the Space this bill was saved into
   const [saving, setSaving] = useState(false);
   const [coverFor, setCoverFor] = useState(null); // the friend being covered
   const [sponsor, setSponsor] = useState(null);   // who is covering them
@@ -358,9 +360,14 @@ export default function SplitScreen({
                 <Text style={styles.name}>
                   {show(r.name)}{nonDrinkers.includes(r.name) ? ' 🥤' : ''}
                 </Text>
-                {fullyCovered && r.pay === 0
-                  ? <Text style={styles.coveredPay}>Covered 💛</Text>
-                  : <Text style={styles.pay}>{inr(r.pay)}</Text>}
+                <View style={{ alignItems: 'flex-end' }}>
+                  {fullyCovered && r.pay === 0
+                    ? <Text style={styles.coveredPay}>Covered 💛</Text>
+                    : <Text style={styles.pay}>{inr(r.pay)}</Text>}
+                  <TouchableOpacity onPress={() => setWhy(r)} hitSlop={10}>
+                    <Text style={styles.whyLink}>Why? ›</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* who pays whom */}
@@ -502,12 +509,14 @@ export default function SplitScreen({
           </View>
         </View>
       </Modal>
+    <WhySheet row={why} tipTotal={tip} onClose={() => setWhy(null)} />
     <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(createdSpace.current); }} />
       </View>
   );
 }
 
 const styles = StyleSheet.create({
+  whyLink: { color: C.lime, fontSize: 13, fontWeight: '800', marginTop: 4 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontFamily: F.display, fontSize: 22, color: C.text },

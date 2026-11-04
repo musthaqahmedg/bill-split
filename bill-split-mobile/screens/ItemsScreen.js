@@ -1,10 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import NumberWheel from './NumberWheel';
 import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { KINDS, kindOf } from '../services/kinds';
 import { show } from '../services/names';
 import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
+import { getNoAlcohol } from '../services/profile';
 
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF', '#7CFFB2'];
 const initials = (n) => show(n).slice(0, 2).toUpperCase();
@@ -17,12 +18,32 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
     items.map((_, i) => ((initialClaims && initialClaims[i]) || []).filter((p) => people.includes(p)))
   );
 
+  // 🥤 "I don't drink" (Profile setting): you start as not drinking on every new split
+  useEffect(() => {
+    if (initialNonDrinkers && initialNonDrinkers.length) return;
+    if (!people.includes('Me')) return;
+    getNoAlcohol().then((no) => { if (no) toggleDrinking('Me'); }).catch(() => {});
+  }, []);
+
+  // 🔁 Rounds: each item remembers its round; late joiners skip earlier rounds by default (tap to add them anyway)
+  const roundOf = (i) => Math.max(1, Number(items[i] && items[i].round) || 1);
+  const rounds = items.reduce((m, _, i) => Math.max(m, roundOf(i)), 1);
+  const [joinedAt, setJoinedAt] = useState({}); // person -> round they arrived at
+  const late = (i, person) => roundOf(i) < (joinedAt[person] || 1);
+  const cycleJoin = (person) =>
+    setJoinedAt((prev) => {
+      const nextR = ((prev[person] || 1) % rounds) + 1;
+      // arriving later → take them off earlier rounds' items
+      setClaims((cl) => cl.map((list, i) => (roundOf(i) < nextR ? list.filter((p) => p !== person) : list)));
+      return { ...prev, [person]: nextR };
+    });
+
   // "What's this?" pop-up: which item is open (-1 = none)
   const [info, setInfo] = useState(-1);
 
   const isAlcohol = (i) => kindOf(items[i]) === 'alcohol';
   const canHave = (i, person) => !(isAlcohol(i) && nonDrinkers.includes(person));
-  const eligible = (i) => people.filter((p) => canHave(i, p));
+  const eligible = (i) => people.filter((p) => canHave(i, p) && !late(i, p));
 
   const toggleDrinking = (person) => {
     const nowDry = !nonDrinkers.includes(person);
@@ -125,6 +146,22 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
         </View>
       </View>
 
+      {rounds > 1 ? (
+        <View style={styles.dryBox}>
+          <Text style={styles.dryLabel}>Came late? Tap to set the round they joined</Text>
+          <View style={styles.chips}>
+            {people.map((p) => {
+              const r = joinedAt[p] || 1;
+              return (
+                <TouchableOpacity key={p} style={[styles.dryChip, r > 1 && styles.lateChipOn]} onPress={() => cycleJoin(p)}>
+                  <Text style={[styles.dryText, r > 1 && styles.dryTextOn]}>{show(p)}{r > 1 ? ` · joined R${r}` : ''}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
       <ScrollView style={styles.list} ref={listRef}>
         {items.map((item, i) => {
           const mystery = claims[i].length === 0;
@@ -133,7 +170,13 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
           const canCount = item.qty > 1 && who.length > 1; // only matters when 2+ people share it
           const k = KINDS[kindOf(item)];
           return (
-            <View key={i} style={[styles.card, mystery && styles.mysteryCard]} onLayout={(e) => (cardY.current[i] = e.nativeEvent.layout.y)}>
+            <View key={i}>
+            {rounds > 1 && (i === 0 || roundOf(i) !== roundOf(i - 1)) ? (
+              <Text style={styles.roundHead}>
+                ROUND {roundOf(i)}{people.filter((p) => (joinedAt[p] || 1) === roundOf(i) && roundOf(i) > 1).length ? ` · ${people.filter((p) => (joinedAt[p] || 1) === roundOf(i) && roundOf(i) > 1).map(show).join(', ')} joined` : ''}
+              </Text>
+            ) : null}
+            <View style={[styles.card, mystery && styles.mysteryCard]} onLayout={(e) => (cardY.current[i] = e.nativeEvent.layout.y)}>
               <View style={styles.cardTop}>
                 <TouchableOpacity style={styles.nameTap} onPress={() => setInfo(i)}>
                   <Text style={styles.itemName}>
@@ -159,7 +202,7 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                           </View>
                         ) : null}
                       </View>
-                      <Text style={[styles.avName, on && { color: C.text }]} numberOfLines={1}>{show(p)}</Text>
+                      <Text style={[styles.avName, on && { color: C.text }]} numberOfLines={1}>{late(i, p) && !on ? 'not there' : show(p)}</Text>
                     </TouchableOpacity>
                   );
                 })}
@@ -192,13 +235,15 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
                   Split {who.length} ways · ₹{(item.price / who.length).toFixed(2)} each
                 </Text>
               )}
+              {mystery ? <Text style={styles.nobody}>Nobody yet · tap a face to claim</Text> : null}
+            </View>
             </View>
           );
         })}
       </ScrollView>
 
       <Text style={styles.count}>
-        {claimed} of {items.length} items claimed{!allDone ? '  ·  🕵️ = mystery item' : ''}
+        {claimed} of {items.length} items claimed{!allDone ? `  ·  ${left} unclaimed` : ''}
       </Text>
 
       <TouchableOpacity style={[styles.button, !allDone && styles.disabled]} onPress={next}>
@@ -269,7 +314,10 @@ const styles = StyleSheet.create({
   dryTextOn: { color: C.onLime, fontWeight: '800' },
   list: { flex: 1 },
   card: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginBottom: 10 },
-  mysteryCard: { borderColor: C.amber, backgroundColor: C.amberBg },
+  mysteryCard: { borderColor: C.red, borderWidth: 2, backgroundColor: 'rgba(255,80,80,0.08)' },
+  nobody: { color: C.red, fontSize: 13, fontWeight: '800', marginTop: 6 },
+  roundHead: { fontFamily: F.pixel, color: C.lime, fontSize: 11, marginTop: 8, marginBottom: 8 },
+  lateChipOn: { backgroundColor: C.violet, borderColor: C.violet },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
   nameTap: { flex: 1, marginRight: 10 },
   itemName: { fontSize: 16, fontWeight: '700', color: C.text },

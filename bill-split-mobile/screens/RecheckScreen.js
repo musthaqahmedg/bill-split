@@ -24,6 +24,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
       price: String(it.price),
       kind: it.kind || null, // null = guess from the name
       about: it.about || '',
+      round: Number(it.round) || 1, // 🔁 which round this item came in (kept through editing)
     }))
   );
   const [total, setTotal] = useState(String(bill?.total || 0));
@@ -66,6 +67,7 @@ export default function RecheckScreen({ items, bill, onBack, onNext }) {
         price: parseFloat(r.price) || 0,
         kind: kindFor(r),
         about: r.about || '',
+        ...(r.round > 1 ? { round: r.round } : {}),
       }))
       .filter((r) => r.name && r.price > 0);
 

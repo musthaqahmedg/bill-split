@@ -500,7 +500,9 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           if (addingRound) {
             // Rolling tab: add the new round's items to the same bill
             const add = (k: string) => (Number(bill?.[k]) || 0) + (Number(billInfo?.[k]) || 0);
-            setItems([...items, ...scanned]);
+            // 🔁 the new scan is the next round (late joiners can skip earlier rounds)
+            const nextRound = Math.max(1, ...items.map((it: any) => Number(it.round) || 1)) + 1;
+            setItems([...items, ...scanned.map((it: any) => ({ ...it, round: nextRound }))]);
             setClaims([...claims, ...scanned.map(() => [])]);
             setPayers([...payers, ...scanned.map(() => ({}))]);
             setBill({

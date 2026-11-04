@@ -68,3 +68,16 @@ export async function saveHome(address) {
   const { error } = await supabase.from('profiles').upsert({ id: user.id, home_address: (address || '').trim() || null });
   if (error) throw error;
 }
+
+// 🥤 "I don't drink": you're skipped on alcohol items in every split
+export async function getNoAlcohol() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { data } = await supabase.from('profiles').select('no_alcohol').eq('id', user.id).maybeSingle();
+  return !!(data && data.no_alcohol);
+}
+export async function setNoAlcohol(on) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('profiles').update({ no_alcohol: !!on }).eq('id', user.id);
+  if (error) throw error;
+}

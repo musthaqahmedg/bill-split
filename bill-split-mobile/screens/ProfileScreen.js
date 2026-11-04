@@ -3,7 +3,7 @@ import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, ScrollView,
   StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { avatarUrl, deleteAccount, getProfile, isValidUpi, pickAvatar, saveProfile } from '../services/profile';
+import { avatarUrl, deleteAccount, getNoAlcohol, getProfile, isValidUpi, pickAvatar, saveProfile, setNoAlcohol } from '../services/profile';
 import Pulse from './Pulse';
 import GuestGate from './GuestGate';
 import BirthdayPicker from './BirthdayPicker';
@@ -19,6 +19,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
   const [showActive, setShowActiveState] = useState(true);
   const [preview, setPreview] = useState(true);
   const [fun, setFun] = useState(true);
+  const [dry, setDry] = useState(false); // 🥤 I don't drink
   const [evAlerts, setEvAlerts] = useState({ on: true, city: null });
   const [cityOpen, setCityOpen] = useState(false);
   const [radius, setRad] = useState(25);
@@ -26,6 +27,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
     getEventAlerts().then(setEvAlerts).catch(() => {});
     getRadius().then(setRad).catch(() => {});
     getFunNotifs().then(setFun).catch(() => {});
+    getNoAlcohol().then(setDry).catch(() => {});
     getShowActive().then(setShowActiveState).catch(() => {});
     getPushPreview().then(setPreview).catch(() => {});
   }, []);
@@ -228,6 +230,14 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
             <Text style={styles.activeSub}>Cheeky nudges about your plans, polls and bills. Max 3 a week, never late at night.</Text>
           </View>
           <Switch value={fun} onValueChange={toggleFun} trackColor={{ true: C.green }} />
+        </View>
+
+        <View style={[styles.activeRow, { marginBottom: 16, marginTop: -4 }]}>
+          <View style={styles.activeText}>
+            <Text style={styles.activeTitle}>🥤 I don't drink</Text>
+            <Text style={styles.activeSub}>You're left out of alcohol items in every split, so you never pay for drinks you didn't have.</Text>
+          </View>
+          <Switch value={dry} onValueChange={async (on) => { setDry(on); try { await setNoAlcohol(on); } catch (e) { setDry(!on); Alert.alert("Couldn't save", e.message); } }} trackColor={{ true: C.green }} />
         </View>
 
         <View style={[styles.activeRow, { marginBottom: evAlerts.on ? 8 : 16, marginTop: -4 }]}>
