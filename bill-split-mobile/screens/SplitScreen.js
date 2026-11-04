@@ -8,7 +8,7 @@ import {
   Text, TextInput, TouchableOpacity,
   View,
 } from 'react-native';
-import { createParty } from '../services/parties';
+import { findOrCreateSpace } from '../services/spaces';
 import { saveBill, updateBill } from '../services/bills';
 import { paidMap, transfers } from '../services/settle';
 import { computeSplit } from '../services/splitEngine';
@@ -142,13 +142,12 @@ export default function SplitScreen({
         let spaceId = partyId;
         if (!spaceId) {
           try {
-            const sp = await createParty({
-              title: (bill.restaurant || 'Bill split').slice(0, 60),
-              kind: 'hangout',
-              party_date: new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+            const sp = await findOrCreateSpace({
               place: bill.restaurant || '',
-              budget: 0,
-              people: people.includes('Me') ? people : ['Me', ...people],
+              title: bill.restaurant || 'Bill split',
+              kind: 'hangout',
+              dateText: new Date().toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' }),
+              people,
             });
             spaceId = sp.id;
           } catch (e) {} // the bill still saves on its own if this fails

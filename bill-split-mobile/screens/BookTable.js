@@ -4,7 +4,8 @@ import {
   Alert, KeyboardAvoidingView, Linking, Modal, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { NOTE_CHIPS, bookingMessage, createBooking, isBar } from '../services/bookings';
-import { createParty, waNumber } from '../services/parties';
+import { waNumber } from '../services/parties';
+import { findOrCreateSpace } from '../services/spaces';
 import { C, F } from '../services/theme';
 
 const AGE_KEY = 'vibeout.ageOk';
@@ -65,7 +66,7 @@ export default function BookTable({ visible, onClose, place, party, guestsDefaul
       let spaceId = party ? party.id : null;
       if (!spaceId) {
         try {
-          const sp = await createParty({ title: `Table at ${place.name}`.slice(0, 60), kind: 'table', party_date: day, place: place.name, budget: 0, people: ['Me'] });
+          const sp = await findOrCreateSpace({ place: place.name, title: `Table at ${place.name}`, kind: 'table', dateText: day, people: ['Me'], allowLive: false });
           spaceId = sp.id;
         } catch (e) {}
       }
