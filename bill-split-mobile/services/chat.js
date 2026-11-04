@@ -6,7 +6,7 @@ import { track } from './track';
 export async function listMessages(partyId) {
   const { data, error } = await supabase
     .from('party_messages')
-    .select('id, member_id, sender_name, body, kind, poll_id, created_at, is_pay')
+    .select('id, member_id, sender_name, body, kind, poll_id, created_at, is_pay, ref')
     .eq('party_id', partyId)
     .order('created_at', { ascending: true })
     .limit(300);
@@ -77,4 +77,21 @@ export async function react({ token, memberId, messageId, emoji }) {
   const { data, error } = await supabase.rpc('react_message', { p_token: token, p_member: memberId, p_message: messageId, p_emoji: emoji });
   if (error) throw error;
   return data; // true = added, false = removed
+}
+
+// 👥 Squad inbox: the latest message in each Space (only Spaces you can see)
+export async function latestPerSpace(partyIds) {
+  if (!partyIds.length) return {};
+  const { data, error } = await supabase
+    .from('party_messages')
+    .select('party_id, sender_name, body, kind, created_at')
+    .in('party_id', partyIds.slice(0, 50))
+    .order('created_at', { ascending: false })
+    .limit(300);
+  if (error) throw error;
+  const out = {};
+  (data || []).forEach((m) => {
+    if (!out[m.party_id]) out[m.party_id] = m;
+  });
+  return out;
 }

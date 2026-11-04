@@ -21,16 +21,17 @@ import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import { countdown, planBucket, untilStart } from '../services/when';
 import VoteTab from './VoteTab';
+import { SpaceBills, SpaceMoney } from './SpaceParts';
 import InviteSheet from './InviteSheet';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
-export default function PartyScreen({ partyId, autoNight = false, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
+export default function PartyScreen({ partyId, autoNight = false, initialTab = null, onOpenBill, onBack, onDeleted, onChat, onEdit, onShop, onTakeOut, onSplit }) {
   const [gamesOpen, setGamesOpen] = useState(false);
   const [nightOpen, setNightOpen] = useState(autoNight); // 🌙 Night Mode
   const [barOpen, setBarOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false); // 📨 QR + link
-  const [tab, setTab] = useState('overview'); // 🗂️ Overview · Plan · Vote · Chat · Split
+  const [tab, setTab] = useState(initialTab || 'plan'); // 🗂️ Space tabs: Chat · Plan · Booking · Bills · Budget · Memories
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -197,11 +198,12 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
     });
   };
   const TABS = [
-    ['overview', 'Overview'],
-    ['plan', 'Plan'],
-    ['vote', 'Vote'],
-    ['chat', 'Chat'],
-    ['split', 'Split'],
+    ['chat', '💬 Chat'],
+    ['plan', '📋 Plan'],
+    ['booking', '🍽️ Booking'],
+    ['bills', '🧾 Bills'],
+    ['budget', '💰 Budget'],
+    ['memories', '📸 Memories'],
   ];
 
   const PersonRow = ({ m, i }) => (
@@ -293,7 +295,7 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
         </View>
 
         <View style={styles.tabBody}>
-          {tab === 'overview' ? (
+          {tab === 'budget' ? (
             <>
               <View style={styles.posters}>
                 <View style={[styles.poster, { backgroundColor: C.lime }]}>
@@ -307,7 +309,21 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
                   <Text style={styles.posterSub}>{answered} of {members.length - 1} answered</Text>
                 </View>
               </View>
+              <SpaceMoney party={party} />
+              {onEdit ? (
+                <TouchableOpacity style={styles.invite} onPress={() => onEdit(party)} activeOpacity={0.85}>
+                  <Text style={styles.inviteIcon}>✏️</Text>
+                  <View style={styles.flex}>
+                    <Text style={styles.inviteTitle}>CHANGE THE BUDGET</Text>
+                    <Text style={styles.inviteSub}>Total, who pays, or make it a treat</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : null}
+            </>
+          ) : null}
 
+          {tab === 'plan' ? (
+            <>
               <TouchableOpacity style={styles.invite} onPress={() => setInviteOpen(true)} activeOpacity={0.85}>
                 <Text style={styles.inviteIcon}>👥</Text>
                 <View style={styles.flex}>
@@ -320,15 +336,21 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
 
               <Text style={styles.section}>The squad · {members.length}</Text>
               {members.map((m, i) => <PersonRow key={m.id} m={m} i={i} />)}
+              <VoteTab party={party} />
+            </>
+          ) : null}
 
+          {tab === 'memories' ? (
+            <>
               <PartyPhotos party={party} />
               <NightCheck party={party} onChanged={reload} />
             </>
           ) : null}
 
+          {tab === 'booking' ? <BookingCard party={party} onTakeOut={onTakeOut ? () => onTakeOut(party) : undefined} /> : null}
+
           {tab === 'plan' ? (
             <>
-              {!['trip', 'daytrip', 'wedding'].includes(party.kind) && onTakeOut ? <BookingCard party={party} onTakeOut={() => onTakeOut(party)} /> : null}
               {party.kind !== 'house' ? <BringList party={party} /> : null}
               <View style={styles.tiles}>
                 {['house', 'party', 'birthday', 'bachelor', 'match', 'trip', 'daytrip'].includes(party.kind) && onShop ? (
@@ -354,9 +376,9 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
             </>
           ) : null}
 
-          {tab === 'vote' ? <VoteTab party={party} /> : null}
 
-          {tab === 'split' ? (
+          {tab === 'bills' ? <SpaceBills partyId={party.id} onOpenBill={onOpenBill} /> : null}
+          {tab === 'bills' ? (
             <>
               {onSplit ? (
                 <TouchableOpacity style={styles.splitBtn} onPress={() => onSplit(crewNames, party.id)} activeOpacity={0.85}>
@@ -452,7 +474,7 @@ export default function PartyScreen({ partyId, autoNight = false, onBack, onDele
             </>
           ) : null}
 
-          {tab === 'overview' ? (
+          {tab === 'plan' ? (
             <TouchableOpacity onPress={confirmDelete} style={styles.deleteBtn}>
               <Text style={styles.deleteText}>Delete this plan</Text>
             </TouchableOpacity>

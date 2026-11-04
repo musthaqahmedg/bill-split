@@ -299,8 +299,9 @@ export async function listBillsDetailed() {
 export async function billsForParty(partyId) {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, total, created_at, bill_participants(name, amount_due, paid_at)')
-    .eq('party_id', partyId);
+    .select('id, total, created_at, restaurant, title, paid_mode, bill_participants(name, amount_due, paid_amount, paid_at)')
+    .eq('party_id', partyId)
+    .order('created_at', { ascending: false });
   if (error) throw error;
   return data || [];
 }

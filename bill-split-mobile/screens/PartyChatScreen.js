@@ -7,6 +7,7 @@ import FloatUp from './FloatUp';
 import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
 import { getParty } from '../services/parties';
+import { STATUS, partyBooking } from '../services/bookings';
 import { getProfile } from '../services/profile';
 import { C, F } from '../services/theme';
 import { useFriendsActive } from '../services/active';
@@ -17,7 +18,11 @@ const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric
 const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#C6FF3D', '#FB923C', '#2DD4BF'];
 const colorFor = (name) => NAME_COLORS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % NAME_COLORS.length];
 
-export default function PartyChatScreen({ partyId, onBack }) {
+export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBooking }) {
+  const [pinned, setPinned] = useState(null); // 📌 this Space's table booking, pinned on top
+  useEffect(() => {
+    partyBooking(partyId).then(setPinned).catch(() => {});
+  }, [partyId]);
   const activeOf = useFriendsActive();
   const [party, setParty] = useState(null);
   const [messages, setMessages] = useState(null);
@@ -132,6 +137,18 @@ export default function PartyChatScreen({ partyId, onBack }) {
     if (item.kind === 'system') {
       return <Text style={styles.system}>{item.body}</Text>;
     }
+    // 🗂️ bill / booking cards posted into the Space chat: tap to open
+    if (item.kind === 'card') {
+      const r = item.ref || {};
+      const go = r.type === 'bill' && onOpenBill ? () => onOpenBill(r.id) : r.type === 'booking' && onOpenBooking ? onOpenBooking : null;
+      return (
+        <TouchableOpacity style={[styles.card, r.type === 'bill' ? { borderColor: C.pink } : { borderColor: C.cyan }]} onPress={go || undefined} disabled={!go} activeOpacity={0.85}>
+          <Text style={styles.cardKicker}>{r.type === 'bill' ? 'BILL' : 'BOOKING'}</Text>
+          <Text style={styles.cardBody}>{item.body}</Text>
+          {go ? <Text style={styles.cardOpen}>Open ›</Text> : null}
+        </TouchableOpacity>
+      );
+    }
     if (item.poll_id) {
       return <PollCard poll={polls[item.poll_id]} myId={me && me.id} sender={isMine(item) ? 'You' : item.sender_name} onVote={vote} />;
     }
@@ -185,6 +202,12 @@ export default function PartyChatScreen({ partyId, onBack }) {
         })()}
         <Text style={styles.vanish}>🔒 Only people in this plan can read it · 🔥 disappears 30 days after the last message</Text>
       </View>
+      {pinned ? (
+        <TouchableOpacity style={styles.pin} onPress={onOpenBooking || undefined} disabled={!onOpenBooking} activeOpacity={0.85}>
+          <Text style={styles.pinText} numberOfLines={1}>📌 {(STATUS[pinned.status] || STATUS.pending).icon} {pinned.place_name} · {pinned.booking_time} · {pinned.guests} guests</Text>
+          {onOpenBooking ? <Text style={styles.pinOpen}>Open ›</Text> : null}
+        </TouchableOpacity>
+      ) : null}
 
       {messages === null ? (
         <ActivityIndicator color={C.accentSoft} style={styles.loading} />
@@ -248,6 +271,13 @@ export default function PartyChatScreen({ partyId, onBack }) {
 }
 
 const styles = StyleSheet.create({
+  card: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 2, borderRadius: 18, padding: 14, marginVertical: 8 },
+  cardKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 10 },
+  cardBody: { color: C.text, fontSize: 15, fontWeight: '800', marginTop: 4 },
+  cardOpen: { color: C.lime, fontSize: 14, fontWeight: '800', marginTop: 8 },
+  pin: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginHorizontal: 16, marginBottom: 6 },
+  pinText: { flex: 1, color: C.text, fontSize: 13, fontWeight: '700' },
+  pinOpen: { color: C.lime, fontSize: 13, fontWeight: '800', marginLeft: 8 },
   picker: { flexDirection: 'row', backgroundColor: C.cardHi, borderRadius: 22, paddingHorizontal: 6, paddingVertical: 4, marginBottom: 4, borderWidth: 1, borderColor: C.border },
   pickBtn: { paddingHorizontal: 5, paddingVertical: 2, borderRadius: 14 },
   pickOn: { backgroundColor: C.accent + '55' },

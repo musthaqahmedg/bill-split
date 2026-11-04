@@ -195,11 +195,18 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [billFrom, setBillFrom] = useState<any>(null); // 🧾 where Back goes from a bill (a Space, its chat, or Home)
+  const [partyTab, setPartyTab] = useState<any>(null); // 🗂️ which Space tab to open
   const [planFrom, setPlanFrom] = useState('parties'); // where Back goes from the plan form
   const [pullVibe, setPullVibe] = useState('predrinks'); // 🤟 Pull up? flow
   const [autoNight, setAutoNight] = useState(false); // 🪩 Night tab → open the room in Night Mode
   useEffect(() => {
     if (screen !== 'party' && autoNight) setAutoNight(false);
+    // leaving a Space (not to its chat or one of its bills) → next time it opens on Plan, and bills go back Home
+    if (!['party', 'partyChat', 'detail'].includes(screen)) {
+      if (partyTab) setPartyTab(null);
+      if (billFrom) setBillFrom(null);
+    }
   }, [screen]);
   const [openEventId, setOpenEventId] = useState<any>(null); // 🎉 tapped an event alert
   const [planEvent, setPlanEvent] = useState<any>(null); // 🎉 big event → party room // 📍 place picked in Discover → "Add to plan"
@@ -750,6 +757,13 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       <PartyScreen
         partyId={openPartyId}
         autoNight={autoNight}
+        initialTab={partyTab}
+        onOpenBill={(id: any) => {
+          setBillFrom('party');
+          setPartyTab('bills');
+          setOpenBillId(id);
+          setScreen('detail');
+        }}
         onBack={() => setScreen('parties')}
         onDeleted={() => setScreen('parties')}
         onChat={() => setScreen('partyChat')}
@@ -795,6 +809,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onOpen={(id: any) => {
           setOpenPartyId(id);
           setScreen('party');
+        }}
+        onOpenChat={(id: any) => {
+          setOpenPartyId(id);
+          setScreen('partyChat');
         }}
         onRooms={() => setScreen('parties')}
         onMemories={() => setScreen('memories')}
@@ -911,14 +929,28 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'partyChat') {
-    return <PartyChatScreen partyId={openPartyId} onBack={() => setScreen('party')} />;
+    return (
+      <PartyChatScreen
+        partyId={openPartyId}
+        onBack={() => setScreen('party')}
+        onOpenBill={(id: any) => {
+          setBillFrom('partyChat');
+          setOpenBillId(id);
+          setScreen('detail');
+        }}
+        onOpenBooking={() => {
+          setPartyTab('booking');
+          setScreen('party');
+        }}
+      />
+    );
   }
 
   if (screen === 'detail') {
     return (
       <BillDetailScreen
         billId={openBillId}
-        onBack={() => setScreen('home')}
+        onBack={() => setScreen(billFrom || 'home')}
         onDeleted={() => setScreen('home')}
         onEdit={(flow: any, id: any, start?: string) => {
           loadBill(flow, id);
@@ -986,6 +1018,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         setScreen('friends');
       }}
       onOpenBill={(id: any) => {
+        setBillFrom(screen === 'bills' ? 'bills' : null);
         setOpenBillId(id);
         setScreen('detail');
       }}

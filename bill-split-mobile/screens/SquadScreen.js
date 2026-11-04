@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import NightSky from '../components/NightSky';
+import { latestPerSpace } from '../services/chat';
+import { kindOf } from '../services/partyKinds';
 import { show } from '../services/names';
 import { badgeOf, listParties, liveOf, partyLink, setLiveStatus } from '../services/parties';
 import { C, F, STICK } from '../services/theme';
@@ -29,10 +31,17 @@ const MY = [
   ['home', '🏠 Home safe'],
 ];
 
-export default function SquadScreen({ onOpen, onRooms, onMemories, onPlan }) {
+export default function SquadScreen({ onOpen, onOpenChat, onRooms, onMemories, onPlan }) {
   const [plans, setPlans] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const load = () => listParties().then(setPlans).catch(() => setPlans([]));
+  const [inbox, setInbox] = useState({}); // 💬 latest message per Space
+  const load = () =>
+    listParties()
+      .then((l) => {
+        setPlans(l);
+        latestPerSpace((l || []).map((p) => p.id)).then(setInbox).catch(() => {});
+      })
+      .catch(() => setPlans([]));
   useEffect(() => {
     load();
   }, []);
@@ -129,6 +138,32 @@ export default function SquadScreen({ onOpen, onRooms, onMemories, onPlan }) {
             </TouchableOpacity>
           </View>
         )}
+
+        {/* 💬 Space chats: one inbox for every Space */}
+        {(() => {
+          const chats = plans.filter((p) => inbox[p.id]).sort((a, b) => new Date(inbox[b.id].created_at) - new Date(inbox[a.id].created_at)).slice(0, 8);
+          if (!chats.length) return null;
+          return (
+            <>
+              <Text style={styles.section}>SPACE CHATS</Text>
+              {chats.map((p) => {
+                const m = inbox[p.id];
+                const who = m.kind === 'text' ? `${m.sender_name === 'Host' ? 'You' : m.sender_name}: ` : '';
+                return (
+                  <TouchableOpacity key={p.id} style={styles.member} onPress={() => (onOpenChat ? onOpenChat(p.id) : onOpen(p.id))} activeOpacity={0.85}>
+                    <View style={[styles.face, { backgroundColor: (kindOf(p.kind).color || C.violet) + '44' }]}>
+                      <Text style={{ fontSize: 20 }}>{kindOf(p.kind).emoji}</Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.name} numberOfLines={1}>{p.title}</Text>
+                      <Text style={styles.status} numberOfLines={1}>{who}{m.body}</Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </>
+          );
+        })()}
 
         <View style={styles.links}>
           <TouchableOpacity style={[styles.link, { backgroundColor: C.lime }]} onPress={onRooms} activeOpacity={0.85}>
