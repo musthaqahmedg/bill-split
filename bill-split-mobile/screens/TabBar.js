@@ -12,7 +12,7 @@ const TABS = [
   { key: 'home', icon: '🌙', label: 'Tonight' },
   { key: 'discover', icon: '🧭', label: 'Discover' },
   { key: 'squad', icon: '👥', label: 'Squad', also: ['parties'] },
-  { key: 'night', icon: '🪩', label: 'Night' },
+  { key: 'night', icon: '🪩', label: 'Night Mode' },
   { key: 'money', icon: '👤', label: 'Me', also: ['memories'] },
 ];
 
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   slot: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   icon: { fontSize: 21 },
   iconOff: { opacity: 0.45 },
-  label: { color: C.faint, fontSize: 11, fontWeight: '600', marginTop: 2 },
+  label: { color: 'rgba(255,255,255,0.7)', fontSize: 11, fontWeight: '700', marginTop: 2 },
   labelOn: { color: C.lime },
   dot: { width: 4, height: 4, borderRadius: 2, backgroundColor: C.lime, marginTop: 3 },
   plus: { width: 56, height: 56, borderRadius: 28, backgroundColor: C.pink, alignItems: 'center', justifyContent: 'center', marginTop: -18, borderWidth: 4, borderColor: C.bg, overflow: 'hidden' },

@@ -195,6 +195,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [celebrate, setCelebrate] = useState(false); // 🎉 GO! burst after creating a plan
   const [billPartyId, setBillPartyId] = useState<any>(null); // 🌙 bill split from Night Mode belongs to this plan
   const [planPlace, setPlanPlace] = useState<any>(null);
+  const [planFrom, setPlanFrom] = useState('parties'); // where Back goes from the plan form
   const [pullVibe, setPullVibe] = useState('predrinks'); // 🤟 Pull up? flow
   const [autoNight, setAutoNight] = useState(false); // 🪩 Night tab → open the room in Night Mode
   useEffect(() => {
@@ -670,6 +671,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return (
       <PartiesScreen
         onNewParty={() => {
+          setPlanFrom('parties');
           setPlanGroup(null);
           setEditPlan(null);
           setScreen('newParty');
@@ -730,7 +732,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         eventId={planEvent ? planEvent.id : null}
         group={editPlan ? null : planGroup}
         editing={editPlan}
-        onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : planPlace ? 'discover' : 'parties')}
+        onBack={() => setScreen(editPlan ? 'party' : planGroup ? 'group' : planPlace ? 'discover' : planFrom)}
         onCreated={(id: any) => {
           if (!editPlan) setCelebrate(true);
           setOpenPartyId(id);
@@ -925,6 +927,15 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
 
   return (
     <HomeScreen
+      key={screen === 'bills' ? 'bills' : 'home'}
+      billsMode={screen === 'bills'}
+      onBack={() => setScreen('home')}
+      onBills={() => setScreen('bills')}
+      onRooms={() => setScreen('parties')}
+      onBookTable={() => {
+        setNearby({ from: 'home', category: 'restobars', title: '🍽️ Book a table' });
+        setScreen('nearby');
+      }}
       onPullUp={(v: any) => {
         setPullVibe(v);
         setScreen('pullUp');
@@ -935,6 +946,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       onSaveAccount={() => setScreen('saveAccount')}
       onMoney={() => setScreen('money')}
       onPlan={(kind: any) => {
+        setPlanFrom('home');
         setPlanKind(kind);
         setPlanGroup(null);
         setEditPlan(null);

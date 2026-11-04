@@ -12,6 +12,9 @@ import EventPopup from './EventPopup';
 import { getBudgets } from '../services/budget';
 import { VIBES } from './PullUpScreen';
 import { listBills } from '../services/bills';
+import { listParties } from '../services/parties';
+import { kindOf } from '../services/partyKinds';
+import { countdown, planBucket, sortPlans, startTime } from '../services/when';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { billBalance, homeBalance } from '../services/settle';
@@ -53,7 +56,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened, onPullUp }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened, onPullUp, billsMode = false, onBills, onBookTable, onRooms, onBack }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +68,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [outNow, setOutNow] = useState(0);
   const [tonightBudget, setTonightBudget] = useState(0); // 🎯 budget set just for tonight
   const [events, setEvents] = useState([]); // 🎉 big events near you
+  const [plans, setPlans] = useState([]); // 🗂️ Your Spaces
   // 🔔 opened from an event alert → show that event's pop-up
   useEffect(() => {
     if (!openEventId) return;
@@ -106,6 +110,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       .catch(() => {});
     // 💰 tonight's budget, 🔥 streak, 🟢 friends out now (all optional, never block Home)
     listExpenses().then(setExpenses).catch(() => {});
+    listParties().then((l) => setPlans(l || [])).catch(() => {});
     getBudgets().then((b) => { setBudget(b.month || 0); setTonightBudget(b.tonight || 0); }).catch(() => {});
     getNights().then((n) => setStreak(nightStats(n).current)).catch(() => {});
     // 🎉 big events near you: pop up the ones not seen yet (after the first-time tour); offline → skip quietly
@@ -188,144 +193,54 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   };
 
   const t = todaySummary(bills, expenses, budget, new Date(), tonightBudget);
-  const budgetCard = (
-    <TouchableOpacity style={styles.budget} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
-      <View style={styles.budgetTop}>
-        <Text style={styles.budgetKicker}>TONIGHT'S BUDGET</Text>
-        <View style={styles.dayPill}>
-          <Text style={styles.dayText}>DAY {new Date().getDate()}</Text>
-        </View>
-      </View>
-      {budget || tonightBudget ? (
-        <>
-          <View style={styles.budgetRow}>
-            <Text style={[styles.budgetBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}{t.left < 0 ? ' over' : ''}</Text>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.spentLabel}>SPENT</Text>
-              <Text style={styles.spent}>-{inr(t.today)}</Text>
-            </View>
-          </View>
-          <View style={styles.budgetTrack}>
-            <View style={[styles.budgetFill, { width: `${t.allowance ? Math.min(100, Math.round((t.today / t.allowance) * 100)) : 0}%` }, t.left < 0 && { backgroundColor: C.red }]} />
-          </View>
-        </>
-      ) : (
-        <View style={styles.budgetRow}>
-          <Text style={styles.budgetBig}>{inr(t.today)}</Text>
-          <Text style={styles.setBudget}>Set a budget ›</Text>
-        </View>
-      )}
-    </TouchableOpacity>
-  );
+  const hasBudget = !!(budget || tonightBudget);
 
-  // 🚕 Ride home: open a cab app (the app opens if installed, otherwise its website)
-  const rideHome = () =>
-    Alert.alert('🚕 Ride home', 'Pick a cab app', [
-      { text: 'Uber', onPress: () => Linking.openURL('https://m.uber.com/ul/?action=setPickup&pickup=my_location').catch(() => {}) },
-      { text: 'Ola', onPress: () => Linking.openURL('https://book.olacabs.com/').catch(() => {}) },
-      { text: 'Rapido', onPress: () => Linking.openURL('https://www.rapido.bike/').catch(() => {}) },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+  // 🗂️ Your Spaces: live and upcoming rooms (soonest first)
+  const live = sortPlans(plans.filter((p) => planBucket(p) === 'live'), 'upcoming');
+  const upcoming = sortPlans(plans.filter((p) => planBucket(p) === 'upcoming'), 'upcoming');
+  const spaces = [...live, ...upcoming].slice(0, 3);
+  const goingOf = (p) => (p.party_members || []).filter((m) => m.rsvp === 'in' || m.name === 'Me').length;
+  const outOf = (p) => (p.party_members || []).filter((m) => m.live_status === 'omw' || m.live_status === 'here').length;
+  const nextLine = (p) => {
+    const st = startTime(p);
+    const hrs = st ? Math.round((st - new Date()) / 36e5) : null;
+    const when = planBucket(p) === 'live' ? (outOf(p) ? `Live · ${outOf(p)} out` : 'Tonight') : st && hrs >= 0 && hrs < 24 ? (hrs < 1 ? 'Starts soon' : `Starts in ${hrs}h`) : countdown(p);
+    return `${when} · ${goingOf(p)} going`;
+  };
+  const nextHouse = [...live, ...upcoming].find((p) => p.kind === 'house');
+  const nextNight = [...live, ...upcoming].find((p) => p.kind !== 'house');
+  // "TUE · NIGHT STARTS IN 2H" when something starts within the day, else the clock
+  const soon = [...live, ...upcoming].map((p) => startTime(p)).filter((d) => d && d > new Date() && d - new Date() < 864e5).sort((x, y) => x - y)[0];
+  const topLine = soon
+    ? `${new Date().toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()} · NIGHT STARTS IN ${Math.max(1, Math.round((soon - new Date()) / 36e5))}H`
+    : clock;
 
-  const header = (
+  const TILES = [
+    { key: 'house', emoji: '🏠', title: 'House\nParty', sub: 'Host at home', bg: C.lime, badge: nextHouse ? `${goingOf(nextHouse)} going` : null, go: () => onPlan && onPlan('house') },
+    { key: 'night', emoji: '🌙', title: 'Plan a\nNight', sub: 'Go out with squad', bg: C.violet, badge: nextNight ? `${goingOf(nextNight)} in` : null, go: () => onPullUp && onPullUp(null) },
+    { key: 'split', emoji: '🧾', title: 'Split\nBills', sub: 'Pay what you had', bg: C.pink, badge: openCount ? `${openCount} due` : null, go: onBills || onNewBill },
+    { key: 'table', emoji: '🍽️', title: 'Book\nTable', sub: 'Reserve a spot', bg: C.cyan, badge: null, go: onBookTable },
+  ];
+
+  const header = billsMode ? (
     <View>
-      {!showArchived ? <Marquee /> : null}
-      <View style={styles.header}>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.clock}>{clock}</Text>
-          {outNow ? (
-            <View style={styles.outPill}>
-              <Text style={styles.outText}>{outNow} out now</Text>
-            </View>
-          ) : null}
-        </View>
-        {onMenu ? (
-          <TouchableOpacity style={[styles.bell, styles.menuBtn]} onPress={onMenu} accessibilityLabel="Menu">
-            <View style={styles.bar} />
-            <View style={[styles.bar, { width: 14, marginVertical: 4 }]} />
-            <View style={styles.bar} />
-          </TouchableOpacity>
-        ) : null}
-        {onNotifications ? (
-          <TouchableOpacity style={styles.bell} onPress={onNotifications}>
-            <Text style={styles.bellIcon}>🔔</Text>
-            {unread ? (
-              <View style={styles.bellBadge}>
-                <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
-              </View>
-            ) : null}
-          </TouchableOpacity>
-        ) : null}
-        {onProfile ? (
-          <TouchableOpacity style={[styles.bell, { marginLeft: 8 }]} onPress={onProfile}>
-            <Text style={styles.bellIcon}>{name ? name[0].toUpperCase() : '👤'}</Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
-
-      <Text style={styles.title}>{showArchived ? 'Archived' : "What's the 🔥 vibe\ntonight?"}</Text>
-      {name && !showArchived ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
-
-      {/* 🤟 What's the vibe? one tap → "Pull up?" (pick people → spot → lock it in) */}
-      {!showArchived && onPullUp ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }} contentContainerStyle={{ paddingRight: 8 }}>
-          {VIBES.map((v, i) => (
-            <TouchableOpacity key={v.key} style={[styles.vibe, { backgroundColor: [C.lime, C.pink, C.violet, C.cyan, '#FFD84D', '#FF8A3D'][i % 6] }]} onPress={() => onPullUp(v.key)} activeOpacity={0.85}>
-              <Text style={styles.vibeText}>{v.emoji} {v.label}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      ) : null}
-
-      {/* ⚡ Quick buttons (new UX): split · ride home · invite · budget */}
+      <TouchableOpacity onPress={onBack} hitSlop={10}>
+        <Text style={styles.backLink}>‹ Back</Text>
+      </TouchableOpacity>
+      <Text style={styles.pageTitle}>{showArchived ? 'Archived' : 'Split Bills'}</Text>
+      <Text style={styles.hello}>Pay only for what you had.</Text>
       {!showArchived ? (
-        <View style={styles.quick}>
-          {[
-            ['🧾', 'Split\nbill', C.pink, onNewBill],
-            ['🚕', 'Ride\nhome', C.cyan, rideHome],
-            ['💌', 'Invite\nfriends', C.violet, onFriends && !guest ? () => onFriends(true) : onSaveAccount],
-            ['👛', 'My\nbudget', '#FFD84D', onMoney],
-          ].map(([e, label, bg, go]) => (
-            <TouchableOpacity key={label} style={[styles.qBtn, { backgroundColor: bg }]} onPress={go} activeOpacity={0.85}>
-              <Text style={styles.qEmoji}>{e}</Text>
-              <Text style={styles.qLabel}>{label}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      ) : null}
-
-      {/* 🎉 Events near you */}
-      {!showArchived && events.length ? (
-        <View style={{ marginBottom: 14 }}>
-          <Text style={styles.evKicker}>🎉 BIG EVENTS NEAR YOU</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingRight: 8 }}>
-            {events.map((e, i) => (
-              <TouchableOpacity key={e.id} style={styles.evCard} onPress={() => setPop({ list: events, start: i })} activeOpacity={0.85}>
-                <View style={styles.evPoster}>
-                  {e.poster_url ? <Image source={{ uri: e.poster_url }} style={StyleSheet.absoluteFill} resizeMode="cover" /> : <Text style={{ fontSize: 34 }}>🎉</Text>}
-                  {e.status === 'sold_out' ? (
-                    <View style={styles.evSold}>
-                      <Text style={styles.evSoldText}>SOLD OUT</Text>
-                    </View>
-                  ) : null}
-                </View>
-                <Text style={styles.evTitle} numberOfLines={1}>{e.title}</Text>
-                <Text style={styles.evMeta} numberOfLines={1}>{[eventWhen(e), eventKm(e.km)].filter(Boolean).join(' · ')}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
-
-      {!showArchived && onPlan ? <TonightCard onPlan={onPlan} onOpenPlan={onOpenPlan} refreshKey={loading} budget={budgetCard} streak={streak} /> : null}
-
-      {/* ⚡ Fast settlement: only when someone owes someone (Split bill + My budget tiles cover the rest) */}
-      {!showArchived && (sum.owed || sum.owe || openBill) ? (
-        <View style={styles.settle}>
-          <View style={styles.settleTop}>
-            <Text style={styles.settleKicker}>{sum.owed || sum.owe ? 'FAST SETTLEMENT' : 'ALL SETTLED ✨'}</Text>
-            {openBill ? <Text style={styles.settleCount}>{openCount} open {openCount === 1 ? 'bill' : 'bills'}</Text> : null}
+        <TouchableOpacity style={styles.scanBig} onPress={onNewBill} activeOpacity={0.85}>
+          <Text style={styles.scanEmoji}>📸</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.scanTitle}>Scan a new bill</Text>
+            <Text style={styles.scanSub}>AI reads the items, you tap who had what</Text>
           </View>
+          <Text style={styles.scanGo}>›</Text>
+        </TouchableOpacity>
+      ) : null}
+      {!showArchived && (sum.owed || sum.owe) ? (
+        <View style={styles.settle}>
           <View style={styles.settleRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.settleLabel}>You'll get back</Text>
@@ -336,22 +251,9 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
               <Text style={[styles.settleBig, { color: sum.owe ? C.pink : C.text }]}>{inr(sum.owe)}</Text>
             </View>
           </View>
-          <View style={styles.settleBtns}>
-            <TouchableOpacity
-              style={[styles.settleBtn, !openBill && { backgroundColor: C.disabled }]}
-              onPress={() => openBill && onOpenBill(openBill.id)}
-              disabled={!openBill}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.settleBtnText, !openBill && { color: C.faint }]}>{openBill ? (openAmt ? `Settle ${inr(openAmt)} ›` : 'Who paid? ›') : 'Nothing to settle'}</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       ) : null}
-
-      {guest && !showArchived ? <GuestGate small onSave={onSaveAccount} /> : null}
-      {!showArchived && onFriends && !guest ? <FriendsRow onOpen={() => onFriends(false)} onAdd={() => onFriends(true)} /> : null}
-      {!showArchived && draft ? (
+      {draft && !showArchived ? (
         <TouchableOpacity style={styles.draft} onPress={onResumeDraft} activeOpacity={0.85}>
           <Text style={styles.draftEmoji}>📝</Text>
           <View style={{ flex: 1 }}>
@@ -365,15 +267,128 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           </TouchableOpacity>
         </TouchableOpacity>
       ) : null}
-
       <View style={styles.sectionRow}>
-        <Text style={styles.section}>{showArchived ? 'Archived bills' : '🧾 Your bills'}</Text>
+        <Text style={styles.section}>{showArchived ? 'Archived bills' : 'Your bills'}</Text>
         {archived.length > 0 || showArchived ? (
           <TouchableOpacity onPress={() => setShowArchived(!showArchived)} hitSlop={8}>
             <Text style={styles.sectionLink}>{showArchived ? '← Back' : `📦 Archived (${archived.length})`}</Text>
           </TouchableOpacity>
         ) : null}
       </View>
+    </View>
+  ) : (
+    <View>
+      <Marquee />
+      <View style={styles.header}>
+        <Text style={[styles.clock, { flex: 1, fontSize: 11, lineHeight: 15, marginRight: 8 }]} numberOfLines={2}>{topLine}</Text>
+        <View style={styles.streak}>
+          <Text style={styles.streakText}>🔥 {streak}</Text>
+        </View>
+        {onNotifications ? (
+          <TouchableOpacity style={styles.bell} onPress={onNotifications} accessibilityLabel="Notifications">
+            <Text style={styles.bellIcon}>🔔</Text>
+            {unread ? (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{unread > 9 ? '9+' : unread}</Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+        ) : null}
+        {onProfile ? (
+          <TouchableOpacity style={[styles.bell, styles.avatar]} onPress={onProfile} accessibilityLabel="Profile">
+            <Text style={styles.avatarText}>{name ? name[0].toUpperCase() : '👤'}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+
+      {name ? <Text style={styles.hello}>{hello()}, {name} 👋</Text> : null}
+      <Text style={styles.title}>What's the vibe 🔥{'\n'}tonight?</Text>
+
+      {/* 🗂️ Your Spaces */}
+      {spaces.length ? (
+        <View style={{ marginTop: 18 }}>
+          <View style={styles.sectionRow}>
+            <Text style={styles.kicker}>YOUR SPACES</Text>
+            {onRooms ? (
+              <TouchableOpacity onPress={onRooms} hitSlop={8}>
+                <Text style={styles.seeAll}>SEE ALL</Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+          {spaces.map((p) => (
+            <TouchableOpacity key={p.id} style={styles.space} onPress={() => onOpenPlan && onOpenPlan(p.id)} activeOpacity={0.85}>
+              <View style={[styles.spaceIcon, { backgroundColor: (kindOf(p.kind).color || C.violet) + '33' }]}>
+                <Text style={styles.spaceEmoji}>{kindOf(p.kind).emoji}</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.spaceName} numberOfLines={1}>{p.title}</Text>
+                <Text style={styles.spaceLine} numberOfLines={1}>{nextLine(p)}</Text>
+              </View>
+              {planBucket(p) === 'live' ? <View style={styles.liveDot} /> : <Text style={styles.spaceGo}>›</Text>}
+            </TouchableOpacity>
+          ))}
+        </View>
+      ) : null}
+
+      {/* 🟨 The four things you do here */}
+      <View style={styles.tiles}>
+        {TILES.map((x) => (
+          <TouchableOpacity key={x.key} style={[styles.tile, { backgroundColor: x.bg }]} onPress={x.go} activeOpacity={0.85}>
+            <View style={styles.tileTop}>
+              <Text style={styles.tileEmoji}>{x.emoji}</Text>
+              {x.badge ? (
+                <View style={styles.tileBadge}>
+                  <Text style={styles.tileBadgeText}>{x.badge}</Text>
+                </View>
+              ) : null}
+            </View>
+            <View>
+              <Text style={styles.tileTitle}>{x.title}</Text>
+              <Text style={styles.tileSub}>{x.sub}</Text>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {/* 👛 Tonight's budget → money tracker */}
+      <TouchableOpacity style={styles.budget} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
+        <View style={styles.budgetTop}>
+          <Text style={styles.budgetKicker}>💳 TONIGHT'S BUDGET</Text>
+          <Text style={styles.budgetDay}>DAY {new Date().getDate()}</Text>
+        </View>
+        {hasBudget ? (
+          <>
+            <View style={styles.budgetRow}>
+              <Text style={[styles.budgetBig, t.left < 0 && { color: C.red }]}>{inr(Math.abs(t.left))}</Text>
+              <Text style={styles.budgetLeft}>{t.left < 0 ? 'over' : 'left'} · {inr(t.today)} spent</Text>
+            </View>
+            <View style={styles.budgetTrack}>
+              <View style={[styles.budgetFill, { width: `${t.allowance ? Math.max(3, Math.min(100, Math.round((t.today / t.allowance) * 100))) : 3}%` }, t.left < 0 && { backgroundColor: C.red }]} />
+            </View>
+          </>
+        ) : (
+          <View style={styles.budgetRow}>
+            <Text style={styles.budgetBig}>{inr(t.today)}</Text>
+            <Text style={styles.setLimit}>Set limit ›</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {guest ? <GuestGate small onSave={onSaveAccount} /> : null}
+      {draft ? (
+        <TouchableOpacity style={styles.draft} onPress={onResumeDraft} activeOpacity={0.85}>
+          <Text style={styles.draftEmoji}>📝</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.draftTitle}>Finish your bill</Text>
+            <Text style={styles.draftSub} numberOfLines={1}>
+              {(draft.bill && draft.bill.restaurant) || 'Unsaved bill'} · {(draft.items || []).length} items · tap to continue
+            </Text>
+          </View>
+          <TouchableOpacity onPress={onDiscardDraft} hitSlop={10}>
+            <Text style={styles.draftX}>✕</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 
@@ -391,13 +406,13 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         />
       ) : null}
       <FlatList
-        data={visible}
+        data={billsMode ? visible : []}
         keyExtractor={(item) => item.id}
         renderItem={renderBill}
         ListHeaderComponent={header}
         refreshControl={<RefreshControl refreshing={loading} onRefresh={load} tintColor={C.accentSoft} />}
         ListEmptyComponent={
-          !loading && (
+          billsMode && !loading && (
             <View style={styles.empty}>
               <Text style={styles.emptyEmoji}>{showArchived ? '📦' : '🧾'}</Text>
               <Text style={styles.emptyText}>{showArchived ? 'No archived bills' : 'No bills yet'}</Text>
@@ -420,10 +435,42 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
 }
 
 const styles = StyleSheet.create({
+  // 🌙 Home (Spaces pipeline)
+  streak: { backgroundColor: C.violet, borderRadius: 16, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, borderRightWidth: 2, borderBottomWidth: 3, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  streakText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
+  avatar: { backgroundColor: C.lime, marginLeft: 8 },
+  avatarText: { fontFamily: F.display, color: C.onLime, fontSize: 16 },
+  kicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
+  seeAll: { fontFamily: F.pixel, color: C.lime, fontSize: 11 },
+  space: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderRadius: 20, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: C.border },
+  spaceIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  spaceEmoji: { fontSize: 22 },
+  spaceName: { color: C.text, fontSize: 16, fontWeight: '800' },
+  spaceLine: { color: C.sub, fontSize: 13, marginTop: 2 },
+  spaceGo: { color: C.faint, fontSize: 24, marginLeft: 8 },
+  liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.lime, marginLeft: 8 },
+  tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14 },
+  tile: { width: '48.5%', minHeight: 150, borderRadius: 28, padding: 16, marginBottom: 10, justifyContent: 'space-between', borderRightWidth: 3, borderBottomWidth: 5, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  tileEmoji: { fontSize: 36 },
+  tileBadge: { backgroundColor: C.onLime, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
+  tileBadgeText: { fontFamily: F.pixel, color: '#fff', fontSize: 10 },
+  tileTitle: { fontFamily: F.display, color: C.onLime, fontSize: 21, lineHeight: 24, marginTop: 10 },
+  tileSub: { color: C.onLime, fontSize: 12, fontWeight: '700', opacity: 0.7, marginTop: 4 },
+  budgetDay: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
+  budgetLeft: { color: C.sub, fontSize: 14, fontWeight: '700' },
+  setLimit: { color: C.lime, fontSize: 15, fontWeight: '800' },
+  backLink: { color: C.lime, fontSize: 16, fontWeight: '600', marginBottom: 10 },
+  pageTitle: { fontFamily: F.display, color: C.text, fontSize: 36 },
+  scanBig: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.pink, borderRadius: 24, padding: 18, marginTop: 14, marginBottom: 12, borderRightWidth: 3, borderBottomWidth: 5, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  scanEmoji: { fontSize: 34, marginRight: 12 },
+  scanTitle: { fontFamily: F.display, color: C.onLime, fontSize: 19 },
+  scanSub: { color: C.onLime, fontSize: 13, fontWeight: '700', opacity: 0.75, marginTop: 2 },
+  scanGo: { fontFamily: F.display, color: C.onLime, fontSize: 28, marginLeft: 8 },
   container: { flex: 1, backgroundColor: C.bg },
   list: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 24 },
   header: { flexDirection: 'row', alignItems: 'center', marginBottom: 18 },
-  hello: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 4, marginBottom: 12 },
+  hello: { color: C.sub, fontSize: 15, fontWeight: '600', marginTop: 2, marginBottom: 4 },
   vibe: { borderRadius: 16, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   vibeText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   quick: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14, marginBottom: 6 },
@@ -443,7 +490,7 @@ const styles = StyleSheet.create({
   evSoldText: { fontFamily: F.pixel, color: C.pink, fontSize: 10 },
   evTitle: { color: C.text, fontSize: 14, fontWeight: '800', marginTop: 6 },
   evMeta: { color: C.faint, fontSize: 11, marginTop: 1 },
-  budget: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 14 },
+  budget: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 24, padding: 18, marginTop: 4, marginBottom: 14 },
   budgetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   budgetKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
   dayPill: { backgroundColor: C.cardHi, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
