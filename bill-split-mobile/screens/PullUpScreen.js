@@ -7,6 +7,8 @@ import { show } from '../services/names';
 import { createParty } from '../services/parties';
 import { findPlaces, getMyLocation, placeDetails, showKm } from '../services/places';
 import { C, F, STICK } from '../services/theme';
+import { eventsNear, eventWhen } from '../services/events';
+import { Image, Linking } from 'react-native';
 import BookTable from './BookTable';
 import ContactPicker from './ContactPicker';
 
@@ -20,13 +22,40 @@ export const VIBES = [
   { key: 'chai', label: 'Chai & chill', emoji: '☕', kind: 'party', cat: 'cafes' },
   { key: 'movie', label: 'Movie', emoji: '🎬', kind: 'movie', cat: 'cinema' },
 ];
+// 🌙 Plan a Night: discover first. Places (by type) and Events (DJ nights, live music, concerts) are separate.
+export const PLACE_CATS = [
+  { key: 'restaurants', label: 'Restaurants', emoji: '🍽️', kind: 'party', cat: 'food', table: true },
+  { key: 'cafes', label: 'Cafés', emoji: '☕', kind: 'hangout', cat: 'cafes', table: true },
+  { key: 'pubs', label: 'Pubs', emoji: '🍺', kind: 'nightout', cat: 'pubs', table: true },
+  { key: 'clubs', label: 'Clubs', emoji: '🪩', kind: 'party', cat: 'bars', table: false },
+  { key: 'movies', label: 'Movies', emoji: '🎬', kind: 'movie', cat: 'cinema', table: false },
+];
+const EVENT_WHEN = [
+  ['tonight', 'Tonight'],
+  ['weekend', 'This weekend'],
+  ['upcoming', 'Upcoming'],
+];
+const eventFits = (e, w, now = new Date()) => {
+  const d = new Date(e.start_at);
+  if (w === 'tonight') return d.toDateString() === now.toDateString();
+  if (w === 'weekend') {
+    const days = (d - now) / 864e5;
+    return days < 7 && [5, 6, 0].includes(d.getDay());
+  }
+  return true;
+};
 const HUES = [C.lime, C.pink, C.violet, C.cyan, '#FFD84D', '#7CFFB2', '#FF8A3D', '#FFB3D9'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const dayText = (d) => d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
-export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCreated }) {
-  const [vibe, setVibe] = useState(VIBES.find((v) => v.key === initialVibe) || VIBES[0]);
-  const [step, setStep] = useState(1); // 1 people · 2 spot
+export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCreated }) {
+  const [vibe, setVibe] = useState(PLACE_CATS.find((v) => v.key === initialVibe) || VIBES.find((v) => v.key === initialVibe) || PLACE_CATS[0]);
+  const [step, setStep] = useState(0); // 0 discover · 1 people · 2 lock it in
+  const [mode, setMode] = useState('places'); // places · events
+  const [found, setFound] = useState(null); // places for the picked type
+  const [events, setEvents] = useState(null);
+  const [when, setWhen] = useState('upcoming');
+  const [picked, setPicked] = useState(null); // { place } or { event } chosen in discover
   const [day, setDay] = useState(0); // 0 tonight · 1 tomorrow
   const [spaceName, setSpaceName] = useState(''); // 🗂️ the Space's name (blank → a suggestion)
   const [pool, setPool] = useState([]); // friend names to pick from
@@ -48,8 +77,34 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
     });
   }, []);
 
+  // 🧭 discover: places of the picked type, and big events
   useEffect(() => {
-    if (step !== 2) return;
+    if (step !== 0 || mode !== 'places') return;
+    setFound(null);
+    getMyLocation({ ask: true })
+      .then((loc) => findPlaces(loc.coords, '', vibe.cat))
+      .then((list) => setFound((list || []).slice(0, 12)))
+      .catch(() => setFound([]));
+  }, [step, mode, vibe.key]);
+  useEffect(() => {
+    if (mode !== 'events' || events) return;
+    eventsNear().then((l) => setEvents((l || []).filter((e) => e.status !== 'cancelled'))).catch(() => setEvents([]));
+  }, [mode]);
+  const pickPlace = (p) => { setPicked({ place: p }); setSpot(p); setStep(1); };
+  const pickEvent = (e) => {
+    setPicked({ event: e });
+    setSpot({ id: `ev-${e.id}`, name: e.venue_name });
+    if (!spaceName) setSpaceName(e.title.slice(0, 60));
+    const d = new Date(e.start_at);
+    const diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(new Date().toDateString())) / 864e5);
+    setDay(Math.max(0, diff));
+    setStep(1);
+  };
+  const vote = () => { setPicked(null); setSpot(null); setStep(1); };
+  const [standalone, setStandalone] = useState(null); // 🍽️ Book table straight from discover
+
+  useEffect(() => {
+    if (step !== 2 || picked) return;
     setSpots(null);
     getMyLocation({ ask: true })
       .then((loc) => findPlaces(loc.coords, '', vibe.cat))
@@ -57,7 +112,8 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
       .catch(() => setSpots([]));
   }, [step, vibe.key]);
 
-  const autoName = `${vibe.label} ${day ? 'tomorrow' : 'tonight'} ${vibe.emoji}`;
+  const dayWord = day === 0 ? 'tonight' : day === 1 ? 'tomorrow' : 'soon';
+  const autoName = `${vibe.label} ${dayWord} ${vibe.emoji}`;
   const toggle = (name) => setPeople(people.includes(name) ? people.filter((p) => p !== name) : [...people, name]);
   const addTyped = () => {
     const n = typed.trim();
@@ -80,6 +136,7 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
         budget: 0,
         people: ['Me', ...people],
         phones,
+        eventId: picked && picked.event ? picked.event.id : null,
       });
       if (spot && wantTable) {
         // 🍽️ ask the venue for a table (WhatsApp / call), then open the room
@@ -98,20 +155,93 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
     <KeyboardAvoidingView style={styles.page} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <NightSky height={240} />
       <ScrollView contentContainerStyle={styles.pad} keyboardShouldPersistTaps="handled">
-        <TouchableOpacity onPress={step === 2 ? () => setStep(1) : onBack} hitSlop={10}>
+        <TouchableOpacity onPress={step > 0 ? () => setStep(step - 1) : onBack} hitSlop={10}>
           <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{step === 1 ? 'PULL UP?' : 'WHERE FIRST?'}</Text>
-        <Text style={styles.kicker}>STEP {step + 1} OF 3 · {step === 1 ? 'PICK YOUR PEOPLE' : 'PICK A SPOT'}</Text>
+        <Text style={styles.title}>{step === 0 ? 'PLAN A\nNIGHT' : step === 1 ? 'WHO’S IN?' : picked ? 'LOCK IT IN' : 'WHERE FIRST?'}</Text>
+        <Text style={styles.kicker}>STEP {step + 1} OF 3 · {step === 0 ? 'FIND THE SPOT' : step === 1 ? 'PICK YOUR PEOPLE' : picked ? 'CHECK AND GO' : 'PICK A SPOT'}</Text>
 
-        {/* vibe + day, always editable */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
-          {VIBES.map((v) => (
-            <TouchableOpacity key={v.key} style={[styles.chip, vibe.key === v.key && styles.chipOn]} onPress={() => setVibe(v)} activeOpacity={0.85}>
-              <Text style={[styles.chipText, vibe.key === v.key && { color: C.onLime }]}>{v.emoji} {v.label}</Text>
+        {step === 0 ? (
+          <>
+            <View style={styles.seg}>
+              {[['places', '📍 Places'], ['events', '🎉 Events']].map(([k, label]) => (
+                <TouchableOpacity key={k} style={[styles.segBtn, mode === k && styles.segOn]} onPress={() => setMode(k)} activeOpacity={0.85}>
+                  <Text style={[styles.segText, mode === k && { color: C.onLime }]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {(mode === 'places' ? PLACE_CATS.map((v) => [v.key, `${v.emoji} ${v.label}`, vibe.key === v.key, () => setVibe(v)]) : EVENT_WHEN.map(([k, l]) => [k, l, when === k, () => setWhen(k)])).map(([k, label, on, go]) => (
+                <TouchableOpacity key={k} style={[styles.chip, on && styles.chipOn]} onPress={go} activeOpacity={0.85}>
+                  <Text style={[styles.chipText, on && { color: C.onLime }]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            {mode === 'places' ? (
+              <>
+                {found === null ? <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} /> : null}
+                {(found || []).map((p) => (
+                  <View key={p.id} style={styles.placeCard}>
+                    <View style={styles.placeTop}>
+                      <Text style={styles.placeEmoji}>{p.emoji || vibe.emoji}</Text>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.placeName} numberOfLines={1}>{p.name}</Text>
+                        <Text style={styles.placeMeta} numberOfLines={1}>{[p.km != null ? showKm(p.km) : null, p.area].filter(Boolean).join(' · ')}</Text>
+                      </View>
+                    </View>
+                    <View style={styles.placeBtns}>
+                      <TouchableOpacity style={styles.planBtn} onPress={() => pickPlace(p)} activeOpacity={0.85}>
+                        <Text style={styles.planBtnText}>Plan here →</Text>
+                      </TouchableOpacity>
+                      {vibe.table ? (
+                        <TouchableOpacity style={styles.bookBtn} onPress={async () => { const det = await placeDetails([p.id]).catch(() => ({})); setStandalone({ ...p, phone: (det[p.id] || {}).phone || null }); }} activeOpacity={0.85}>
+                          <Text style={styles.bookBtnText}>🍽️ Book table</Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  </View>
+                ))}
+                {found && !found.length ? <Text style={styles.muted}>Nothing found nearby for {vibe.label.toLowerCase()}. Try another type, or let the squad vote.</Text> : null}
+              </>
+            ) : (
+              <>
+                {events === null ? <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} /> : null}
+                {(events || []).filter((e) => eventFits(e, when)).map((e) => (
+                  <View key={e.id} style={styles.eventCard}>
+                    {e.poster_url ? <Image source={{ uri: e.poster_url }} style={styles.eventPoster} resizeMode="cover" /> : <View style={[styles.eventPoster, { alignItems: 'center', justifyContent: 'center' }]}><Text style={{ fontSize: 40 }}>🎉</Text></View>}
+                    <View style={{ padding: 14 }}>
+                      <Text style={styles.eventWhen}>{eventWhen(e).toUpperCase()}{e.status === 'sold_out' ? ' · SOLD OUT' : ''}</Text>
+                      <Text style={styles.eventTitle} numberOfLines={2}>{e.title}</Text>
+                      <Text style={styles.placeMeta} numberOfLines={1}>{e.venue_name}{e.price_from != null ? ` · ${Number(e.price_from) === 0 ? 'Free' : `from ₹${Math.round(e.price_from).toLocaleString('en-IN')}`}` : ''}</Text>
+                      <View style={styles.placeBtns}>
+                        <TouchableOpacity style={styles.planBtn} onPress={() => pickEvent(e)} activeOpacity={0.85}>
+                          <Text style={styles.planBtnText}>Plan with squad →</Text>
+                        </TouchableOpacity>
+                        {e.booking_url && e.status !== 'sold_out' ? (
+                          <TouchableOpacity style={styles.bookBtn} onPress={() => Linking.openURL(e.booking_url).catch(() => {})} activeOpacity={0.85}>
+                            <Text style={styles.bookBtnText}>🎟️ Tickets</Text>
+                          </TouchableOpacity>
+                        ) : null}
+                      </View>
+                    </View>
+                  </View>
+                ))}
+                {events && !events.filter((e) => eventFits(e, when)).length ? <Text style={styles.muted}>No events {when === 'tonight' ? 'tonight' : when === 'weekend' ? 'this weekend' : 'coming up'} near you yet. Check Upcoming, or plan a place.</Text> : null}
+              </>
+            )}
+
+            <TouchableOpacity style={[styles.spot, { marginTop: 8 }]} onPress={vote} activeOpacity={0.85}>
+              <Text style={styles.spotEmoji}>🗳️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.spotName}>Not sure yet? Let the squad vote</Text>
+                <Text style={styles.spotMeta}>Pick your people, everyone suggests and votes in the Space</Text>
+              </View>
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+          </>
+        ) : null}
+
+        {step === 1 ? (
         <View style={{ flexDirection: 'row', marginBottom: 16 }}>
           {['Tonight', 'Tomorrow'].map((t, i) => (
             <TouchableOpacity key={t} style={[styles.chip, day === i && styles.chipPink]} onPress={() => setDay(i)} activeOpacity={0.85}>
@@ -119,9 +249,15 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
             </TouchableOpacity>
           ))}
         </View>
+        ) : null}
 
         {step === 1 ? (
           <>
+            {picked ? (
+              <View style={styles.pickedBox}>
+                <Text style={styles.pickedText} numberOfLines={1}>{picked.event ? `🎉 ${picked.event.title} · ${eventWhen(picked.event)}` : `${vibe.emoji} ${picked.place.name}`}</Text>
+              </View>
+            ) : null}
             <Text style={styles.nameLabel}>NAME YOUR SPACE</Text>
             <TextInput style={[styles.input, { flex: 0, marginBottom: 16 }]} value={spaceName} onChangeText={setSpaceName} placeholder={autoName} placeholderTextColor={C.faint} maxLength={60} keyboardAppearance="dark" />
             <Text style={styles.lead}>Who's pulling up? Tap to add. They get the invite instantly.</Text>
@@ -162,11 +298,22 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
               }}
             />
             <TouchableOpacity style={[styles.cta, !people.length && styles.ctaOff]} onPress={() => (people.length ? setStep(2) : Alert.alert('Add your people', 'Pick at least one friend'))} activeOpacity={0.85}>
-              <Text style={styles.ctaText}>NEXT: PICK A SPOT →</Text>
+              <Text style={styles.ctaText}>{picked ? 'NEXT: LOCK IT IN →' : 'NEXT: PICK A SPOT →'}</Text>
             </TouchableOpacity>
           </>
-        ) : (
+        ) : null}
+        {step === 2 ? (
           <>
+            {picked ? (
+              <View style={[styles.spot, styles.spotOn]}>
+                <Text style={styles.spotEmoji}>{picked.event ? '🎉' : vibe.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.spotName, { color: C.onLime }]} numberOfLines={1}>{picked.event ? picked.event.title : picked.place.name}</Text>
+                  <Text style={[styles.spotMeta, { color: C.onLime }]} numberOfLines={1}>{picked.event ? `${picked.event.venue_name} · ${eventWhen(picked.event)}` : [picked.place.km != null ? showKm(picked.place.km) : null, picked.place.area].filter(Boolean).join(' · ')}</Text>
+                </View>
+              </View>
+            ) : (
+            <>
             <TouchableOpacity style={[styles.spot, !spot && styles.spotOn]} onPress={() => setSpot(null)} activeOpacity={0.85}>
               <Text style={styles.spotEmoji}>🗳️</Text>
               <View style={{ flex: 1 }}>
@@ -188,7 +335,9 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
               );
             })}
             {spots && !spots.length ? <Text style={styles.muted}>Couldn't find spots nearby. Let the squad vote instead.</Text> : null}
-            {spot ? (
+            </>
+            )}
+            {spot && !(picked && picked.event) && vibe.table !== false ? (
               <TouchableOpacity style={styles.tableRow} onPress={() => setWantTable(!wantTable)} activeOpacity={0.85}>
                 <View style={[styles.box, wantTable && styles.boxOn]}>
                   <Text style={styles.boxTick}>{wantTable ? '✓' : ''}</Text>
@@ -202,10 +351,23 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
             <TouchableOpacity style={styles.cta} onPress={lockIn} disabled={saving} activeOpacity={0.85}>
               <Text style={styles.ctaText}>{saving ? 'Creating…' : 'LOCK IT IN 🤟'}</Text>
             </TouchableOpacity>
-            <Text style={styles.foot}>{people.length + 1} people · {vibe.label} · {day ? 'tomorrow' : 'tonight'}</Text>
+            <Text style={styles.foot}>{people.length + 1} people · {picked && picked.event ? 'event' : vibe.label} · {dayWord}</Text>
           </>
-        )}
+        ) : null}
       </ScrollView>
+      {/* 🍽️ Book table straight from discover: its own Space is made (or joined) for the booking */}
+      <BookTable
+        visible={!!standalone}
+        place={standalone}
+        party={null}
+        guestsDefault={2}
+        onBooked={(b) => { if (b && b.party_id) setStandalone({ ...standalone, spaceId: b.party_id }); }}
+        onClose={() => {
+          const id = standalone && standalone.spaceId;
+          setStandalone(null);
+          if (id) onCreated(id, false);
+        }}
+      />
       <BookTable
         visible={!!booking}
         place={booking ? booking.place : null}
@@ -222,6 +384,26 @@ export default function PullUpScreen({ initialVibe = 'predrinks', onBack, onCrea
 }
 
 const styles = StyleSheet.create({
+  seg: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, marginBottom: 12 },
+  segBtn: { flex: 1, borderRadius: 12, paddingVertical: 10, alignItems: 'center' },
+  segOn: { backgroundColor: C.lime },
+  segText: { color: C.sub, fontSize: 15, fontWeight: '900' },
+  placeCard: { backgroundColor: C.card, borderRadius: 20, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: C.border },
+  placeTop: { flexDirection: 'row', alignItems: 'center' },
+  placeEmoji: { fontSize: 30, marginRight: 12 },
+  placeName: { fontFamily: F.bold, color: C.text, fontSize: 16 },
+  placeMeta: { color: C.sub, fontSize: 13, marginTop: 2 },
+  placeBtns: { flexDirection: 'row', marginTop: 12 },
+  planBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginRight: 8 },
+  planBtnText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
+  bookBtn: { flex: 1, borderWidth: 2, borderColor: C.cyan, borderRadius: 14, paddingVertical: 9, alignItems: 'center' },
+  bookBtnText: { color: C.cyan, fontSize: 14, fontWeight: '900' },
+  eventCard: { backgroundColor: C.card, borderRadius: 22, overflow: 'hidden', marginBottom: 12, borderWidth: 2, borderColor: C.violet },
+  eventPoster: { width: '100%', height: 150, backgroundColor: '#2A1B5E' },
+  eventWhen: { fontFamily: F.pixel, color: C.lime, fontSize: 10 },
+  eventTitle: { fontFamily: F.display, color: C.text, fontSize: 20, marginTop: 4 },
+  pickedBox: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 14 },
+  pickedText: { color: C.text, fontSize: 14, fontWeight: '800' },
   page: { flex: 1, backgroundColor: C.bg },
   pad: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 50 },
   back: { color: C.lime, fontSize: 16, fontWeight: '600', marginBottom: 10 },

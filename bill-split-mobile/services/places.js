@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Location from 'expo-location';
 import { Linking } from 'react-native';
 import { supabase } from './supabaseClient';
@@ -41,7 +42,15 @@ export async function getMyLocation({ ask = true } = {}) {
     let perm = await Location.getForegroundPermissionsAsync();
     if (perm.status !== 'granted' && ask && perm.canAskAgain) {
       // first time: explain why before the system pop-up
-      if (perm.status === 'undetermined' && primer && !(await primer())) return { status: 'denied', coords: PALAKKAD };
+      if (perm.status === 'undetermined' && primer) {
+        // "Not now" is remembered for 3 days, so the explainer doesn't pop up on every screen
+        const later = Number(await AsyncStorage.getItem('vo_loc_not_now').catch(() => 0)) || 0;
+        if (Date.now() - later < 3 * 864e5) return { status: 'denied', coords: PALAKKAD };
+        if (!(await primer())) {
+          AsyncStorage.setItem('vo_loc_not_now', String(Date.now())).catch(() => {});
+          return { status: 'denied', coords: PALAKKAD };
+        }
+      }
       perm = await Location.requestForegroundPermissionsAsync();
     }
     if (perm.status !== 'granted') {
