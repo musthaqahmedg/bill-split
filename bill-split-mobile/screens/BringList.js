@@ -6,6 +6,7 @@ import { waNumber } from '../services/parties';
 import { baseName, canPlan, planFor } from '../services/planner';
 import { supabase } from '../services/supabaseClient';
 import { C, F } from '../services/theme';
+import { costIn } from '../services/houseplan';
 
 // Quick ideas by plan type
 const IDEAS = {
@@ -145,6 +146,16 @@ export default function BringList({ party }) {
         <Text style={styles.title}>🛒 Who brings what</Text>
         {items && items.length ? <Text style={styles.count}>{covered}/{items.length} covered · {ready} ready</Text> : null}
       </View>
+      {(() => {
+        const est = (items || []).reduce((t, it) => t + costIn(it.name), 0);
+        if (!est) return null;
+        const budget = Number(party.budget) || 0;
+        return (
+          <Text style={[styles.tally, budget && est > budget && { color: C.red }]}>
+            💰 Estimated ₹{est.toLocaleString('en-IN')}{budget ? ` of ₹${budget.toLocaleString('en-IN')} budget${est > budget ? ' · over' : ` · ₹${(budget - est).toLocaleString('en-IN')} left`}` : ''}
+          </Text>
+        );
+      })()}
 
       {canPlan(party.kind) && (
         <View style={styles.plan}>
@@ -263,6 +274,7 @@ const styles = StyleSheet.create({
   box: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginBottom: 14 },
   top: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
   title: { color: C.text, fontSize: 16, fontWeight: '800' },
+  tally: { color: C.lime, fontSize: 13, fontWeight: '800', marginTop: 6, marginBottom: 4 },
   count: { color: C.green, fontSize: 12, fontWeight: '700' },
   plan: { backgroundColor: C.cardHi, borderRadius: 14, padding: 12, marginBottom: 12 },
   planTitle: { color: C.text, fontSize: 15, fontWeight: '800' },

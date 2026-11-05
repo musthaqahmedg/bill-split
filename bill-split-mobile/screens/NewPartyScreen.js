@@ -14,6 +14,9 @@ import { createParty, sharesFor, updateParty } from '../services/parties';
 import { KINDS, kindOf } from '../services/partyKinds';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import { C, F } from '../services/theme';
+import { Linking } from 'react-native';
+import { NEEDS, planItems, planTotal, prepTips, shopLink } from '../services/houseplan';
+import { supabase } from '../services/supabaseClient';
 
 // Party name ideas that change every few seconds in the empty box
 const IDEAS = [
@@ -124,6 +127,15 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
   const [special, setSpecial] = useState(ex && ex.special_person ? ex.special_person : 'Me');
 
   const [idea, setIdea] = useState(0);
+  // 🏠 House Party: what's needed (feeds the budget + the shared list)
+  const isHouse = kind === 'house';
+  const [needs, setNeeds] = useState(['food', 'snacks', 'drinks', 'ice', 'cups']);
+  const [budgetTouched, setBudgetTouched] = useState(!!ex);
+  const guests = Math.max(people.length, 1);
+  useEffect(() => {
+    if (isHouse && !budgetTouched) setBudget(String(planTotal(needs, guests) || ''));
+  }, [needs, guests, isHouse]);
+  const toggleNeed = (k) => setNeeds(needs.includes(k) ? needs.filter((x) => x !== k) : [...needs, k]);
 
   // 💾 New plans save themselves as a draft, so leaving the page never loses anything
   const DRAFT = 'vibeout.planDraft';
@@ -238,6 +250,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
   const next = () => {
     if (step === 0 && !title.trim()) return Alert.alert('Name needed', `Give it a name, e.g. ${kindOf(kind).ideas[0]}`);
     if (step === 2 && people.length < 2) return Alert.alert('Add people', 'Add at least one friend');
+    if (resume) setResume(null); // moved on without the old draft → start saving this one
     go(step + 1);
   };
 
@@ -253,6 +266,17 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
       } else {
         const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null, eventId: ex ? null : eventId });
         AsyncStorage.removeItem(DRAFT).catch(() => {});
+        if (isHouse && needs.length) {
+          // 🏠 what's needed → the shared "who brings what" list (with rough costs)
+          try {
+            const { data: me } = await supabase.from('party_members').select('id').eq('party_id', party.id).eq('name', 'Me').maybeSingle();
+            if (me && party.share_token) {
+              for (const it of planItems(needs, guests)) {
+                await supabase.rpc('add_party_item', { p_token: party.share_token, p_member: me.id, p_name: it.name.slice(0, 80) });
+              }
+            }
+          } catch (e) {} // the party is saved either way
+        }
         onCreated(party.id);
       }
     } catch (e) {
@@ -278,8 +302,8 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
       <View style={styles.kickerPill}>
         <Text style={styles.kickerText}>{ex ? 'EDIT PLAN · ' : ''}STEP {step + 1} OF 4 · {STEPS[step].kicker}</Text>
       </View>
-      <Text style={styles.title}>{STEPS[step].title}</Text>
-      {resume ? (
+      <Text style={styles.title}>{isHouse && step === 3 ? "What's the\nplan? 📝" : isHouse && step === 0 ? 'Name your\nparty 🏠' : STEPS[step].title}</Text>
+      {resume && step === 0 && (!initialKind || (resume.kind || 'party') === initialKind) ? (
         <View style={styles.draftBox}>
           <Text style={styles.draftTitle}>📝 Finish your unsaved plan?</Text>
           <Text style={styles.draftSub} numberOfLines={1}>
@@ -418,7 +442,59 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
           </>
         )}
 
-        {step === 3 && (
+        {step === 3 && isHouse && (
+          <>
+        <Text style={styles.lead}>What do we need? Tap to add. It goes on the shared list so friends can say who brings what.</Text>
+        <View style={styles.chips}>
+          {NEEDS.map((x) => {
+            const on = needs.includes(x.key);
+            return (
+              <TouchableOpacity key={x.key} style={[styles.kind, { borderColor: C.lime }, on && styles.kindOn]} onPress={() => toggleNeed(x.key)}>
+                <Text style={[styles.kindText, on && styles.kindTextOn]}>{x.emoji} {x.label}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+        {planItems(needs, guests).map((it) => {
+          const shop = NEEDS.find((x) => x.key === it.key).shop;
+          return (
+            <View key={it.key} style={styles.needRow}>
+              <Text style={styles.needName}>{it.name.replace(/ · ~₹[\d,]+$/, '')}</Text>
+              <Text style={styles.needCost}>{it.cost ? inr(it.cost) : 'free'}</Text>
+              {shop ? (
+                <TouchableOpacity onPress={() => Linking.openURL(shopLink(shop)).catch(() => {})} hitSlop={8}>
+                  <Text style={styles.needShop}>📍 Where to buy</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          );
+        })}
+        <View style={styles.tips}>
+          {prepTips(needs, guests).map((t) => <Text key={t} style={styles.tip}>{t}</Text>)}
+        </View>
+
+        <View onLayout={keep('budget')}>
+          <Text style={styles.label}>Party budget (₹) · about {inr(Number(budget) / guests)} each for {guests}</Text>
+        </View>
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={styles.input} value={budget} onChangeText={(t) => { setBudgetTouched(true); setBudget(t.replace(/[^0-9]/g, '')); }}
+          onFocus={() => scrollTo('budget')}
+          placeholder="e.g. 3,000" placeholderTextColor={C.faint} keyboardAppearance="dark" keyboardType="number-pad" />
+
+        <Text style={styles.label}>Who pays?</Text>
+        <View style={styles.chips}>
+          {[
+            ['equal', '👥 Everyone chips in'],
+            ['treat', "🎁 I'm treating"],
+          ].map(([k, label]) => (
+            <TouchableOpacity key={k} style={[styles.mode, mode === k && styles.modeOn]} onPress={() => setMode(k)}>
+              <Text style={[styles.modeText, mode === k && styles.modeTextOn]}>{label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+          </>
+        )}
+        {step === 3 && !isHouse && (
           <>
         <Text style={styles.lead}>Price is per person. We split the bill after.</Text>
         {TICKETS.map((t) => {
@@ -547,6 +623,12 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 }
 
 const styles = StyleSheet.create({
+  needRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 8 },
+  needName: { flex: 1, color: C.text, fontSize: 14, fontWeight: '700', marginRight: 8 },
+  needCost: { color: C.lime, fontSize: 14, fontWeight: '900' },
+  needShop: { width: '100%', color: C.cyan, fontSize: 13, fontWeight: '700', marginTop: 6 },
+  tips: { backgroundColor: C.cardHi, borderRadius: 14, padding: 12, marginTop: 4, marginBottom: 4 },
+  tip: { color: C.sub, fontSize: 13, lineHeight: 19 },
   labelSoft: { color: C.faint, fontSize: 13 },
   ticket: { flexDirection: 'row', alignItems: 'center', borderRadius: 18, paddingVertical: 16, paddingLeft: 18, paddingRight: 16, marginBottom: 10, overflow: 'hidden', borderWidth: 3, borderColor: 'transparent', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   ticketOn: { borderColor: '#fff' },

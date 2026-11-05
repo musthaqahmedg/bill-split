@@ -423,3 +423,18 @@ test('tonight budget overrides the monthly allowance; week sums Mon→today', as
   assert.equal(w.left, 1300);
   assert.equal(w.day, 3);
 });
+
+test('🏠 house party plan: items, costs and total for N guests', async () => {
+  const { planItems, planTotal, costIn, prepTips } = await import('../services/houseplan.js');
+  const items = planItems(['food', 'ice', 'games'], 8);
+  assert.equal(items.length, 3);
+  assert.match(items[0].name, /3 large pizzas/);
+  assert.equal(items[0].cost, 1760); // 8 × 220
+  assert.equal(items[1].cost, 160); // 4 kg × 40
+  assert.equal(items[2].cost, 0);
+  assert.ok(!items[2].name.includes('₹')); // free items show no price
+  assert.equal(planTotal(['food', 'ice', 'games'], 8), 1920);
+  assert.equal(costIn(items[0].name), 1760);
+  assert.equal(costIn('Chips'), 0);
+  assert.ok(prepTips(['ice', 'food'], 8).length <= 3);
+});

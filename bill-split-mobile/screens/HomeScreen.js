@@ -220,10 +220,10 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
     : clock;
 
   const TILES = [
-    { key: 'house', emoji: '🏠', title: 'House\nParty', sub: 'Host at home', bg: C.lime, badge: nextHouse ? `${goingOf(nextHouse)} going` : null, go: () => onPlan && onPlan('house') },
-    { key: 'night', emoji: '🌙', title: 'Plan a\nNight', sub: 'Go out with squad', bg: C.violet, badge: nextNight ? `${goingOf(nextNight)} in` : null, go: () => onPullUp && onPullUp(null) },
-    { key: 'split', emoji: '🧾', title: 'Split\nBills', sub: 'Pay what you had', bg: C.pink, badge: openCount ? `${openCount} due` : null, go: onBills || onNewBill },
-    { key: 'table', emoji: '🍽️', title: 'Book\nTable', sub: 'Reserve a spot', bg: C.cyan, badge: null, go: onBookTable },
+    { key: 'house', emoji: '🏠', title: 'House\nParty', sub: 'Host parties, movie nights & private hangouts', bg: C.lime, badge: nextHouse ? `${goingOf(nextHouse)} going` : null, go: () => onPlan && onPlan('house') },
+    { key: 'night', emoji: '🌙', title: 'Plan a\nNight', sub: 'Discover places, DJ nights & upcoming events', bg: C.violet, badge: nextNight ? `${goingOf(nextNight)} in` : null, go: () => onPullUp && onPullUp(null) },
+    { key: 'split', emoji: '🧾', title: 'Split\nBills', sub: 'Scan bills and pay only your share', bg: C.pink, badge: openCount ? `${openCount} due` : null, go: onBills || onNewBill },
+    { key: 'table', emoji: '🍽️', title: 'Book\nTable', sub: 'Discover spots and reserve your table', bg: C.cyan, badge: null, go: onBookTable },
   ];
 
   const header = billsMode ? (
