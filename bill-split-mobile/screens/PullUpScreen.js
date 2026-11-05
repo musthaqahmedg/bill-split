@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import NightSky from '../components/NightSky';
 import { recentFriends } from '../services/bills';
@@ -10,6 +10,7 @@ import { C, F, STICK } from '../services/theme';
 import { eventsNear, eventWhen } from '../services/events';
 import { Image, Linking } from 'react-native';
 import BookTable from './BookTable';
+import MenuSheet from './MenuSheet';
 import ContactPicker from './ContactPicker';
 
 // 🤟 "Pull up?" (new UX): the fast way to plan tonight. Vibe → your people → a spot → LOCK IT IN.
@@ -48,7 +49,8 @@ const HUES = [C.lime, C.pink, C.violet, C.cyan, '#FFD84D', '#7CFFB2', '#FF8A3D',
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const dayText = (d) => d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 
-export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCreated }) {
+export default function PullUpScreen({ initialVibe = 'restaurants', bookOnly = false, onBack, onCreated }) {
+  const [menuFor, setMenuFor] = useState(null); // 📋 menu sheet
   const [vibe, setVibe] = useState(PLACE_CATS.find((v) => v.key === initialVibe) || VIBES.find((v) => v.key === initialVibe) || PLACE_CATS[0]);
   const [step, setStep] = useState(0); // 0 discover · 1 people · 2 lock it in
   const [mode, setMode] = useState('places'); // places · events
@@ -102,6 +104,7 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
   };
   const vote = () => { setPicked(null); setSpot(null); setStep(1); };
   const [standalone, setStandalone] = useState(null); // 🍽️ Book table straight from discover
+  const bookedSpace = useRef(null); // the Space the booking landed in (read right after the sheet closes)
 
   useEffect(() => {
     if (step !== 2 || picked) return;
@@ -158,11 +161,12 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
         <TouchableOpacity onPress={step > 0 ? () => setStep(step - 1) : onBack} hitSlop={10}>
           <Text style={styles.back}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>{step === 0 ? 'PLAN A\nNIGHT' : step === 1 ? 'WHO’S IN?' : picked ? 'LOCK IT IN' : 'WHERE FIRST?'}</Text>
-        <Text style={styles.kicker}>STEP {step + 1} OF 3 · {step === 0 ? 'FIND THE SPOT' : step === 1 ? 'PICK YOUR PEOPLE' : picked ? 'CHECK AND GO' : 'PICK A SPOT'}</Text>
+        <Text style={styles.title}>{step === 0 && bookOnly ? 'BOOK A\nTABLE' : step === 0 ? 'PLAN A\nNIGHT' : step === 1 ? 'WHO’S IN?' : picked ? 'LOCK IT IN' : 'WHERE FIRST?'}</Text>
+        <Text style={styles.kicker}>{bookOnly && step === 0 ? 'PICK A SPOT · SEE THE MENU · CHOOSE A TIME' : `STEP ${step + 1} OF 3 · `}{bookOnly && step === 0 ? '' : step === 0 ? 'FIND THE SPOT' : step === 1 ? 'PICK YOUR PEOPLE' : picked ? 'CHECK AND GO' : 'PICK A SPOT'}</Text>
 
         {step === 0 ? (
           <>
+            {bookOnly ? null : (
             <View style={styles.seg}>
               {[['places', '📍 Places'], ['events', '🎉 Events']].map(([k, label]) => (
                 <TouchableOpacity key={k} style={[styles.segBtn, mode === k && styles.segOn]} onPress={() => setMode(k)} activeOpacity={0.85}>
@@ -170,8 +174,9 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
                 </TouchableOpacity>
               ))}
             </View>
+            )}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-              {(mode === 'places' ? PLACE_CATS.map((v) => [v.key, `${v.emoji} ${v.label}`, vibe.key === v.key, () => setVibe(v)]) : EVENT_WHEN.map(([k, l]) => [k, l, when === k, () => setWhen(k)])).map(([k, label, on, go]) => (
+              {(mode === 'places' ? PLACE_CATS.filter((v) => !bookOnly || v.table).map((v) => [v.key, `${v.emoji} ${v.label}`, vibe.key === v.key, () => setVibe(v)]) : EVENT_WHEN.map(([k, l]) => [k, l, when === k, () => setWhen(k)])).map(([k, label, on, go]) => (
                 <TouchableOpacity key={k} style={[styles.chip, on && styles.chipOn]} onPress={go} activeOpacity={0.85}>
                   <Text style={[styles.chipText, on && { color: C.onLime }]}>{label}</Text>
                 </TouchableOpacity>
@@ -191,12 +196,18 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
                       </View>
                     </View>
                     <View style={styles.placeBtns}>
+                      {bookOnly ? (
+                        <TouchableOpacity style={styles.bookBtn} onPress={() => setMenuFor(p.area ? `${p.name}, ${p.area}` : p.name)} activeOpacity={0.85}>
+                          <Text style={styles.bookBtnText}>📋 Menu</Text>
+                        </TouchableOpacity>
+                      ) : (
                       <TouchableOpacity style={styles.planBtn} onPress={() => pickPlace(p)} activeOpacity={0.85}>
                         <Text style={styles.planBtnText}>Plan here →</Text>
                       </TouchableOpacity>
+                      )}
                       {vibe.table ? (
-                        <TouchableOpacity style={styles.bookBtn} onPress={async () => { const det = await placeDetails([p.id]).catch(() => ({})); setStandalone({ ...p, phone: (det[p.id] || {}).phone || null }); }} activeOpacity={0.85}>
-                          <Text style={styles.bookBtnText}>🍽️ Book table</Text>
+                        <TouchableOpacity style={bookOnly ? [styles.planBtn, { marginRight: 0, marginLeft: 8 }] : styles.bookBtn} onPress={async () => { const det = await placeDetails([p.id]).catch(() => ({})); setStandalone({ ...p, phone: (det[p.id] || {}).phone || null }); }} activeOpacity={0.85}>
+                          <Text style={bookOnly ? styles.planBtnText : styles.bookBtnText}>🍽️ Book table</Text>
                         </TouchableOpacity>
                       ) : null}
                     </View>
@@ -231,6 +242,7 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
               </>
             )}
 
+            {bookOnly ? null : (
             <TouchableOpacity style={[styles.spot, { marginTop: 8 }]} onPress={vote} activeOpacity={0.85}>
               <Text style={styles.spotEmoji}>🗳️</Text>
               <View style={{ flex: 1 }}>
@@ -238,6 +250,7 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
                 <Text style={styles.spotMeta}>Pick your people, everyone suggests and votes in the Space</Text>
               </View>
             </TouchableOpacity>
+            )}
           </>
         ) : null}
 
@@ -361,13 +374,15 @@ export default function PullUpScreen({ initialVibe = 'restaurants', onBack, onCr
         place={standalone}
         party={null}
         guestsDefault={2}
-        onBooked={(b) => { if (b && b.party_id) setStandalone({ ...standalone, spaceId: b.party_id }); }}
+        onBooked={(b) => { if (b && b.party_id) bookedSpace.current = b.party_id; }}
         onClose={() => {
-          const id = standalone && standalone.spaceId;
+          const id = bookedSpace.current;
+          bookedSpace.current = null;
           setStandalone(null);
-          if (id) onCreated(id, false);
+          if (id) onCreated(id, false, 'booking'); // open the Space on its Booking tab
         }}
       />
+      <MenuSheet place={menuFor} onClose={() => setMenuFor(null)} />
       <BookTable
         visible={!!booking}
         place={booking ? booking.place : null}

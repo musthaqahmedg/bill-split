@@ -797,9 +797,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return (
       <PullUpScreen
         key={pullVibe}
-        initialVibe={pullVibe}
+        initialVibe={pullVibe === 'book' ? 'restaurants' : pullVibe}
+        bookOnly={pullVibe === 'book'}
         onBack={() => setScreen('home')}
-        onCreated={(id: any) => {
+        onCreated={(id: any, _vote: any, tab: any) => {
+          if (tab) setPartyTab(tab);
           setCelebrate(true);
           setOpenPartyId(id);
           setScreen('party');
@@ -977,8 +979,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       onBills={() => setScreen('bills')}
       onRooms={() => setScreen('parties')}
       onBookTable={() => {
-        setNearby({ from: 'home', category: 'restobars', title: '🍽️ Book a table' });
-        setScreen('nearby');
+        setPullVibe('book'); // 🍽️ Book a Table: spot → menu → time & guests → request → its Space
+        setScreen('pullUp');
       }}
       onPullUp={(v: any) => {
         setPullVibe(v);
