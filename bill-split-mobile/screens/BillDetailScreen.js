@@ -417,8 +417,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
                           <Text style={styles.upiText}>💸 Pay {inr(m.amount)}{outOf('Me').length > 1 ? ` to ${show(m.to)}` : ''} with UPI</Text>
                         </TouchableOpacity>
                       )) : null}
-                      <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(p)}>
-                        <Text style={styles.markText}>{p.name === 'Me' ? "I've paid" : 'Mark paid'}</Text>
+                      {p.paid_claimed_at && p.name !== 'Me' ? <Text style={styles.saysPaid}>💸 Says paid</Text> : null}
+                      <TouchableOpacity style={[styles.markBtn, p.paid_claimed_at && p.name !== 'Me' && styles.receivedBtn]} onPress={() => togglePaid(p)}>
+                        <Text style={[styles.markText, p.paid_claimed_at && p.name !== 'Me' && { color: C.onLime }]}>{p.name === 'Me' ? "I've paid" : p.paid_claimed_at ? 'Received ✓' : 'Mark paid'}</Text>
                       </TouchableOpacity>
                       {p.name !== 'Me' ? (
                         <TouchableOpacity style={styles.remindBtn} onPress={() => remind(p)}>
@@ -464,6 +465,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 }
 
 const styles = StyleSheet.create({
+  saysPaid: { color: C.lime, fontSize: 13, fontWeight: '800', marginRight: 8, marginBottom: 6 },
+  receivedBtn: { backgroundColor: C.lime, borderColor: C.lime },
   upiBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, marginBottom: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   upiText: { color: C.onLime, fontSize: 14, fontWeight: '900' },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },

@@ -180,7 +180,7 @@ export async function listBills() {
 export async function getBill(id) {
   const { data, error } = await supabase
     .from('bills')
-    .select('*, bill_items(id, name, price, quantity, kind, about, round, item_claims(participant_id, paid_by, units)), bill_participants(id, name, amount_due, paid_amount, not_drinking, paid_at)')
+    .select('*, bill_items(id, name, price, quantity, kind, about, round, item_claims(participant_id, paid_by, units)), bill_participants(id, name, amount_due, paid_amount, not_drinking, paid_at, paid_claimed_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -300,7 +300,7 @@ export async function listBillsDetailed() {
 export async function billsForParty(partyId) {
   const { data, error } = await supabase
     .from('bills')
-    .select('id, total, created_at, restaurant, title, paid_mode, bill_participants(name, amount_due, paid_amount, paid_at)')
+    .select('id, total, created_at, restaurant, title, paid_mode, share_token, bill_participants(id, name, amount_due, paid_amount, paid_at)')
     .eq('party_id', partyId)
     .order('created_at', { ascending: false });
   if (error) throw error;

@@ -93,3 +93,21 @@ export function homeBalance(bills) {
   });
   return { owed, owe, unpaid };
 }
+
+// 🗂️ One Space, many bills: what each friend and I owe each other IN TOTAL (only unpaid moves count).
+// Returns [{ name, net }] — net > 0: they owe me · net < 0: I owe them.
+export function spaceNet(bills) {
+  const net = {};
+  (bills || []).forEach((b) => {
+    if (b.paid_mode === 'unpaid') return;
+    const ps = b.bill_participants || [];
+    const dues = Object.fromEntries(ps.map((p) => [p.name, Math.round(Number(p.amount_due) || 0)]));
+    const done = new Set(ps.filter((p) => p.paid_at).map((p) => p.name));
+    transfers(dues, savedPaidMap(b, ps)).forEach((m) => {
+      if (done.has(m.from)) return; // already paid
+      if (m.to === 'Me') net[m.from] = (net[m.from] || 0) + m.amount;
+      else if (m.from === 'Me') net[m.to] = (net[m.to] || 0) - m.amount;
+    });
+  });
+  return Object.entries(net).filter(([, v]) => v !== 0).map(([name, v]) => ({ name, net: v })).sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
+}

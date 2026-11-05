@@ -21,7 +21,7 @@ import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import { countdown, planBucket, untilStart } from '../services/when';
 import VoteTab from './VoteTab';
-import { SpaceBills, SpaceMoney } from './SpaceParts';
+import { SpaceBalances, SpaceBills, SpaceMoney } from './SpaceParts';
 import InviteSheet from './InviteSheet';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -310,6 +310,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
                 </View>
               </View>
               <SpaceMoney party={party} />
+              <SpaceBalances partyId={party.id} />
               {onEdit ? (
                 <TouchableOpacity style={styles.invite} onPress={() => onEdit(party)} activeOpacity={0.85}>
                   <Text style={styles.inviteIcon}>✏️</Text>
@@ -377,6 +378,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
           ) : null}
 
 
+          {tab === 'bills' ? <SpaceBalances partyId={party.id} /> : null}
           {tab === 'bills' ? <SpaceBills partyId={party.id} onOpenBill={onOpenBill} /> : null}
           {tab === 'bills' ? (
             <>
@@ -456,8 +458,9 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
                         </TouchableOpacity>
                       ) : (
                         <>
-                          <TouchableOpacity style={styles.markBtn} onPress={() => togglePaid(m)}>
-                            <Text style={styles.markText}>Mark paid</Text>
+                          {m.paid_claimed_at ? <Text style={styles.saysPaid}>💸 Says paid</Text> : null}
+                          <TouchableOpacity style={[styles.markBtn, m.paid_claimed_at && styles.receivedBtn]} onPress={() => togglePaid(m)}>
+                            <Text style={[styles.markText, m.paid_claimed_at && { color: C.onLime }]}>{m.paid_claimed_at ? 'Received ✓' : 'Mark paid'}</Text>
                           </TouchableOpacity>
                           <TouchableOpacity style={styles.remindBtn} onPress={() => remind(m)}>
                             <Text style={styles.remindText}>Remind</Text>
@@ -517,6 +520,8 @@ function Countdown({ party }) {
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 
 const styles = StyleSheet.create({
+  saysPaid: { color: C.lime, fontSize: 13, fontWeight: '800', marginRight: 8, alignSelf: 'center' },
+  receivedBtn: { backgroundColor: C.lime, borderColor: C.lime },
   evCover: { width: '100%', height: 180, borderRadius: 20, marginBottom: 14, backgroundColor: C.card, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20 },
   center: { justifyContent: 'center', alignItems: 'center' },

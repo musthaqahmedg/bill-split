@@ -438,3 +438,21 @@ test('🏠 house party plan: items, costs and total for N guests', async () => {
   assert.equal(costIn('Chips'), 0);
   assert.ok(prepTips(['ice', 'food'], 8).length <= 3);
 });
+
+test('🗂️ Space netting: two bills, I paid one, Arun paid the other → one net amount each', async () => {
+  const { spaceNet } = await import('../services/settle.js');
+  const bills = [
+    // I paid ₹900: Arun owes me 300, Bibin owes me 300
+    { paid_mode: 'me', total: 900, bill_participants: [{ name: 'Me', amount_due: 300, paid_amount: 900 }, { name: 'Arun', amount_due: 300 }, { name: 'Bibin', amount_due: 300 }] },
+    // Arun paid ₹600: I owe Arun 200, Bibin owes Arun 200 (not mine)
+    { paid_mode: 'friend', total: 600, bill_participants: [{ name: 'Me', amount_due: 200 }, { name: 'Arun', amount_due: 200, paid_amount: 600 }, { name: 'Bibin', amount_due: 200 }] },
+  ];
+  const n = Object.fromEntries(spaceNet(bills).map((x) => [x.name, x.net]));
+  assert.equal(n.Arun, 100); // 300 − 200
+  assert.equal(n.Bibin, 300);
+  // Bibin paid me already → drops out
+  bills[0].bill_participants[2].paid_at = '2026-11-05';
+  const n2 = Object.fromEntries(spaceNet(bills).map((x) => [x.name, x.net]));
+  assert.equal(n2.Bibin, undefined);
+  assert.equal(n2.Arun, 100);
+});

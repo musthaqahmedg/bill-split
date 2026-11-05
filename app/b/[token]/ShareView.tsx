@@ -5,7 +5,7 @@ import { supabase } from '../../../lib/supabaseBrowser';
 
 type Claim = { participant_id: string; paid_by: string | null; units?: number };
 type Item = { id: string; name: string; price: number; quantity: number; kind: string | null; about: string | null; claims: Claim[] };
-type Person = { id: string; name: string; amount_due: number; paid_amount?: number; not_drinking: boolean; paid: boolean; tagged?: boolean };
+type Person = { id: string; name: string; amount_due: number; paid_amount?: number; not_drinking: boolean; paid: boolean; says_paid?: boolean; tagged?: boolean };
 
 export type SharedBill = {
   restaurant: string | null;
@@ -58,6 +58,12 @@ const upiLink = (upi: string, name: string, amount: number, note: string) =>
 
 export default function ShareView({ bill, token }: { bill: SharedBill; token: string }) {
   const [me, setMe] = useState<string | null>(null);
+  const [claimed, setClaimed] = useState(false); // 💸 said "I've paid" (the host still confirms)
+  const claimPaid = async () => {
+    if (!me) return;
+    const { error } = await supabase().rpc('bill_claim_paid', { p_token: token, p_participant: me });
+    if (!error) setClaimed(true);
+  };
   const [copied, setCopied] = useState(false);
   // 🙋 Tag what I had
   const [tagging, setTagging] = useState(false);
@@ -182,6 +188,11 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
                 </>
               ) : mine.paid ? (
                 <p style={s.youBig}>Paid ✅</p>
+              ) : mine.says_paid || claimed ? (
+                <>
+                  <p style={s.youBig}>💸 Sent</p>
+                  <p style={s.youNote}>We told {payee} you paid. It shows as paid once they confirm they received it.</p>
+                </>
               ) : getsBack > 0 ? (
                 <>
                   <p style={s.youLabel}>💳 You paid the bill. You get back</p>
@@ -201,7 +212,10 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
                 </>
               )}
 
-              {!mine.paid && bill.paid_mode !== 'unpaid' && myMoves.map((m) =>
+              {!mine.paid && !mine.says_paid && !claimed && bill.paid_mode !== 'unpaid' && myMoves.length ? (
+                <button onClick={claimPaid} style={s.claimPaidBtn}>✅ I've paid</button>
+              ) : null}
+              {!mine.paid && !mine.says_paid && !claimed && bill.paid_mode !== 'unpaid' && myMoves.map((m) =>
                 nameOf[m.to] === 'Me' && bill.payee_upi ? (
                   <div key={'pay' + m.to}>
                     <a href={upiLink(bill.payee_upi, payee, m.amount, `${bill.restaurant || 'Bill'} split`)} style={s.payBtn}>
@@ -305,6 +319,7 @@ const s: Record<string, React.CSSProperties> = {
   chipOn: { background: '#8B5CF6', color: '#fff' },
   you: { marginTop: 18, borderTop: '1px solid #3E2470', paddingTop: 16, textAlign: 'center' },
   youLabel: { color: '#B8A6D9', margin: 0, fontSize: 14 },
+  claimPaidBtn: { display: 'block', width: '100%', marginTop: 10, marginBottom: 6, padding: '12px 14px', borderRadius: 14, border: '2px solid #34D399', background: 'transparent', color: '#34D399', fontSize: 15, fontWeight: 800, cursor: 'pointer' },
   youBig: { fontSize: 38, fontWeight: 800, margin: '4px 0', color: '#C9A8FF' },
   youNote: { color: '#8C7AAE', fontSize: 12, margin: '8px 0 0' },
   payBtn: { display: 'block', marginTop: 16, background: '#34D399', color: '#0B2A1F', fontWeight: 800, fontSize: 17, padding: '14px 16px', borderRadius: 14, textDecoration: 'none' },

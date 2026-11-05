@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string; is_pay?: boolean };
 type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null; asked_to?: string | null; asked_name?: string | null };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
-type Member = { id: string; name: string; share: number | null; paid: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
+type Member = { id: string; name: string; share: number | null; paid: boolean; says_paid?: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
 
 export type SharedParty = {
   title: string;
@@ -165,7 +165,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const markPaid = async () => {
     if (!me) return setSendError('Tap your name above first');
     const res = await rpc('guest_mark_paid', { p_token: token, p_member: me });
-    if (res.ok) setMembers((list) => list.map((m) => (m.id === me ? { ...m, paid: true } : m)));
+    if (res.ok) setMembers((list) => list.map((m) => (m.id === me ? { ...m, says_paid: true } : m))); // the host confirms it
   };
 
   const refreshSafety = async () => {
@@ -451,6 +451,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
                     <div style={{ marginTop: 6 }}>🎁 This one is a treat. Nothing to pay!</div>
                   ) : meM.paid ? (
                     <div style={{ marginTop: 6, fontWeight: 800 }}>✅ You’ve paid. Thank you!</div>
+                  ) : meM.says_paid ? (
+                    <div style={{ marginTop: 6, fontWeight: 700 }}>💸 Sent. It shows as paid once {host} confirms they received it.</div>
                   ) : covers[meM.id] ? (
                     <div style={{ marginTop: 6, fontWeight: 700 }}>🤝 {members.find((x) => x.id === covers[meM.id])?.name || 'A friend'} is paying for you. Thank them 💜</div>
                   ) : (

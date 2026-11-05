@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { billsForParty } from '../services/bills';
-import { billBalance } from '../services/settle';
+import { billBalance, spaceNet } from '../services/settle';
+import { show } from '../services/names';
+import PayUpiSheet from './PayUpiSheet';
 import { C, F } from '../services/theme';
 
 // 🗂️ Pieces of a Space: its bills (tap to open) and its money (spent so far vs the budget)
@@ -17,6 +19,49 @@ function useSpaceBills(partyId) {
     billsForParty(partyId).then(setBills).catch(() => setBills([]));
   }, [partyId]);
   return bills;
+}
+
+// 🤝 Everyone's total across all this Space's bills (one number per friend), with Pay with UPI
+export function SpaceBalances({ partyId }) {
+  const bills = useSpaceBills(partyId);
+  const [pay, setPay] = useState(null);
+  if (!bills || bills.length < 1) return null;
+  const rows = spaceNet(bills);
+  if (!rows.length) return null;
+  const payee = (name) => {
+    const b = bills.find((x) => (x.bill_participants || []).some((p) => p.name === name));
+    const pt = b && b.bill_participants.find((p) => p.name === name);
+    return { participantId: pt ? pt.id : null, shareToken: b ? b.share_token : null };
+  };
+  return (
+    <View style={styles.money}>
+      <Text style={styles.kicker}>IN THIS SPACE · ALL BILLS TOGETHER</Text>
+      {rows.map((r) => (
+        <View key={r.name} style={styles.netRow}>
+          <Text style={styles.netText} numberOfLines={1}>
+            {r.net > 0 ? `${show(r.name)} owes you ` : `You owe ${show(r.name)} `}
+            <Text style={{ color: r.net > 0 ? C.lime : C.pink, fontWeight: '900' }}>{inr(Math.abs(r.net))}</Text>
+          </Text>
+          {r.net < 0 ? (
+            <TouchableOpacity style={styles.payBtn} onPress={() => setPay({ to: r.name, amount: -r.net, ...payee(r.name) })} activeOpacity={0.85}>
+              <Text style={styles.payText}>💸 Pay</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ))}
+      <Text style={styles.netHint}>One payment per friend instead of one per bill.</Text>
+      <PayUpiSheet
+        visible={!!pay}
+        onClose={() => setPay(null)}
+        to={pay ? pay.to : ''}
+        amount={pay ? pay.amount : 0}
+        note="VibeOut Space"
+        participantId={pay ? pay.participantId : null}
+        shareToken={pay ? pay.shareToken : null}
+        isCreator
+      />
+    </View>
+  );
 }
 
 export function SpaceBills({ partyId, onOpenBill }) {
@@ -79,5 +124,10 @@ const styles = StyleSheet.create({
   big: { fontFamily: F.display, color: C.text, fontSize: 28 },
   track: { height: 8, borderRadius: 4, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 10 },
   fill: { height: '100%', backgroundColor: C.lime, borderRadius: 4 },
+  netRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 },
+  netText: { flex: 1, color: C.text, fontSize: 15, fontWeight: '700' },
+  payBtn: { backgroundColor: C.lime, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 12, marginLeft: 8 },
+  payText: { color: C.onLime, fontSize: 13, fontWeight: '900' },
+  netHint: { color: C.faint, fontSize: 12, marginTop: 10 },
   mine: { color: C.sub, fontSize: 14, fontWeight: '700', marginTop: 10 },
 });

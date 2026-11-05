@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, event:events(poster_url), party_members(id, name, share, paid_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
+    .select('*, event:events(poster_url), party_members(id, name, share, paid_at, paid_claimed_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
