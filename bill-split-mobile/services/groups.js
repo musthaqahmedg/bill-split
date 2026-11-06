@@ -47,6 +47,9 @@ export async function renameGroup(id, name, emoji) {
 }
 
 export async function deleteGroup(id) {
+  // ✍️ its Manual Split expenses go too (otherwise they'd be left with no group)
+  const { error: e1 } = await supabase.from('bills').delete().eq('group_id', id).eq('kind', 'manual');
+  if (e1) throw e1;
   const { error } = await supabase.from('friend_groups').delete().eq('id', id);
   if (error) throw error;
 }

@@ -6,11 +6,14 @@ import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../se
 import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import ActiveTag from './ActiveTag';
+import GroupMoney from './GroupMoney';
 import FriendButton from './FriendButton';
 import { appUsers, lookupKeys } from '../services/friends';
 import { useFriendsActive } from '../services/active';
 
-export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpenPlan }) {
+export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpenPlan, mode = 'plan', onAddExpense, onEditExpense }) {
+  const split = mode === 'split'; // ✍️ Manual Split: money first, plans hidden
+  const [expCount, setExpCount] = useState(0);
   const activeOf = useFriendsActive();
   const [group, setGroup] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -71,13 +74,13 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
   };
 
   const remove = (m) =>
-    Alert.alert(`Remove ${m.name}?`, 'They will be taken out of this group.', [
+    Alert.alert(`Remove ${m.name}?`, expCount ? 'Their past expenses stay, so balances stay correct.' : 'They will be taken out of this group.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Remove', style: 'destructive', onPress: async () => { await removeMember(m.id); load(); } },
     ]);
 
   const confirmDelete = () =>
-    Alert.alert('Delete this group?', 'Plans made with it are kept.', [
+    Alert.alert('Delete this group?', expCount ? `Its ${expCount} ${expCount === 1 ? 'expense is' : 'expenses are'} deleted too. Plans made with it are kept.` : 'Plans made with it are kept.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => { await deleteGroup(group.id); onDeleted(); } },
     ]);
@@ -96,12 +99,21 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
         keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} tintColor={C.accentSoft} />}
       >
-        <TouchableOpacity style={[styles.planBtn, !members.length && styles.off]} disabled={!members.length} onPress={() => onPlan(group)}>
-          <Text style={styles.planText}>🎉 Plan something with {group.name}</Text>
-          <Text style={styles.planSub}>Everyone gets added in one tap</Text>
-        </TouchableOpacity>
+        {split ? (
+          <GroupMoney
+            group={group}
+            onCount={setExpCount}
+            onAdd={(people) => onAddExpense && onAddExpense(group, people, null)}
+            onEdit={(x, people) => onEditExpense && onEditExpense(group, people, x)}
+          />
+        ) : (
+          <TouchableOpacity style={[styles.planBtn, !members.length && styles.off]} disabled={!members.length} onPress={() => onPlan(group)}>
+            <Text style={styles.planText}>🎉 Plan something with {group.name}</Text>
+            <Text style={styles.planSub}>Everyone gets added in one tap</Text>
+          </TouchableOpacity>
+        )}
 
-        <Text style={styles.label}>Members</Text>
+        <Text style={[styles.label, split && { marginTop: 18 }]}>Members</Text>
         <View style={styles.memberCard}>
           <View style={styles.memberRow}>
             <Text style={styles.memberName}>You</Text>
@@ -141,7 +153,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
           <Text style={styles.addText}>Add to group</Text>
         </TouchableOpacity>
 
-        {group.plans.length > 0 && (
+        {!split && group.plans.length > 0 && (
           <>
             <Text style={styles.label}>Plans with this group</Text>
             {group.plans.map((p) => (

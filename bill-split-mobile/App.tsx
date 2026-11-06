@@ -741,6 +741,15 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return (
       <GroupScreen
         groupId={openGroupId}
+        mode={groupsMode}
+        onAddExpense={(g: any, people: any, x: any) => {
+          setExpenseEdit({ groupId: g.id, groupName: g.name, people, expense: x });
+          setScreen('addExpense');
+        }}
+        onEditExpense={(g: any, people: any, x: any) => {
+          setExpenseEdit({ groupId: g.id, groupName: g.name, people, expense: x });
+          setScreen('addExpense');
+        }}
         onBack={() => setScreen('groups')}
         onDeleted={() => setScreen('groups')}
         onPlan={(g: any) => {
