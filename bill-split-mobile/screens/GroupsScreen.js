@@ -4,9 +4,10 @@ import KeyboardDone from './KeyboardDone';
 import { createGroup, listGroups } from '../services/groups';
 import { C, F } from '../services/theme';
 
-const EMOJIS = ['👥', '🎓', '🏘️', '💼', '⚽', '🏏', '🎮', '👨‍👩‍👧', '💃', '🍻', '✈️', '🔥'];
+const EMOJIS = ['👥', '🎓', '🏘️', '💼', '⚽', '🏏', '🎮', '👨‍👩‍👧', '💃', '🍻', '✈️', '🔥', '🏖️', '🚗', '🎉', '🏠'];
 
-export default function GroupsScreen({ onBack, onOpenGroup }) {
+export default function GroupsScreen({ onBack, onOpenGroup, mode = 'plan' }) {
+  const split = mode === 'split'; // ✍️ opened from Split Bills → Manual Split
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -24,7 +25,7 @@ export default function GroupsScreen({ onBack, onOpenGroup }) {
   useEffect(() => { load(); }, [load]);
 
   const create = async () => {
-    if (!name.trim()) return Alert.alert('Name the group', 'e.g. School gang 🎓');
+    if (!name.trim()) return Alert.alert('Name the group', split ? 'e.g. Goa Trip ✈️' : 'e.g. School gang 🎓');
     try {
       const g = await createGroup(name, emoji);
       setName('');
@@ -40,8 +41,10 @@ export default function GroupsScreen({ onBack, onOpenGroup }) {
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>Groups 👥</Text>
-      <Text style={styles.sub}>Make a group once, then plan anything with them in one tap</Text>
+      <Text style={styles.title}>{split ? 'Manual Split ✍️' : 'Groups 👥'}</Text>
+      <Text style={styles.sub}>
+        {split ? 'Pick a group (or make one), add expenses, and see who owes whom' : 'Make a group once, then plan anything with them in one tap'}
+      </Text>
 
       {creating ? (
         <View style={styles.newBox}>
@@ -53,7 +56,7 @@ export default function GroupsScreen({ onBack, onOpenGroup }) {
             ))}
           </View>
           <TextInput style={styles.input} value={name} onChangeText={setName} autoFocus maxLength={60}
-            placeholder="School gang, Area friends, Office…" placeholderTextColor={C.faint} keyboardAppearance="dark"
+            placeholder={split ? 'Goa Trip, Weekend Party, Flat 4B…' : 'School gang, Area friends, Office…'} placeholderTextColor={C.faint} keyboardAppearance="dark"
             onSubmitEditing={create} returnKeyType="done" />
           <View style={styles.row}>
             <TouchableOpacity style={styles.cancelBtn} onPress={() => setCreating(false)}>

@@ -227,6 +227,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     } // a Discover place only prefills the plan started from it
   }, [screen]);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
+  const [groupsMode, setGroupsMode] = useState<'plan' | 'split'>('plan'); // ✍️ 'split' = opened from Split Bills → Manual Split
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
   const [nearby, setNearby] = useState<any>({ from: 'parties', category: 'restobars', title: null }); // 📍 Nearby screen
@@ -688,7 +689,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setEditPlan(null);
           setScreen('newParty');
         }}
-        onGroups={() => setScreen('groups')}
+        onGroups={() => {
+          setGroupsMode('plan');
+          setScreen('groups');
+        }}
         onMemories={() => setScreen('discover')}
         onNearby={() => {
           setNearby({ from: 'parties', category: 'restobars', title: null });
@@ -705,7 +709,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'groups') {
     return (
       <GroupsScreen
-        onBack={() => setScreen('parties')}
+        mode={groupsMode}
+        onBack={() => setScreen(groupsMode === 'split' ? 'bills' : 'parties')}
         onOpenGroup={(id: any) => {
           setOpenGroupId(id);
           setScreen('group');
@@ -909,6 +914,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
             setScreen('friends');
           } else {
             const to: any = { pullUp: 'pullUp', squad: 'squad', night: 'night', rooms: 'parties', nearby: 'discover', groups: 'groups', money: 'money', spend: 'money', memories: 'memories', notifications: 'notifications', profile: 'profile', yourData: 'yourData', help: 'help' };
+            if (k === 'groups') setGroupsMode('plan');
             setScreen(to[k] || 'home');
           }
         }}
@@ -977,6 +983,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       billsMode={screen === 'bills'}
       onBack={() => setScreen('home')}
       onBills={() => setScreen('bills')}
+      onManualSplit={() => {
+        setGroupsMode('split');
+        setScreen('groups');
+      }}
       onRooms={() => setScreen('parties')}
       onBookTable={() => {
         setPullVibe('book'); // 🍽️ Book a Table: spot → menu → time & guests → request → its Space

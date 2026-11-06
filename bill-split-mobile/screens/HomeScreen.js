@@ -56,7 +56,7 @@ const clockText = () => {
 const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
-export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened, onPullUp, billsMode = false, onBills, onBookTable, onRooms, onBack }) {
+export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onMenu, onPlanEvent, openEventId, onEventOpened, onPullUp, billsMode = false, onBills, onBookTable, onRooms, onBack, onManualSplit }) {
   const [unread] = useUnread();
   const [bills, setBills] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -232,16 +232,29 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         <Text style={styles.backLink}>‹ Back</Text>
       </TouchableOpacity>
       <Text style={styles.pageTitle}>{showArchived ? 'Archived' : 'Split Bills'}</Text>
-      <Text style={styles.hello}>Pay only for what you had.</Text>
+      <Text style={styles.hello}>Split expenses. Keep friendships simple.</Text>
       {!showArchived ? (
-        <TouchableOpacity style={styles.scanBig} onPress={onNewBill} activeOpacity={0.85}>
-          <Text style={styles.scanEmoji}>📸</Text>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.scanTitle}>Split a new bill</Text>
-            <Text style={styles.scanSub}>Snap it, tap who had what, done</Text>
-          </View>
-          <Text style={styles.scanGo}>›</Text>
-        </TouchableOpacity>
+        <View>
+          {/* Two ways to split: a receipt (by item) or typed expenses (no bill needed) */}
+          <TouchableOpacity style={styles.scanBig} onPress={onNewBill} activeOpacity={0.85} accessibilityRole="button">
+            <Text style={styles.scanEmoji}>📸</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.scanTitle}>Scan a Bill</Text>
+              <Text style={styles.scanSub}>Scan your restaurant or pub bill and split each item</Text>
+            </View>
+            <Text style={styles.scanGo}>›</Text>
+          </TouchableOpacity>
+          {onManualSplit ? (
+            <TouchableOpacity style={[styles.scanBig, { backgroundColor: C.cyan, marginTop: 0 }]} onPress={onManualSplit} activeOpacity={0.85} accessibilityRole="button">
+              <Text style={styles.scanEmoji}>✍️</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.scanTitle}>Manual Split</Text>
+                <Text style={styles.scanSub}>No bill? Make a group, add expenses, choose how to split</Text>
+              </View>
+              <Text style={styles.scanGo}>›</Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
       ) : null}
       {!showArchived && (sum.owed || sum.owe) ? (
         <View style={styles.settle}>
