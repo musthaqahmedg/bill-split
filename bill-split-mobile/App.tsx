@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
+import AddExpenseScreen from './screens/AddExpenseScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
 import OfflineBanner from './components/OfflineBanner';
@@ -227,6 +228,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     } // a Discover place only prefills the plan started from it
   }, [screen]);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
+  const [expenseEdit, setExpenseEdit] = useState<any>(null); // ✍️ { groupId, groupName, people, expense? } for Add / Edit expense
   const [groupsMode, setGroupsMode] = useState<'plan' | 'split'>('plan'); // ✍️ 'split' = opened from Split Bills → Manual Split
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
@@ -713,6 +715,22 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onBack={() => setScreen(groupsMode === 'split' ? 'bills' : 'parties')}
         onOpenGroup={(id: any) => {
           setOpenGroupId(id);
+          setScreen('group');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'addExpense' && expenseEdit) {
+    return (
+      <AddExpenseScreen
+        groupId={expenseEdit.groupId}
+        groupName={expenseEdit.groupName}
+        people={expenseEdit.people}
+        expense={expenseEdit.expense}
+        onBack={() => setScreen('group')}
+        onSaved={() => {
+          setExpenseEdit(null);
           setScreen('group');
         }}
       />

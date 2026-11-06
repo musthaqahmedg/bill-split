@@ -172,6 +172,7 @@ export async function listBills() {
   const { data, error } = await supabase
     .from('bills')
     .select('id, title, total, bill_date, created_at, status, party_id, bill_participants(name, amount_due, paid_amount, paid_at), paid_mode')
+    .eq('kind', 'scan') // ✍️ Manual Split expenses live in their group, not in this list
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -290,6 +291,7 @@ export async function listBillsDetailed() {
   const { data, error } = await supabase
     .from('bills')
     .select('id, title, bill_date, created_at, bill_items(name, price, kind, item_claims(participant_id, units)), bill_participants(id, name, amount_due)')
+    .eq('kind', 'scan')
     .order('created_at', { ascending: false })
     .limit(400);
   if (error) throw error;
