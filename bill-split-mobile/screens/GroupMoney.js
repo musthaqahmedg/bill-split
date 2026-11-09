@@ -88,8 +88,8 @@ export default function GroupMoney({ group, onAdd, onEdit, onCount }) {
           </>
         ) : (
           <>
-            <Text style={styles.big}>{hasSpend ? 'All settled ✅' : '₹0'}</Text>
-            <Text style={styles.bigSub}>{hasSpend ? 'nobody owes anything' : 'add your first expense'}</Text>
+            <Text style={styles.big}>{!hasSpend ? '₹0' : bal.settled ? 'All settled ✅' : "You're settled ✅"}</Text>
+            <Text style={styles.bigSub}>{!hasSpend ? 'add your first expense' : bal.settled ? 'nobody owes anything' : 'others still need to settle'}</Text>
           </>
         )}
         {hasSpend ? <Text style={styles.mine}>You paid {fmt(me.paid)} · your share {fmt(me.share)}</Text> : null}
