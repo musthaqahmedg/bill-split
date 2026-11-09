@@ -9,8 +9,14 @@ type Ev = {
   id?: string; title: string; poster_url: string | null; start_at: string; end_at: string | null; venue_name: string;
   city: string | null; lat: number | null; lng: number | null; price_from: number | null; booking_url: string | null;
   status: 'draft' | 'published' | 'sold_out' | 'cancelled'; is_featured: boolean;
+  category: string | null; description: string | null;
 };
-const blank: Ev = { title: '', poster_url: null, start_at: '', end_at: null, venue_name: '', city: 'Palakkad', lat: 10.7867, lng: 76.6548, price_from: null, booking_url: null, status: 'draft', is_featured: true };
+// 🎉 Plan a Night categories (same keys as the app)
+const CATEGORIES: [string, string][] = [
+  ['parties', '🎉 Parties & nightlife'], ['music', '🎵 Live music'], ['comedy', '😂 Comedy & shows'],
+  ['festivals', '🎪 Festivals & pop-ups'], ['activities', '🎳 Activities'], ['games', '🎮 Games'],
+];
+const blank: Ev = { title: '', poster_url: null, start_at: '', end_at: null, venue_name: '', city: 'Palakkad', lat: 10.7867, lng: 76.6548, price_from: null, booking_url: null, status: 'draft', is_featured: true, category: 'parties', description: null };
 const pad = (n: number) => String(n).padStart(2, '0');
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 const dayOf = (v: string) => { if (!v) return ''; if (/^\d{4}-\d{2}-\d{2}T/.test(v) && v.length <= 16) return v.slice(0, 10); const d = new Date(v); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
@@ -94,6 +100,7 @@ export default function EventsAdmin() {
     setMsg('');
     if (!form.title.trim() || !form.venue_name.trim() || !dayOf(form.start_at)) return setMsg('Please add a title, venue and date');
     if (form.booking_url && !/^https:\/\//i.test(form.booking_url)) return setMsg('Booking link must start with https://');
+    if (!form.category) return setMsg('Please pick a category');
     setBusy(true);
     const row = { ...form, start_at: new Date(form.start_at).toISOString(), end_at: form.end_at ? new Date(form.end_at).toISOString() : null, updated_at: new Date().toISOString() };
     const { error } = form.id ? await sb.from('events').update(row).eq('id', form.id) : await sb.from('events').insert(row);
@@ -178,6 +185,16 @@ export default function EventsAdmin() {
               </select>
             </L>
           </div>
+          <L t="🏷️ Category">
+            <select style={S.in} value={f.category || ''} onChange={(e) => setForm({ ...f, category: e.target.value || null })}>
+              <option value="">Pick one…</option>
+              {CATEGORIES.map(([k, label]) => <option key={k} value={k}>{label}</option>)}
+            </select>
+          </L>
+          <L t="📝 About this event (optional)">
+            <textarea style={{ ...S.in, minHeight: 90, resize: 'vertical' }} maxLength={2000} value={f.description || ''}
+              onChange={(e) => setForm({ ...f, description: e.target.value || null })} placeholder="Line-up, dress code, age limit, what's included…" />
+          </L>
           <div style={S.two}>
             <L t="💸 Price from (₹, 0 = free)"><input style={S.in} inputMode="numeric" value={f.price_from ?? ''} onChange={(e) => setForm({ ...f, price_from: e.target.value === '' ? null : +e.target.value.replace(/\D/g, '') })} placeholder="999" /></L>
             <L t="🔗 Ticket link (optional)"><input style={S.in} value={f.booking_url || ''} onChange={(e) => setForm({ ...f, booking_url: e.target.value || null })} placeholder="https://…" /></L>
