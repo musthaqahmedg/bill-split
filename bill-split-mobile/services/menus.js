@@ -11,6 +11,19 @@ export async function getVenueMenu(place) {
   return data || [];
 }
 
+// 🍽️ Book a Table cards: which places have a scanned menu + a ₹ / ₹₹ / ₹₹₹ band from its real prices
+export async function menuSummary(places) {
+  if (!places || !places.length) return {};
+  const { data, error } = await supabase.rpc('venues_menu_summary', { p_places: places.slice(0, 40) });
+  if (error) return {};
+  const out = {};
+  (data || []).forEach((r) => {
+    const m = Number(r.median_price) || 0;
+    out[r.place] = { items: r.items, band: m < 250 ? '₹' : m < 600 ? '₹₹' : '₹₹₹' };
+  });
+  return out;
+}
+
 export const isVenue = (party) =>
   !!party.place && party.kind !== 'house' && !/^my place|current location/i.test(party.place.trim());
 

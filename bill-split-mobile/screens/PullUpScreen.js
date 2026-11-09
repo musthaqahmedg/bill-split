@@ -5,7 +5,8 @@ import { recentFriends } from '../services/bills';
 import { myFriends } from '../services/friends';
 import { show } from '../services/names';
 import { createParty } from '../services/parties';
-import { findPlaces, getMyLocation, placeDetails, showKm } from '../services/places';
+import { findPlaces, getMyLocation, openStatus, placeDetails, showKm } from '../services/places';
+import { menuSummary } from '../services/menus';
 import { C, F, STICK } from '../services/theme';
 import { eventsNear, eventWhen } from '../services/events';
 import { Image, Linking } from 'react-native';
@@ -55,6 +56,7 @@ export default function PullUpScreen({ initialVibe = 'restaurants', bookOnly = f
   const [step, setStep] = useState(0); // 0 discover · 1 people · 2 lock it in
   const [mode, setMode] = useState('places'); // places · events
   const [found, setFound] = useState(null); // places for the picked type
+  const [info, setInfo] = useState({ det: {}, menus: {} }); // 🍽️ Book a Table: cuisine / open / veg + menu & ₹ band
   const [events, setEvents] = useState(null);
   const [when, setWhen] = useState('upcoming');
   const [picked, setPicked] = useState(null); // { place } or { event } chosen in discover
@@ -88,6 +90,17 @@ export default function PullUpScreen({ initialVibe = 'restaurants', bookOnly = f
       .then((list) => setFound((list || []).slice(0, 12)))
       .catch(() => setFound([]));
   }, [step, mode, vibe.key]);
+  // Book a Table: fill in card details once the list is in (free map data + our scanned menus)
+  const placeLabel = (p) => (p.area ? `${p.name}, ${p.area}` : p.name);
+  useEffect(() => {
+    if (!bookOnly || !found || !found.length) return;
+    let live = true;
+    Promise.all([
+      placeDetails(found.map((p) => p.id)).catch(() => ({})),
+      menuSummary(found.map(placeLabel)).catch(() => ({})),
+    ]).then(([det, menus]) => { if (live) setInfo({ det, menus }); });
+    return () => { live = false; };
+  }, [found]);
   useEffect(() => {
     if (mode !== 'events' || events) return;
     eventsNear().then((l) => setEvents((l || []).filter((e) => e.status !== 'cancelled'))).catch(() => setEvents([]));
@@ -195,6 +208,29 @@ export default function PullUpScreen({ initialVibe = 'restaurants', bookOnly = f
                         <Text style={styles.placeMeta} numberOfLines={1}>{[p.km != null ? showKm(p.km) : null, p.area].filter(Boolean).join(' · ')}</Text>
                       </View>
                     </View>
+                    {bookOnly ? (() => {
+                      const d = info.det[p.id] || {};
+                      const m = info.menus[placeLabel(p)];
+                      const st = openStatus(d.hours);
+                      const cap = (x) => x.charAt(0).toUpperCase() + x.slice(1);
+                      const chips = [
+                        d.cuisine && d.cuisine.length ? { t: `🍴 ${d.cuisine.map(cap).join(' · ')}` } : null,
+                        st ? { t: st.soon ? '🟠 Closing soon' : st.open ? '🟢 Open now' : '🔴 Closed', c: st.open && !st.soon ? C.green : st.soon ? C.amber : C.red } : null,
+                        m ? { t: `${m.band} · 📋 Menu`, c: C.lime } : null,
+                        d.veg === 'only' ? { t: '🥗 Pure veg', c: C.green } : d.veg === 'yes' ? { t: '🥗 Veg options' } : null,
+                        d.outdoor ? { t: '🌿 Outdoor' } : null,
+                        d.ac ? { t: '❄️ AC' } : null,
+                      ].filter(Boolean);
+                      return chips.length ? (
+                        <View style={styles.infoRow}>
+                          {chips.map((x) => (
+                            <View key={x.t} style={styles.infoChip}>
+                              <Text style={[styles.infoText, x.c && { color: x.c }]}>{x.t}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      ) : null;
+                    })() : null}
                     <View style={styles.placeBtns}>
                       {bookOnly ? (
                         <TouchableOpacity style={styles.bookBtn} onPress={() => setMenuFor(p.area ? `${p.name}, ${p.area}` : p.name)} activeOpacity={0.85}>
@@ -407,6 +443,9 @@ const styles = StyleSheet.create({
   placeTop: { flexDirection: 'row', alignItems: 'center' },
   placeEmoji: { fontSize: 30, marginRight: 12 },
   placeName: { fontFamily: F.bold, color: C.text, fontSize: 16 },
+  infoRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
+  infoChip: { backgroundColor: C.cardHi, borderRadius: 10, paddingVertical: 4, paddingHorizontal: 8, marginRight: 6, marginBottom: 6 },
+  infoText: { color: C.sub, fontSize: 12, fontWeight: '800' },
   placeMeta: { color: C.sub, fontSize: 13, marginTop: 2 },
   placeBtns: { flexDirection: 'row', marginTop: 12 },
   planBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 14, paddingVertical: 11, alignItems: 'center', marginRight: 8 },

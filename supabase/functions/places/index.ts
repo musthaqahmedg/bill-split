@@ -134,6 +134,11 @@ async function details(ids: string[]) {
         phone: tg.phone || tg["contact:phone"] || tg.mobile || tg["contact:mobile"] || null,
         hours: tg.opening_hours || null,
         website: tg.website || tg["contact:website"] || null,
+        // 🍽️ Book a Table card details (only when the map has them)
+        cuisine: tg.cuisine ? String(tg.cuisine).split(/[;,]/).map((c: string) => c.trim().replace(/_/g, " ")).filter(Boolean).slice(0, 3) : null,
+        veg: tg["diet:vegetarian"] === "only" ? "only" : tg["diet:vegetarian"] === "yes" ? "yes" : null,
+        outdoor: tg.outdoor_seating === "yes" ? true : null,
+        ac: tg.air_conditioning === "yes" ? true : null,
       };
     }
   }));
@@ -149,7 +154,7 @@ Deno.serve(async (req) => {
 
     if (Array.isArray(body.details)) {
       const ids = [...new Set(body.details.map(String))].sort() as string[];
-      const key = "d|" + ids.join(",");
+      const key = "d2|" + ids.join(",");
       const hit = await cacheGet(key, 24 * 7);
       if (hit) return json({ details: hit });
       const d = await details(ids);
