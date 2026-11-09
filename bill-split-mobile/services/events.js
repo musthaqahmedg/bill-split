@@ -105,6 +105,48 @@ export async function remindLater(ids, now = Date.now()) {
   save(m);
 }
 
+// 🌙 Plan a Night: every upcoming event near you (not just the featured pop-up ones)
+export const EVENT_CATS = [
+  { key: 'parties', label: 'Parties', emoji: '🎉' },
+  { key: 'music', label: 'Live music', emoji: '🎵' },
+  { key: 'comedy', label: 'Comedy', emoji: '😂' },
+  { key: 'festivals', label: 'Festivals', emoji: '🎪' },
+  { key: 'activities', label: 'Activities', emoji: '🎳' },
+  { key: 'games', label: 'Games', emoji: '🎮' },
+];
+export async function eventsBrowse({ ask = true } = {}) {
+  const radiusKm = Math.max(await getRadius(), 50);
+  const loc = await getMyLocation({ ask });
+  const { data, error } = await supabase.rpc('events_browse', {
+    p_lat: loc.coords.lat,
+    p_lng: loc.coords.lon,
+    p_radius_km: radiusKm,
+    p_city: loc.status === 'granted' ? null : 'Palakkad',
+  });
+  if (error) throw error;
+  return data || [];
+}
+// Date chips: 'all' | 'tonight' | 'tomorrow' | 'weekend' (the coming Fri–Sun, or the rest of it if we're in it)
+export function onDay(e, when, now = new Date()) {
+  if (when === 'all') return true;
+  const start = new Date(e.start_at);
+  const end = e.end_at ? new Date(e.end_at) : new Date(start.getTime() + 6 * 3600e3);
+  const dayStart = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const today = dayStart(now);
+  const overlaps = (a, b) => start < b && end > a;
+  if (when === 'tonight') return overlaps(now, new Date(today.getTime() + DAY + 6 * 3600e3)); // till 6 AM
+  if (when === 'tomorrow') return overlaps(new Date(today.getTime() + DAY), new Date(today.getTime() + 2 * DAY + 6 * 3600e3));
+  if (when === 'weekend') {
+    const dow = now.getDay(); // 0 Sun … 5 Fri, 6 Sat
+    const toFri = dow === 0 ? -2 : dow === 6 ? -1 : 5 - dow;
+    const fri = new Date(today.getTime() + toFri * DAY);
+    return overlaps(dow === 0 || dow >= 5 ? now : fri, new Date(fri.getTime() + 3 * DAY + 6 * 3600e3));
+  }
+  return true;
+}
+export const eventPrice = (e) =>
+  e.status === 'sold_out' ? 'Sold out' : e.price_from == null ? null : Number(e.price_from) === 0 ? 'Free' : `From ₹${Math.round(e.price_from).toLocaleString('en-IN')}`;
+
 export const eventWhen = (e) =>
   new Date(e.start_at).toLocaleString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
 export const eventKm = (km) => (km == null ? null : km < 1 ? `${Math.round(km * 1000)} m away` : `${km.toFixed(km < 10 ? 1 : 0)} km away`);

@@ -48,6 +48,7 @@ import NightTabScreen from './screens/NightTabScreen';
 import LocationPrime from './components/LocationPrime';
 import SquadScreen from './screens/SquadScreen';
 import PullUpScreen from './screens/PullUpScreen';
+import PlanNightScreen from './screens/PlanNightScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
@@ -825,6 +826,32 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  if (screen === 'planNight') {
+    // 🌙 Plan a Night = events only (parties, music, comedy, festivals, activities, games)
+    const planFromEvent = (e: any) => {
+      setPlanEvent(e);
+      setPlanPlace(e.venue_name + (e.city ? `, ${e.city}` : ''));
+      setPlanKind('party');
+      setPlanGroup(null);
+      setEditPlan(null);
+      setScreen('newParty');
+    };
+    return (
+      <PlanNightScreen
+        onBack={() => setScreen('home')}
+        onOpenEvent={planFromEvent}
+        onPlanAnyway={() => {
+          setPlanEvent(null);
+          setPlanPlace(null);
+          setPlanKind('nightout');
+          setPlanGroup(null);
+          setEditPlan(null);
+          setScreen('newParty');
+        }}
+      />
+    );
+  }
+
   if (screen === 'pullUp') {
     return (
       <PullUpScreen
@@ -1020,6 +1047,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         setScreen('pullUp');
       }}
       onPullUp={(v: any) => {
+        if (!v) return setScreen('planNight'); // 🌙 the Plan a Night tile
         setPullVibe(v);
         setScreen('pullUp');
       }}
