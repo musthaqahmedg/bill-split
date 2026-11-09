@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ContactPicker from './ContactPicker';
 import KeyboardDone from './KeyboardDone';
-import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../services/groups';
+import { addMembers, deleteGroup, getGroup, removeMember, renameGroup, setAdmin } from '../services/groups';
+import { EMOJIS } from './GroupsScreen';
 import { kindOf } from '../services/partyKinds';
 import { C, F } from '../services/theme';
 import ActiveTag from './ActiveTag';
@@ -20,6 +21,9 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
     if (addY.current != null && scrollRef.current) scrollRef.current.scrollTo({ y: Math.max(0, addY.current - 8), animated: true });
   }, 250);
   const nameRef = useRef(null);
+  const [editing, setEditing] = useState(false); // ✏️ rename the group / change its emoji
+  const [newName, setNewName] = useState('');
+  const [newEmoji, setNewEmoji] = useState('👥');
   const activeOf = useFriendsActive();
   const [group, setGroup] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -97,7 +101,46 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
-      <Text style={styles.title}>{group.emoji} {group.name}</Text>
+      {editing ? (
+        <View style={styles.editBox}>
+          <TextInput style={styles.input} value={newName} onChangeText={setNewName} maxLength={60} autoFocus
+            placeholder="Group name" placeholderTextColor={C.faint} keyboardAppearance="dark" />
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+            {EMOJIS.map((e) => (
+              <TouchableOpacity key={e} style={[styles.emo, newEmoji === e && styles.emoOn]} onPress={() => setNewEmoji(e)}>
+                <Text style={styles.emoText}>{e}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.editRow}>
+            <TouchableOpacity style={styles.editCancel} onPress={() => setEditing(false)}>
+              <Text style={styles.editCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.editSave, !newName.trim() && styles.off]}
+              disabled={!newName.trim()}
+              onPress={async () => {
+                try {
+                  await renameGroup(group.id, newName.trim(), newEmoji);
+                  setEditing(false);
+                  load();
+                } catch (e) {
+                  Alert.alert("Couldn't save", e.message);
+                }
+              }}
+            >
+              <Text style={styles.editSaveText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.titleRow}>
+          <Text style={[styles.title, { flex: 1 }]}>{group.emoji} {group.name}</Text>
+          <TouchableOpacity hitSlop={10} accessibilityLabel="Edit group name" onPress={() => { setNewName(group.name); setNewEmoji(group.emoji || '👥'); setEditing(true); }}>
+            <Text style={styles.editLink}>✏️ Edit</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <Text style={styles.sub}>{members.length} {members.length === 1 ? 'member' : 'members'} + you (admin)</Text>
 
       <ScrollView
@@ -206,6 +249,17 @@ const styles = StyleSheet.create({
   center: { justifyContent: 'center', alignItems: 'center' },
   back: { color: C.accentSoft, fontSize: 16, marginBottom: 10 },
   title: { fontFamily: F.display, fontSize: 22, color: C.text },
+  titleRow: { flexDirection: 'row', alignItems: 'center' },
+  editLink: { color: C.accentSoft, fontSize: 14, fontWeight: '800', marginLeft: 10 },
+  editBox: { marginBottom: 4 },
+  emo: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center', marginRight: 6, backgroundColor: C.card },
+  emoOn: { backgroundColor: C.lime },
+  emoText: { fontSize: 20 },
+  editRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 8 },
+  editCancel: { paddingVertical: 10, paddingHorizontal: 14 },
+  editCancelText: { color: C.sub, fontSize: 15, fontWeight: '700' },
+  editSave: { backgroundColor: C.lime, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 18 },
+  editSaveText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   sub: { color: C.faint, fontSize: 14, marginTop: 4, marginBottom: 12 },
   list: { flex: 1 },
   planBtn: { backgroundColor: C.accent, borderRadius: 16, padding: 16, alignItems: 'center', marginBottom: 16 },

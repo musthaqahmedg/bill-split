@@ -4,7 +4,7 @@ import KeyboardDone from './KeyboardDone';
 import { createGroup, listGroups } from '../services/groups';
 import { C, F } from '../services/theme';
 
-const EMOJIS = ['👥', '🎓', '🏘️', '💼', '⚽', '🏏', '🎮', '👨‍👩‍👧', '💃', '🍻', '✈️', '🔥', '🏖️', '🚗', '🎉', '🏠'];
+export const EMOJIS = ['👥', '🎓', '🏘️', '💼', '⚽', '🏏', '🎮', '👨‍👩‍👧', '💃', '🍻', '✈️', '🔥', '🏖️', '🚗', '🎉', '🏠'];
 
 export default function GroupsScreen({ onBack, onOpenGroup, mode = 'plan' }) {
   const split = mode === 'split'; // ✍️ opened from Split Bills → Manual Split
