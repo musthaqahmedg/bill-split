@@ -16,7 +16,20 @@ import ContactPicker from './ContactPicker';
 
 // 🤟 "Pull up?" (new UX): the fast way to plan tonight. Vibe → your people → a spot → LOCK IT IN.
 // No budget, no long form. The room is created and the squad gets the invite.
-export const VIBES = [
+export // 🖼️ Sample art for Book a Table cards (drawn, not the real venue — marked SAMPLE)
+const PLACE_ART = {
+  restaurant: require('../assets/places/place-restaurant.jpg'),
+  cafe: require('../assets/places/place-cafe.jpg'),
+  pub: require('../assets/places/place-pub.jpg'),
+};
+const artFor = (p, vibeKey) => {
+  if (p.kind === 'cafe') return PLACE_ART.cafe;
+  if (['pub', 'bar', 'biergarten', 'brewery', 'nightclub'].includes(p.kind)) return PLACE_ART.pub;
+  if (['restaurant', 'fast_food', 'food_court'].includes(p.kind)) return PLACE_ART.restaurant;
+  return vibeKey === 'cafes' ? PLACE_ART.cafe : vibeKey === 'pubs' ? PLACE_ART.pub : PLACE_ART.restaurant;
+};
+
+const VIBES = [
   { key: 'predrinks', label: 'Pre-drinks', emoji: '🍹', kind: 'nightout', cat: 'bars' },
   { key: 'club', label: 'Club', emoji: '🪩', kind: 'party', cat: 'pubs' },
   { key: 'crawl', label: 'Bar crawl', emoji: '🍻', kind: 'nightout', cat: 'bars' },
@@ -201,6 +214,12 @@ export default function PullUpScreen({ initialVibe = 'restaurants', bookOnly = f
                 {found === null ? <ActivityIndicator color={C.lime} style={{ marginTop: 16 }} /> : null}
                 {(found || []).map((p) => (
                   <View key={p.id} style={styles.placeCard}>
+                    {bookOnly ? (
+                      <View style={styles.art}>
+                        <Image source={artFor(p, vibe.key)} style={styles.artImg} resizeMode="cover" accessibilityIgnoresInvertColors />
+                        <View style={styles.artTag}><Text style={styles.artTagText}>SAMPLE</Text></View>
+                      </View>
+                    ) : null}
                     <View style={styles.placeTop}>
                       <Text style={styles.placeEmoji}>{p.emoji || vibe.emoji}</Text>
                       <View style={{ flex: 1 }}>
@@ -443,6 +462,10 @@ const styles = StyleSheet.create({
   placeTop: { flexDirection: 'row', alignItems: 'center' },
   placeEmoji: { fontSize: 30, marginRight: 12 },
   placeName: { fontFamily: F.bold, color: C.text, fontSize: 16 },
+  art: { height: 96, borderRadius: 14, overflow: 'hidden', marginBottom: 12, backgroundColor: C.cardHi },
+  artImg: { width: '100%', height: '100%' },
+  artTag: { position: 'absolute', left: 8, bottom: 8, backgroundColor: 'rgba(14,14,18,0.75)', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
+  artTagText: { fontFamily: F.pixel, color: C.sub, fontSize: 9 },
   infoRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 },
   infoChip: { backgroundColor: C.cardHi, borderRadius: 10, paddingVertical: 4, paddingHorizontal: 8, marginRight: 6, marginBottom: 6 },
   infoText: { color: C.sub, fontSize: 12, fontWeight: '800' },
