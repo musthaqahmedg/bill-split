@@ -49,6 +49,7 @@ import LocationPrime from './components/LocationPrime';
 import SquadScreen from './screens/SquadScreen';
 import PullUpScreen from './screens/PullUpScreen';
 import PlanNightScreen from './screens/PlanNightScreen';
+import EventScreen from './screens/EventScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
@@ -229,6 +230,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     } // a Discover place only prefills the plan started from it
   }, [screen]);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
+  const [eventOpen, setEventOpen] = useState<any>(null); // 🎟️ the event page open from Plan a Night
   const [expenseEdit, setExpenseEdit] = useState<any>(null); // ✍️ { groupId, groupName, people, expense? } for Add / Edit expense
   const [groupsMode, setGroupsMode] = useState<'plan' | 'split'>('plan'); // ✍️ 'split' = opened from Split Bills → Manual Split
   const [planGroup, setPlanGroup] = useState<any>(null); // planning for a group (everyone pre-added)
@@ -826,20 +828,26 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
+  const planFromEvent = (e: any) => {
+    setPlanEvent(e);
+    setPlanPlace(e.venue_name + (e.city ? `, ${e.city}` : ''));
+    setPlanKind('party');
+    setPlanGroup(null);
+    setEditPlan(null);
+    setScreen('newParty');
+  };
+  if (screen === 'event' && eventOpen) {
+    return <EventScreen event={eventOpen} onBack={() => setScreen('planNight')} onPlan={planFromEvent} />;
+  }
   if (screen === 'planNight') {
     // 🌙 Plan a Night = events only (parties, music, comedy, festivals, activities, games)
-    const planFromEvent = (e: any) => {
-      setPlanEvent(e);
-      setPlanPlace(e.venue_name + (e.city ? `, ${e.city}` : ''));
-      setPlanKind('party');
-      setPlanGroup(null);
-      setEditPlan(null);
-      setScreen('newParty');
-    };
     return (
       <PlanNightScreen
         onBack={() => setScreen('home')}
-        onOpenEvent={planFromEvent}
+        onOpenEvent={(e: any) => {
+          setEventOpen(e);
+          setScreen('event');
+        }}
         onPlanAnyway={() => {
           setPlanEvent(null);
           setPlanPlace(null);

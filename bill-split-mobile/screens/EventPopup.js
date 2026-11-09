@@ -27,7 +27,7 @@ function Poster({ uri, h }) {
 }
 
 // 🙋 "I'm going" + which friends are going
-function Going({ id }) {
+export function Going({ id }) {
   const [info, setInfo] = useState(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
