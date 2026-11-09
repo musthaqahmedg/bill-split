@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import ContactPicker from './ContactPicker';
 import KeyboardDone from './KeyboardDone';
 import { addMembers, deleteGroup, getGroup, removeMember, setAdmin } from '../services/groups';
@@ -14,6 +14,12 @@ import { useFriendsActive } from '../services/active';
 export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpenPlan, mode = 'plan', onAddExpense, onEditExpense }) {
   const split = mode === 'split'; // ✍️ Manual Split: money first, plans hidden
   const [expCount, setExpCount] = useState(0);
+  const scrollRef = useRef(null);
+  const addY = useRef(null); // where "Add people" sits, so typing a name scrolls it above the keyboard
+  const showAdd = () => setTimeout(() => {
+    if (addY.current != null && scrollRef.current) scrollRef.current.scrollTo({ y: Math.max(0, addY.current - 8), animated: true });
+  }, 250);
+  const nameRef = useRef(null);
   const activeOf = useFriendsActive();
   const [group, setGroup] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -58,7 +64,8 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
       await addMembers(group.id, [person]);
       setName('');
       setContact('');
-      load();
+      await load();
+      setTimeout(() => nameRef.current && nameRef.current.focus(), 50);
     } catch (e) {
       Alert.alert("Couldn't add", e.message);
     }
@@ -86,7 +93,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
     ]);
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <TouchableOpacity onPress={onBack}>
         <Text style={styles.back}>‹ Back</Text>
       </TouchableOpacity>
@@ -94,6 +101,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
       <Text style={styles.sub}>{members.length} {members.length === 1 ? 'member' : 'members'} + you (admin)</Text>
 
       <ScrollView
+        ref={scrollRef}
         style={styles.list}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -140,15 +148,18 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
           ))}
         </View>
 
-        <Text style={styles.label}>Add people</Text>
+        <View onLayout={(e) => { addY.current = e.nativeEvent.layout.y; }}>
+          <Text style={styles.label}>Add people</Text>
+        </View>
         <TouchableOpacity style={styles.contactsBtn} onPress={() => setContactsOpen(true)}>
           <Text style={styles.contactsText}>📇 Add from contacts</Text>
         </TouchableOpacity>
-        <TextInput style={styles.input} value={name} onChangeText={setName} maxLength={60}
-          placeholder="Friend's name" placeholderTextColor={C.faint} keyboardAppearance="dark" />
+        <TextInput ref={nameRef} style={styles.input} value={name} onChangeText={setName} maxLength={60} onFocus={showAdd}
+          placeholder="Friend's name" placeholderTextColor={C.faint} keyboardAppearance="dark"
+          returnKeyType="done" blurOnSubmit={false} onSubmitEditing={addOne} />
         <TextInput style={[styles.input, styles.small]} value={contact} onChangeText={setContact}
           placeholder="📱 Number or ✉️ email (optional)" placeholderTextColor={C.faint} keyboardAppearance="dark"
-          autoCapitalize="none" autoCorrect={false} keyboardType="email-address" onSubmitEditing={addOne} returnKeyType="done" />
+          autoCapitalize="none" autoCorrect={false} keyboardType="email-address" onSubmitEditing={addOne} returnKeyType="done" onFocus={showAdd} />
         <TouchableOpacity style={[styles.addBtn, !name.trim() && styles.off]} onPress={addOne} disabled={!name.trim()}>
           <Text style={styles.addText}>Add to group</Text>
         </TouchableOpacity>
@@ -165,6 +176,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
           </>
         )}
 
+        <View style={{ height: 120 }} />
         <TouchableOpacity onPress={confirmDelete} style={styles.deleteBtn}>
           <Text style={styles.deleteText}>Delete this group</Text>
         </TouchableOpacity>
@@ -185,7 +197,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
         }}
       />
       <KeyboardDone />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

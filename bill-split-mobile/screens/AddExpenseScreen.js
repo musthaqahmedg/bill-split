@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import KeyboardDone from './KeyboardDone';
 import { fmt, paidBy, splitShares } from '../services/manualSplit';
@@ -125,7 +125,7 @@ export default function AddExpenseScreen({ groupId, groupName, people, expense, 
   const unit = how === 'percent' ? '%' : '₹';
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         <TouchableOpacity onPress={onBack} hitSlop={10}>
           <Text style={styles.back}>‹ Back</Text>
@@ -268,7 +268,7 @@ export default function AddExpenseScreen({ groupId, groupName, people, expense, 
         ) : null}
       </ScrollView>
       <KeyboardDone />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
