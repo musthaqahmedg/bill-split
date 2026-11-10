@@ -4,6 +4,7 @@ import { deleteParty, getParty, partyLink, setCleanup, setCoveredBy, setHideBill
 import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
 import SpaceTimeline from './SpaceTimeline';
+import SpaceSongs from './SpaceSongs';
 import BookingCard from './BookingCard';
 import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
@@ -205,6 +206,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
     ['bills', '🧾 Bills'],
     ['budget', '💰 Budget'],
     ['memories', '📸 Memories'],
+    ['music', '🎵 Music'],
     ['timeline', '🕒 Timeline'],
   ];
 
@@ -375,6 +377,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
           ) : null}
 
           {tab === 'timeline' ? <SpaceTimeline party={party} /> : null}
+          {tab === 'music' ? <SpaceSongs party={party} /> : null}
 
           {tab === 'booking' ? <BookingCard party={party} onTakeOut={onTakeOut ? () => onTakeOut(party) : undefined} /> : null}
 

@@ -74,6 +74,10 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   const [booking, setBooking] = useState<{ place_name: string; booking_date: string; booking_time: string; guests: number; notes: string | null; status: string } | null>(null);
   const [safety, setSafety] = useState<{ id: string; name: string; home_at: string | null; is_driver: boolean }[]>([]);
   const [itemText, setItemText] = useState('');
+  // 🎵 song requests
+  const [songs, setSongs] = useState<{ id: string; title: string; artist: string | null; added_by: string | null; added_by_name: string | null; votes: number; voters: string[] }[]>([]);
+  const [songTitle, setSongTitle] = useState('');
+  const [songArtist, setSongArtist] = useState('');
   const [pollQ, setPollQ] = useState('');
   const [pollOpts, setPollOpts] = useState(['', '']);
   const bottom = useRef<HTMLDivElement>(null);
@@ -104,6 +108,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
         if (ph.ok && alive) setPhotos(await ph.json());
         const bk = await rpc('get_party_booking', { p_token: token });
         if (bk.ok && alive) setBooking((await bk.json())[0] || null);
+        const sg = await rpc('get_party_songs', { p_token: token });
+        if (sg.ok && alive) setSongs(await sg.json());
         const sf = await rpc('get_party_safety', { p_token: token });
         if (sf.ok && alive) setSafety(await sf.json());
         if (li.ok && alive) setItems(await li.json());
@@ -126,6 +132,28 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages.length]);
+
+  const refreshSongs = async () => {
+    const sg = await rpc('get_party_songs', { p_token: token });
+    if (sg.ok) setSongs(await sg.json());
+  };
+  const addSong = async () => {
+    if (!me || !songTitle.trim()) return setSendError('Tap your name above first');
+    const res = await rpc('add_party_song', { p_token: token, p_member: me, p_title: songTitle.trim(), p_artist: songArtist.trim() });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      return setSendError((j && j.message) || "Couldn't add the song");
+    }
+    setSongTitle('');
+    setSongArtist('');
+    refreshSongs();
+  };
+  const voteSong = async (id: string, on: boolean) => {
+    if (!me) return setSendError('Tap your name above first');
+    setSongs((list) => list.map((x) => (x.id === id ? { ...x, votes: x.votes + (on ? 1 : -1), voters: on ? [...x.voters, me] : x.voters.filter((v) => v !== me) } : x)));
+    await rpc('vote_party_song', { p_token: token, p_member: me, p_song: id, p_on: on });
+    refreshSongs();
+  };
 
   const refreshList = async () => {
     const li = await rpc('get_party_list', { p_token: token });
@@ -390,6 +418,36 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           {mine && (
             <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={(e) => { e.preventDefault(); addItem(itemText); }}>
               <input style={s.chatInput} value={itemText} maxLength={80} onChange={(e) => setItemText(e.target.value)} placeholder="Add something to bring…" />
+              <button style={s.smallBtn} type="submit">Add</button>
+            </form>
+          )}
+        </div>
+
+        <p style={s.label}>🎵 Song requests</p>
+        <div style={s.listBox}>
+          {songs.length === 0 && <p style={s.chatEmpty}>No songs yet. Add the first one 🎶</p>}
+          {[...songs].sort((a, b) => b.votes - a.votes).map((sg, i) => {
+            const voted = !!me && sg.voters.includes(me);
+            const query = encodeURIComponent([sg.title, sg.artist].filter(Boolean).join(' '));
+            return (
+              <div key={sg.id} style={{ ...s.itemRow, alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 20, opacity: 0.5, fontWeight: 900 }}>{i + 1}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sg.title}</div>
+                  <div style={s.itemWho}>
+                    {[sg.artist, sg.added_by_name ? `by ${sg.added_by_name}` : null].filter(Boolean).join(' · ')}
+                    {' · '}<a href={`https://open.spotify.com/search/${query}`} target="_blank" rel="noreferrer" style={{ color: '#34D399' }}>Spotify</a>
+                    {' · '}<a href={`https://www.youtube.com/results?search_query=${query}`} target="_blank" rel="noreferrer" style={{ color: '#FF4FA0' }}>YouTube</a>
+                  </div>
+                </div>
+                <button style={{ ...s.claimBtn, ...(voted ? s.claimOn : {}) }} onClick={() => voteSong(sg.id, !voted)}>👍 {sg.votes}</button>
+              </div>
+            );
+          })}
+          {mine && (
+            <form style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }} onSubmit={(e) => { e.preventDefault(); addSong(); }}>
+              <input style={{ ...s.chatInput, flex: '1 1 140px' }} value={songTitle} maxLength={80} onChange={(e) => setSongTitle(e.target.value)} placeholder="Song name" />
+              <input style={{ ...s.chatInput, flex: '1 1 110px' }} value={songArtist} maxLength={60} onChange={(e) => setSongArtist(e.target.value)} placeholder="Artist (optional)" />
               <button style={s.smallBtn} type="submit">Add</button>
             </form>
           )}
