@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   avAllText: { color: C.lime, fontSize: 11, fontWeight: '900' },
   sub: { color: C.sub, fontSize: 14, marginTop: 4, marginBottom: 12 },
   dryBox: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 12, marginBottom: 12 },
-  dryLabel: { fontSize: 12, fontWeight: '900', letterSpacing: 1, color: C.cyan, marginBottom: 8 },
+  dryLabel: { fontSize: 13, fontWeight: '900', letterSpacing: 1, color: C.cyan, marginBottom: 8 },
   dryChip: { borderWidth: 1, borderColor: C.border, borderRadius: 16, paddingVertical: 5, paddingHorizontal: 11, marginRight: 8, marginBottom: 6, backgroundColor: C.bg },
   dryChipOn: { backgroundColor: C.cyan, borderColor: C.cyan },
   dryText: { color: C.sub, fontSize: 13 },
@@ -359,6 +359,6 @@ const styles = StyleSheet.create({
   tagFood: { backgroundColor: C.cardHi },
   infoTagText: { fontSize: 14, fontWeight: '700', color: C.text },
   infoAbout: { fontSize: 16, color: C.sub, lineHeight: 22 },
-  infoNote: { fontSize: 12, color: C.faint, marginTop: 14 },
+  infoNote: { fontSize: 13, color: C.faint, marginTop: 14 },
   infoBtn: { backgroundColor: C.lime, padding: 14, borderRadius: 14, alignItems: 'center', marginTop: 18, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
 });

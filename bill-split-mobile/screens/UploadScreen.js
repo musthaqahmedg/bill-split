@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   dim: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(14,14,18,0.35)' },
   scanLine: { position: 'absolute', left: 16, right: 16, top: 0, height: 4, borderRadius: 2, backgroundColor: C.lime, shadowColor: C.lime, shadowOpacity: 0.9, shadowRadius: 12, elevation: 8 },
   readingPill: { position: 'absolute', alignSelf: 'center', bottom: 24, backgroundColor: C.onLime, borderRadius: 14, paddingVertical: 7, paddingHorizontal: 12 },
-  readingText: { color: C.lime, fontSize: 12, fontWeight: '900', letterSpacing: 0.6 },
+  readingText: { color: C.lime, fontSize: 13, fontWeight: '900', letterSpacing: 0.6 },
   restaurant: { fontSize: 15, color: C.sub, marginBottom: 12 },
   preview: { flex: 1, resizeMode: 'contain' },
   placeholder: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 30 },
