@@ -54,7 +54,7 @@ const clockText = () => {
   return `${d.toLocaleDateString('en-IN', { weekday: 'short' }).toUpperCase()} ${d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }).toUpperCase()}`;
 };
 
-const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 
 export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotifications, draft, onResumeDraft, onDiscardDraft, guest, onSaveAccount, onMoney, onPlan, onOpenPlan, onProfile, onPlanEvent, openEventId, onEventOpened, onPullUp, billsMode = false, onBills, onBookTable, onRooms, onBack, onManualSplit }) {
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   tileTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   tileEmoji: { fontSize: 36 },
   tileBadge: { backgroundColor: C.onLime, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
-  tileBadgeText: { fontFamily: F.pixel, color: '#fff', fontSize: 10 },
+  tileBadgeText: { fontFamily: F.pixel, color: '#fff', fontSize: 11 },
   tileTitle: { fontFamily: F.display, color: C.onLime, fontSize: 21, lineHeight: 24, marginTop: 10 },
   tileSub: { color: C.onLime, fontSize: 12, fontWeight: '700', opacity: 0.7, marginTop: 4 },
   budgetDay: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
@@ -510,17 +510,17 @@ const styles = StyleSheet.create({
   evCard: { width: 150, marginRight: 10 },
   evPoster: { height: 190, borderRadius: 18, backgroundColor: '#3B1FE0', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.lime },
   evSold: { position: 'absolute', bottom: 8, left: 8, backgroundColor: C.onLime, borderRadius: 8, paddingVertical: 3, paddingHorizontal: 7 },
-  evSoldText: { fontFamily: F.pixel, color: C.pink, fontSize: 10 },
+  evSoldText: { fontFamily: F.pixel, color: C.pink, fontSize: 11 },
   evTitle: { color: C.text, fontSize: 14, fontWeight: '800', marginTop: 6 },
   evMeta: { color: C.faint, fontSize: 11, marginTop: 1 },
   budget: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 24, padding: 18, marginTop: 4, marginBottom: 14 },
   budgetTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   budgetKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
   dayPill: { backgroundColor: C.cardHi, borderRadius: 10, paddingVertical: 3, paddingHorizontal: 8 },
-  dayText: { fontFamily: F.pixel, color: C.text, fontSize: 10 },
+  dayText: { fontFamily: F.pixel, color: C.text, fontSize: 11 },
   budgetRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 8 },
   budgetBig: { fontFamily: F.display, color: C.lime, fontSize: 34 },
-  spentLabel: { fontFamily: F.pixel, color: C.faint, fontSize: 10 },
+  spentLabel: { fontFamily: F.pixel, color: C.faint, fontSize: 11 },
   spent: { fontFamily: F.bold, color: C.pink, fontSize: 17, marginTop: 2 },
   setBudget: { color: C.lime, fontSize: 14, fontWeight: '800', marginBottom: 6 },
   budgetTrack: { height: 8, borderRadius: 4, backgroundColor: C.cardHi, overflow: 'hidden', marginTop: 12 },
@@ -571,7 +571,7 @@ const styles = StyleSheet.create({
   faces: { flexDirection: 'row', alignItems: 'center' },
   face: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
   faceDone: { opacity: 0.45 },
-  faceText: { color: '#fff', fontSize: 12, fontWeight: '800' },
+  faceText: { color: C.onLime, fontSize: 12, fontWeight: '800' },
   more: { color: C.faint, fontSize: 12, fontWeight: '700', marginLeft: 6 },
   status: { borderRadius: 12, paddingVertical: 5, paddingHorizontal: 10 },
   statusText: { fontSize: 13, fontWeight: '700' },

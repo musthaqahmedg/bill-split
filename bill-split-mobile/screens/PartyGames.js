@@ -5,7 +5,7 @@ import { CHARADES, DARES, HOT_SEAT, MOST_LIKELY, NEVER, REVEAL, TRUTHS, WHEEL_RE
 import { getProfile } from '../services/profile';
 import { C, F } from '../services/theme';
 
-const COLORS = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA', '#F87171', '#A3E635'];
+const COLORS = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#A98BFF', '#F87171', '#A3E635'];
 
 // 🎮 Party games: spin the wheel, never have I ever, truth or dare, charades
 export default function PartyGames({ visible, onClose, party }) {
@@ -374,13 +374,13 @@ function TruthOrDare({ players }) {
       <Text style={styles.gameTitle}>🎭 Truth or dare</Text>
       <Text style={styles.turn}>It’s <Text style={styles.turnName}>{who || 'your'}</Text> turn</Text>
       {kind ? (
-        <View style={[styles.bigCard, { backgroundColor: kind === 'truth' ? '#22D3EE' : '#F87171' }]}>
+        <View style={[styles.bigCard, { backgroundColor: kind === 'truth' ? '#55E0F0' : '#F87171' }]}>
           <Text style={styles.cardKind}>{kind === 'truth' ? 'TRUTH' : 'DARE'}</Text>
           <Text style={styles.bigCardText}>{card}</Text>
         </View>
       ) : (
         <View style={styles.todRow}>
-          <TouchableOpacity style={[styles.todBtn, { backgroundColor: '#22D3EE' }]} onPress={() => choose('truth')}>
+          <TouchableOpacity style={[styles.todBtn, { backgroundColor: '#55E0F0' }]} onPress={() => choose('truth')}>
             <Text style={styles.todText}>Truth 🤔</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.todBtn, { backgroundColor: '#F87171' }]} onPress={() => choose('dare')}>
@@ -449,7 +449,7 @@ function Charades() {
       ) : (
         <>
           <Text style={[styles.timer, time <= 10 && { color: C.red }]}>{time}s</Text>
-          <View style={[styles.bigCard, { backgroundColor: '#22D3EE' }]}>
+          <View style={[styles.bigCard, { backgroundColor: '#55E0F0' }]}>
             <Text style={styles.bigCardText}>{word}</Text>
           </View>
           <Text style={styles.sub}>Score: {score}</Text>

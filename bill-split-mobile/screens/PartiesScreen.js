@@ -9,7 +9,7 @@ import { C, F } from '../services/theme';
 import NightSky from '../components/NightSky';
 import { countdown, planBucket, sortPlans } from '../services/when';
 
-const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   sub: { color: C.sub, fontSize: 14, fontWeight: '500', marginTop: 2 },
   title: { fontFamily: F.display, fontSize: 40, color: C.text },
   newRoom: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.lime, borderRadius: 24, padding: 18, marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  newKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, opacity: 0.7 },
+  newKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 11, opacity: 0.7 },
   newTitle: { fontFamily: F.display, color: C.onLime, fontSize: 22, marginTop: 2 },
   newSub: { color: C.onLime, fontSize: 13, fontWeight: '700', marginTop: 2 },
   newPlus: { fontFamily: F.display, color: C.onLime, fontSize: 40, marginLeft: 8 },
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   roomsKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11, marginTop: 20, marginBottom: 10 },
   emojiSmall: { fontSize: 20, marginRight: 8 },
   tag: { flexDirection: 'row', alignItems: 'center', borderRadius: 10, paddingVertical: 4, paddingHorizontal: 8, marginLeft: 8 },
-  tagText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
+  tagText: { fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
   moneyLine: { color: C.sub, fontSize: 13, fontWeight: '700', flexShrink: 1, marginLeft: 8, textAlign: 'right' },
   titleItalic: { fontFamily: F.display, color: C.lime },
   tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, marginBottom: 14 },

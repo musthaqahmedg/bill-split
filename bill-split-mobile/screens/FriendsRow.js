@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginTop: 12 },
   person: { width: '20%', alignItems: 'center' },
   name: { color: C.text, fontSize: 12, fontWeight: '700', marginTop: 6, maxWidth: 64 },
-  tag: { fontSize: 10, fontWeight: '700', marginTop: 1, maxWidth: 64 },
+  tag: { fontSize: 11, fontWeight: '700', marginTop: 1, maxWidth: 64 },
   invite: { width: 50, height: 50, borderRadius: 25, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.faint, alignItems: 'center', justifyContent: 'center' },
   plus: { color: C.sub, fontSize: 22 },
   badge: { position: 'absolute', top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: C.red, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: C.bg },

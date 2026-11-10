@@ -193,7 +193,7 @@ export async function setLiveStatus(party, memberId, status) {
 }
 export const liveOf = (m) => (m.home_at ? 'home' : m.live_status || null);
 export const LIVE = {
-  omw: { emoji: '🚶', label: 'On the way', color: '#F59E0B' },
+  omw: { emoji: '🚶', label: 'On the way', color: '#FBBF24' },
   here: { emoji: '📍', label: 'Here', color: '#34D399' },
-  home: { emoji: '🏠', label: 'Home safe', color: '#60A5FA' },
+  home: { emoji: '🏠', label: 'Home safe', color: '#A98BFF' },
 };

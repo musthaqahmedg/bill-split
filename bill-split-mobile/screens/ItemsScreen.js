@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
   avOff: { backgroundColor: C.cardHi, borderColor: C.border, borderStyle: 'dashed' },
   avInit: { color: C.onLime, fontSize: 13, fontWeight: '900' },
   avBadge: { position: 'absolute', right: -6, top: -6, backgroundColor: C.onLime, borderRadius: 9, paddingHorizontal: 4, borderWidth: 1, borderColor: C.lime },
-  avBadgeText: { color: C.lime, fontSize: 10, fontWeight: '900' },
+  avBadgeText: { color: C.lime, fontSize: 11, fontWeight: '900' },
   avName: { color: C.faint, fontSize: 11, fontWeight: '700', marginTop: 4, maxWidth: 56 },
   avAll: { backgroundColor: 'transparent', borderColor: C.lime },
   avAllText: { color: C.lime, fontSize: 11, fontWeight: '900' },

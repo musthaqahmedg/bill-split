@@ -559,7 +559,7 @@ const styles = StyleSheet.create({
   tabBody: { paddingTop: 4 },
   posters: { flexDirection: 'row', marginBottom: 10 },
   poster: { flex: 1, borderRadius: 20, padding: 14, marginHorizontal: 3, minHeight: 110, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  posterKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, letterSpacing: 1, opacity: 0.7 },
+  posterKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 11, letterSpacing: 1, opacity: 0.7 },
   posterBig: { fontFamily: F.display, color: C.onLime, fontSize: 26, marginTop: 6 },
   posterSub: { color: C.onLime, fontSize: 12, fontWeight: '700', marginTop: 4, opacity: 0.8 },
   invite: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.violet, borderRadius: 20, padding: 16, marginBottom: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },

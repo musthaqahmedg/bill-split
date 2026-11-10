@@ -544,7 +544,7 @@ const styles = StyleSheet.create({
   body: { color: C.sub, fontSize: 14, lineHeight: 21 },
   bars: { flexDirection: 'row', height: 150, alignItems: 'flex-end' },
   barCol: { flex: 1, alignItems: 'center', height: '100%' },
-  barAmt: { color: C.faint, fontSize: 10, height: 14 },
+  barAmt: { color: C.faint, fontSize: 11, height: 14 },
   barTrack: { flex: 1, width: 22, justifyContent: 'flex-end', marginVertical: 4 },
   barFill: { width: '100%', borderRadius: 6, backgroundColor: C.cardHi },
   barOn: { backgroundColor: C.lime },

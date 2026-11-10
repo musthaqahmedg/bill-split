@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   bookBtnText: { color: C.cyan, fontSize: 14, fontWeight: '900' },
   eventCard: { backgroundColor: C.card, borderRadius: 22, overflow: 'hidden', marginBottom: 12, borderWidth: 2, borderColor: C.violet },
   eventPoster: { width: '100%', height: 150, backgroundColor: '#2A1B5E' },
-  eventWhen: { fontFamily: F.pixel, color: C.lime, fontSize: 10 },
+  eventWhen: { fontFamily: F.pixel, color: C.lime, fontSize: 11 },
   eventTitle: { fontFamily: F.display, color: C.text, fontSize: 20, marginTop: 4 },
   pickedBox: { backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 14 },
   pickedText: { color: C.text, fontSize: 14, fontWeight: '800' },

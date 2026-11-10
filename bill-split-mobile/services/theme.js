@@ -23,7 +23,20 @@ export const C = {
   amber: '#FBBF24',     // mystery items 🕵️
   amberBg: '#2C2310',
   disabled: '#34343F',  // buttons you can't press yet
+  orange: '#FF8A3D',    // games / extra category colour
+  yellow: '#FFD84D',    // comedy / extra category colour
+  mint: '#7CFFB2',      // extra tile colour
 };
+
+// 👤 Avatar circles (dark initials on top, always C.onLime)
+export const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
+
+// 🔤 Type scale: use these sizes only (see DESIGN.md)
+export const T = { tiny: 11, small: 13, body: 15, bodyL: 16, title: 18, h2: 22, h1: 28, hero: 40 };
+// ⬜ Corners: small chips · cards & buttons · big cards & sheets
+export const R = { sm: 10, md: 14, lg: 20, pill: 999 };
+// ↔️ Spacing steps
+export const S = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 24 };
 
 // 🌈 Gradients
 export const G = {

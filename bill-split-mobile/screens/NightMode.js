@@ -17,7 +17,7 @@ import QuickAdd from './QuickAdd';
 
 // 🌙 Night Mode: everything you need DURING the night on one dark, simple screen.
 // Crew status · chat · photos · games · split the bill · ride home · share location · I'm home safe
-const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
 const PILLS = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 const hue = (name) => HUES[((name || '?').charCodeAt(0) || 0) % HUES.length];
 const clock = () => new Date().toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   bigTitle: { fontFamily: F.display, color: C.text, fontSize: 32, marginTop: 4 },
   posters: { flexDirection: 'row', marginTop: 16 },
   poster: { flex: 1, borderRadius: 20, padding: 14, marginHorizontal: 3, minHeight: 120, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  posterKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, letterSpacing: 1, opacity: 0.7 },
+  posterKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 11, letterSpacing: 1, opacity: 0.7 },
   posterBig: { fontFamily: F.display, color: C.onLime, fontSize: 28, marginTop: 6 },
   posterMid: { fontFamily: F.display, color: C.onLime, fontSize: 16, lineHeight: 20, marginTop: 6 },
   posterSub: { color: C.onLime, fontSize: 12, fontWeight: '700', marginTop: 6, opacity: 0.8 },
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   memberName: { color: C.text, fontSize: 16, fontWeight: '800', marginRight: 8, flexShrink: 1 },
   memberStatus: { color: C.faint, fontSize: 13, fontWeight: '600', marginTop: 3 },
   pill: { borderRadius: 8, paddingVertical: 2, paddingHorizontal: 7, flexShrink: 1 },
-  pillText: { color: C.onLime, fontSize: 10, fontWeight: '900', letterSpacing: 0.5 },
+  pillText: { color: C.onLime, fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
   statusEmoji: { fontSize: 20 },
   statusText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 3 },
   addStop: { color: C.accentSoft, fontSize: 14, fontWeight: '700' },
@@ -536,7 +536,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: C.text, fontSize: 16, fontWeight: '700' },
   cardSub: { color: C.green, fontSize: 13, fontWeight: '600' },
   person: { alignItems: 'center', width: 72, marginRight: 4 },
-  personBadge: { color: C.accentSoft, fontSize: 10, fontWeight: '700', textAlign: 'center', marginTop: 2 },
+  personBadge: { color: C.accentSoft, fontSize: 11, fontWeight: '700', textAlign: 'center', marginTop: 2 },
   cardHint: { color: C.faint, fontSize: 12, fontWeight: '500' },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 40 },

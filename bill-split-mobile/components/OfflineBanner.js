@@ -52,5 +52,5 @@ export default function OfflineBanner() {
 
 const styles = StyleSheet.create({
   bar: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 999, backgroundColor: C.pink, paddingBottom: 8, paddingHorizontal: 12, alignItems: 'center' },
-  text: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, textAlign: 'center' },
+  text: { fontFamily: F.pixel, color: C.onLime, fontSize: 11, textAlign: 'center' },
 });

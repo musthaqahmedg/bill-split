@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   photo: { width: '32%', aspectRatio: 1, borderRadius: 12, marginRight: '2%', marginBottom: 6, backgroundColor: C.card },
   ticket: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 18, overflow: 'hidden', marginBottom: 10, borderWidth: 2, borderColor: C.lime, borderStyle: 'dashed' },
   ticketPoster: { width: 86, backgroundColor: '#2A1B5E', alignItems: 'center', justifyContent: 'center' },
-  ticketKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 10 },
+  ticketKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11 },
   ticketTitle: { fontFamily: F.bold, color: C.text, fontSize: 16, marginTop: 4 },
   ticketMeta: { color: C.sub, fontSize: 12, marginTop: 4 },
   page: { flex: 1, backgroundColor: C.bg },

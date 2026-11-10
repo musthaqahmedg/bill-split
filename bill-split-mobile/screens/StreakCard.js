@@ -138,5 +138,5 @@ const styles = StyleSheet.create({
   nightRow: { flexDirection: 'row', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.border },
   nightDate: { color: C.faint, fontSize: 13, width: 95 },
   nightText: { color: C.text, fontSize: 14, flex: 1 },
-  badgeCount: { color: C.sub, fontSize: 10, fontWeight: '800', marginTop: 2 },
+  badgeCount: { color: C.sub, fontSize: 11, fontWeight: '800', marginTop: 2 },
 });

@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   nextEmoji: { position: 'absolute', right: 14, bottom: 10, fontSize: 46, opacity: 0.9 },
   live: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderWidth: 1, borderColor: C.lime, borderRadius: 16, paddingVertical: 10, paddingHorizontal: 12, marginBottom: 12 },
   liveDot: { width: 9, height: 9, borderRadius: 5, backgroundColor: C.lime, marginRight: 10 },
-  liveKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 10, letterSpacing: 1.2 },
+  liveKicker: { fontFamily: F.pixel, color: C.lime, fontSize: 11, letterSpacing: 1.2 },
   liveTitle: { color: C.text, fontSize: 14, fontWeight: '700', marginTop: 1 },
   liveGo: { color: C.lime, fontSize: 12, fontWeight: '900', marginLeft: 8 },
   nextTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

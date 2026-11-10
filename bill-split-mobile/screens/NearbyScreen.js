@@ -143,7 +143,7 @@ export default function NearbyScreen({ onBack, initialCategory = 'restobars', ti
               </View>
             ) : null}
             {st ? (
-              <View style={[styles.tag, { backgroundColor: st.soon ? '#F59E0B' : st.open ? '#0E0E12' : '#7F1D1D' }]}>
+              <View style={[styles.tag, { backgroundColor: st.soon ? '#FBBF24' : st.open ? '#0E0E12' : '#7F1D1D' }]}>
                 <Text style={[styles.tagText, { color: st.open && !st.soon ? C.lime : '#fff' }]}>{st.soon ? 'Closing soon' : st.open ? 'Open now' : 'Closed'}</Text>
               </View>
             ) : null}

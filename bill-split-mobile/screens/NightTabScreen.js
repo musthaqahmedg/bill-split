@@ -97,5 +97,5 @@ const styles = StyleSheet.create({
   rowTitle: { color: C.text, fontSize: 16, fontWeight: '800' },
   rowMeta: { color: C.sub, fontSize: 13, marginTop: 2 },
   pill: { backgroundColor: C.lime, borderRadius: 10, paddingVertical: 4, paddingHorizontal: 8, marginLeft: 8 },
-  pillText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
+  pillText: { fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
 });

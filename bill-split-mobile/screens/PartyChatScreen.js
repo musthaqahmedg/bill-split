@@ -16,7 +16,7 @@ import { useFriendsActive } from '../services/active';
 const time = (iso) => new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' });
 
 // Colour for each friend's name, so the chat is easy to follow
-const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#60A5FA', '#C6FF3D', '#FB923C', '#2DD4BF'];
+const NAME_COLORS = ['#F472B6', '#34D399', '#FBBF24', '#A98BFF', '#C6FF3D', '#FB923C', '#2DD4BF'];
 const colorFor = (name) => NAME_COLORS[[...name].reduce((a, ch) => a + ch.charCodeAt(0), 0) % NAME_COLORS.length];
 
 export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBooking }) {
@@ -332,7 +332,7 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
 
 const styles = StyleSheet.create({
   card: { alignSelf: 'stretch', backgroundColor: C.card, borderWidth: 2, borderRadius: 18, padding: 14, marginVertical: 8 },
-  cardKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 10 },
+  cardKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 11 },
   cardBody: { color: C.text, fontSize: 15, fontWeight: '800', marginTop: 4 },
   cardOpen: { color: C.lime, fontSize: 14, fontWeight: '800', marginTop: 8 },
   pin: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.cardHi, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginHorizontal: 16, marginBottom: 6 },
@@ -359,7 +359,7 @@ const styles = StyleSheet.create({
   theirs: { alignSelf: 'flex-start', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderBottomLeftRadius: 4 },
   sender: { fontSize: 12, fontWeight: '800', marginBottom: 2 },
   body: { color: C.text, fontSize: 16 },
-  time: { color: 'rgba(255,255,255,0.55)', fontSize: 10, alignSelf: 'flex-end', marginTop: 3 },
+  time: { color: 'rgba(255,255,255,0.55)', fontSize: 11, alignSelf: 'flex-end', marginTop: 3 },
   system: { alignSelf: 'center', color: C.sub, fontSize: 13, backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 5, paddingHorizontal: 12, marginVertical: 6, overflow: 'hidden' },
   empty: { alignItems: 'center', marginTop: 60 },
   emptyEmoji: { fontSize: 44 },
@@ -367,7 +367,7 @@ const styles = StyleSheet.create({
   emptySub: { color: C.faint, fontSize: 14, marginTop: 4 },
   stickers: { flexDirection: 'row', paddingHorizontal: 10, paddingTop: 8, backgroundColor: C.bg },
   stick: { flex: 1, borderRadius: 12, paddingVertical: 8, alignItems: 'center', marginHorizontal: 3, transform: [{ rotate: '-2deg' }], borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  stickText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
+  stickText: { fontFamily: F.pixel, color: C.onLime, fontSize: 11 },
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 220 },
   photoCell: { width: 106, height: 106, margin: 2, borderRadius: 12, overflow: 'hidden', backgroundColor: C.cardHi },
   photoOne: { width: 216, height: 216 },

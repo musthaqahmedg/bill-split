@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   from: { color: C.accentSoft, fontSize: 11, fontWeight: '700', marginBottom: 2 },
   text: { color: C.text, fontSize: 15, lineHeight: 20 },
   textMine: { color: '#fff' },
-  time: { color: C.faint, fontSize: 10, marginTop: 4, alignSelf: 'flex-end' },
+  time: { color: C.faint, fontSize: 11, marginTop: 4, alignSelf: 'flex-end' },
   timeMine: { color: 'rgba(255,255,255,0.7)' },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
   chip: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.18)', borderRadius: 16, paddingVertical: 7, paddingHorizontal: 12 },

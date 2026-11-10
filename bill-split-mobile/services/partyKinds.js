@@ -4,7 +4,7 @@ export const KINDS = [
     ideas: ['Friday night out 🍻', 'Promotion treat 🥂', 'Farewell for Rahul 👋', 'New Year bash 🎆'] },
   { key: 'birthday', color: '#F472B6', emoji: '🎂', label: 'Birthday', places: ['all', 'food', 'cafes', 'bars', 'hotels'],
     ideas: ["Arun's birthday 🎂", 'Surprise bday for Meera 🎈', "Dad's 60th 🎉"] },
-  { key: 'house', color: '#22D3EE', emoji: '🏠', label: 'House party', places: ['stays', 'food', 'all'],
+  { key: 'house', color: '#55E0F0', emoji: '🏠', label: 'House party', places: ['stays', 'food', 'all'],
     ideas: ['House party at mine 🏠', 'Game night 🎮', 'Potluck dinner 🍲'] },
   { key: 'nightout', color: '#FBBF24', emoji: '🍻', label: 'Night out', places: ['bars', 'all', 'food', 'cafes'],
     ideas: ['Friday night out 🍻', 'Bar hop 🍸', 'Late night food run 🌙'] },
@@ -22,7 +22,7 @@ export const KINDS = [
     ideas: ['Sunday cafe hangout ☕', 'Lunch with the gang 🍛', 'Chai and chill 🫖'] },
   { key: 'table', color: '#FFD84D', emoji: '🍽️', label: 'Table', places: ['food', 'restobars', 'cafes'],
     ideas: ['Dinner at Cafe Zoe 🍽️', 'Friday dinner 🍝', 'Team lunch 🥗'] },
-  { key: 'match', color: '#60A5FA', emoji: '⚽', label: 'Match night', places: ['bars', 'food', 'cafes'],
+  { key: 'match', color: '#A98BFF', emoji: '⚽', label: 'Match night', places: ['bars', 'food', 'cafes'],
     ideas: ['Match night ⚽', 'IPL final watch 🏏', 'World Cup screening 🏆'] },
 ];
 

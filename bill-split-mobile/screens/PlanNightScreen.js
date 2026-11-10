@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   card: { width: COL, marginBottom: 18 },
   cardPoster: { width: COL, height: COL * 1.45, borderRadius: 14, overflow: 'hidden' },
   soldTag: { position: 'absolute', top: 8, right: 8, backgroundColor: C.red, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 },
-  soldText: { color: '#fff', fontSize: 10, fontWeight: '900' },
+  soldText: { color: '#fff', fontSize: 11, fontWeight: '900' },
   dateChip: { alignSelf: 'flex-start', backgroundColor: C.cardHi, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, marginTop: 8 },
   dateText: { color: C.text, fontSize: 12, fontWeight: '700' },
   cardTitle: { color: C.text, fontSize: 15, fontWeight: '800', marginTop: 6 },

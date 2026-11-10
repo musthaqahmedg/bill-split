@@ -35,7 +35,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       const came = members.filter((m) => m.rsvp === 'in' || m.name === 'Me');
       const out = [];
       out.push({ bg: k.color || C.accent, emoji: k.emoji, big: party.title, small: [party.party_date, party.place && party.place.replace(/^My place 🏠 · .*/, 'My place 🏠')].filter(Boolean).join(' · ') || 'The night recap' });
-      out.push({ bg: '#EC4899', emoji: '🙌', big: `${came.length} ${came.length === 1 ? 'legend' : 'legends'} showed up`, names: came.map((m) => show(m.name)) });
+      out.push({ bg: '#FF4FA0', emoji: '🙌', big: `${came.length} ${came.length === 1 ? 'legend' : 'legends'} showed up`, names: came.map((m) => show(m.name)) });
       for (const p of (photos || []).slice(0, 6)) out.push({ bg: '#000', photo: p.url, small: `📸 ${p.uploader_name}` });
       // 🗺️ Where the night went
       const stops = (Array.isArray(party.stops) ? party.stops : []).filter((x) => x && x.name);
@@ -44,17 +44,17 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       const badged = members.map((m) => [m, badgeOf(m, members, party)]).filter(([, b]) => b && b !== '🎟️ Host');
       if (badged.length) out.push({ bg: '#E879F9', emoji: '😎', big: 'Badges of the night', lines: badged.slice(0, 6).map(([m, b]) => `${show(m.name)} — ${b}`) });
       const brought = list.filter((x) => x.claimed_name);
-      if (brought.length) out.push({ bg: '#22D3EE', emoji: '🛒', big: 'Who brought what', lines: brought.slice(0, 6).map((x) => `${x.name.split(' · ')[0]} — ${x.claimed_name === 'Me' ? 'host' : x.claimed_name}`) });
+      if (brought.length) out.push({ bg: '#55E0F0', emoji: '🛒', big: 'Who brought what', lines: brought.slice(0, 6).map((x) => `${x.name.split(' · ')[0]} — ${x.claimed_name === 'Me' ? 'host' : x.claimed_name}`) });
       const msgs = chat.filter((m) => m.kind === 'text' && !m.poll_id).length;
       const polls = chat.filter((m) => m.poll_id).length;
-      if (msgs || polls) out.push({ bg: '#9B5CFF', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
+      if (msgs || polls) out.push({ bg: '#8B5CF6', emoji: '💬', big: `${msgs} messages`, small: polls ? `and ${polls} poll${polls === 1 ? '' : 's'} 📊` : 'The group chat was busy' });
       const budget = Number(party.budget) || 0;
       // 🧾 The real bill (split from Night Mode)
       if (bills.length) {
         const total = bills.reduce((a, b) => a + (Number(b.total) || 0), 0);
         const mine = bills.reduce((a, b) => a + (Number(((b.bill_participants || []).find((p) => p.name === 'Me') || {}).amount_due) || 0), 0);
         out.push({ bg: '#22C55E', emoji: '🧾', big: `${inr(total)} spent`, small: `${bills.length} bill${bills.length === 1 ? '' : 's'} · your share ${inr(mine)} · split to the rupee 😎` });
-      } else if (party.split_mode === 'treat') out.push({ bg: '#F59E0B', emoji: '🎁', big: 'It was a treat!', small: 'Someone paid for everyone 💜' });
+      } else if (party.split_mode === 'treat') out.push({ bg: '#FBBF24', emoji: '🎁', big: 'It was a treat!', small: 'Someone paid for everyone 💜' });
       else if (budget) {
         const owing = members.filter((m) => m.name !== 'Me' && Number(m.share) > 0);
         const paid = owing.filter((m) => m.paid_at).length;
@@ -64,7 +64,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
       const driver = members.find((m) => m.is_driver);
       const first = members.filter((m) => m.home_at).sort((a, b) => new Date(a.home_at) - new Date(b.home_at))[0];
       if (home || driver) out.push({
-        bg: '#60A5FA', emoji: '🏠', big: `${home} got home safe`,
+        bg: '#A98BFF', emoji: '🏠', big: `${home} got home safe`,
         small: [first ? `🏆 First home: ${show(first.name)} at ${new Date(first.home_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}` : null, driver ? `🛡️ ${show(driver.name)} was the driver. Legend.` : null].filter(Boolean).join('\n') || 'Safe nights only 💙',
       });
       out.push({ bg: '#0E0E13', emoji: '✨', big: 'What a night', small: 'Planned on Vibe Out', end: true });

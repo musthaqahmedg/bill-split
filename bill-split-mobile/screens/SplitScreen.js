@@ -19,7 +19,7 @@ import BillSteps from './BillSteps';
 import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
 import { checkBudgetWarning } from '../services/budgetWarn';
 
-const HUES = ['#9B5CFF', '#EC4899', '#22D3EE', '#F59E0B', '#34D399', '#60A5FA'];
+const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
 const money = (n) => '₹' + Number(n.toFixed(2)).toLocaleString('en-IN');
 
@@ -549,7 +549,7 @@ const styles = StyleSheet.create({
   itemPrice: { color: C.text, fontSize: 14, fontWeight: '700', marginLeft: 8 },
   faces: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
   face: { minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.card },
-  faceText: { color: '#fff', fontSize: 10, fontWeight: '800' },
+  faceText: { color: C.onLime, fontSize: 11, fontWeight: '800' },
   itemWho: { color: C.faint, fontSize: 12, marginLeft: 6, flex: 1 },
   sumRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 },
   sumLabel: { color: C.sub, fontSize: 14 },

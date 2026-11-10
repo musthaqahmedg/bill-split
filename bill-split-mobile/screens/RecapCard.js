@@ -148,6 +148,6 @@ const styles = StyleSheet.create({
   buttons: { flexDirection: 'row', width: 330, marginTop: 16 },
   closeBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#fff', marginRight: 10 },
   closeText: { color: '#333', fontSize: 16, fontWeight: '600' },
-  shareBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#9B5CFF' },
+  shareBtn: { flex: 1, padding: 14, borderRadius: 10, alignItems: 'center', backgroundColor: '#8B5CF6' },
   shareText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 });
