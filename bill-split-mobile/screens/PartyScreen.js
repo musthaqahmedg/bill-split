@@ -3,6 +3,7 @@ import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Linking, Modal, 
 import { deleteParty, getParty, partyLink, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
+import SpaceTimeline from './SpaceTimeline';
 import BookingCard from './BookingCard';
 import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
@@ -204,6 +205,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
     ['bills', '🧾 Bills'],
     ['budget', '💰 Budget'],
     ['memories', '📸 Memories'],
+    ['timeline', '🕒 Timeline'],
   ];
 
   const PersonRow = ({ m, i }) => (
@@ -347,6 +349,8 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
               <NightCheck party={party} onChanged={reload} />
             </>
           ) : null}
+
+          {tab === 'timeline' ? <SpaceTimeline party={party} /> : null}
 
           {tab === 'booking' ? <BookingCard party={party} onTakeOut={onTakeOut ? () => onTakeOut(party) : undefined} /> : null}
 
