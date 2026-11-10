@@ -46,5 +46,5 @@ const styles = StyleSheet.create({
   optText: { color: C.text, fontSize: 15, fontWeight: '600', flex: 1, marginRight: 8 },
   pct: { color: C.lime, fontSize: 13, fontWeight: '900' },
   names: { color: C.faint, fontSize: 11, marginTop: 2 },
-  total: { color: C.faint, fontSize: 12, marginTop: 2 },
+  total: { color: C.faint, fontSize: 13, marginTop: 2 },
 });

@@ -70,6 +70,6 @@ const styles = StyleSheet.create({
   line: { flex: 1, width: 2, backgroundColor: C.border, minHeight: 14 },
   body: { flex: 1, paddingLeft: 10, paddingBottom: 14, paddingTop: 6 },
   text: { color: C.text, fontSize: 15, fontWeight: '700' },
-  time: { color: C.faint, fontSize: 12, marginTop: 2 },
+  time: { color: C.faint, fontSize: 13, marginTop: 2 },
   hint: { color: C.faint, fontSize: 13, marginTop: 10 },
 });

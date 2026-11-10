@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   smallTextDark: { color: '#06281C', fontSize: 13, fontWeight: '700' },
   btn: { backgroundColor: C.accent, borderRadius: 14, padding: 14, alignItems: 'center', marginTop: 10 },
   btnText: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  btnSub: { color: 'rgba(255,255,255,0.75)', fontSize: 12, marginTop: 2 },
+  btnSub: { color: 'rgba(255,255,255,0.75)', fontSize: 13, marginTop: 2 },
   link: { color: C.accentSoft, fontSize: 13, fontWeight: '600', textAlign: 'center', marginTop: 10 },
   hint: { color: C.faint, fontSize: 11, marginTop: 6 },
 });

@@ -128,6 +128,6 @@ const styles = StyleSheet.create({
   netText: { flex: 1, color: C.text, fontSize: 15, fontWeight: '700' },
   payBtn: { backgroundColor: C.lime, borderRadius: 12, paddingVertical: 7, paddingHorizontal: 12, marginLeft: 8 },
   payText: { color: C.onLime, fontSize: 13, fontWeight: '900' },
-  netHint: { color: C.faint, fontSize: 12, marginTop: 10 },
+  netHint: { color: C.faint, fontSize: 13, marginTop: 10 },
   mine: { color: C.sub, fontSize: 14, fontWeight: '700', marginTop: 10 },
 });
