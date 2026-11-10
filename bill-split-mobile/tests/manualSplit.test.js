@@ -142,3 +142,19 @@ test('settleUp and fmt basics', () => {
   assert.equal(fmt(1234.5), '₹1,234.50');
   assert.equal(fmt(1400), '₹1,400');
 });
+
+// 📅 Year view (money tracker)
+import { yearSummary } from '../services/money.js';
+test('year view: 12 months, total, biggest month, average so far', () => {
+  const bill = (date, amt) => ({ bill_date: date, created_at: `${date}T20:00:00`, total: amt, bill_participants: [{ name: 'Me', amount_due: amt }] });
+  const bills = [bill('2026-01-10', 1000), bill('2026-03-05', 3000), bill('2025-12-31', 999)];
+  const expenses = [{ spent_at: '2026-03-06T10:00:00', amount: 500 }];
+  const y = yearSummary(bills, 2026, new Date('2026-04-15T12:00:00'), expenses);
+  assert.equal(y.months.length, 12);
+  assert.equal(y.total, 4500);
+  assert.equal(y.nights, 2);
+  assert.equal(y.biggest.key, '2026-03');
+  assert.equal(y.biggest.spent, 3500);
+  assert.equal(y.avgMonth, 1125); // 4500 over Jan–Apr
+  assert.equal(yearSummary(bills, 2025, new Date('2026-04-15'), expenses).avgMonth, 83); // 999 / 12
+});

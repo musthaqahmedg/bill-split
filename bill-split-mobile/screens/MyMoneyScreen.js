@@ -5,7 +5,7 @@ import { listExpenses, removeExpense } from '../services/expenses';
 import QuickAdd from './QuickAdd';
 import SetBudgetSheet from './SetBudgetSheet';
 import { getBudgets } from '../services/budget';
-import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, shiftMonth, swapsFor, todaySummary, weekSummary } from '../services/money';
+import { EXPENSE_CATS, MOTIVATION, budgetStatus, habitsSummary, monthKey, monthLabel, moneySummary, yearSummary, shiftMonth, swapsFor, todaySummary, weekSummary } from '../services/money';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { homeBalance } from '../services/settle';
@@ -31,6 +31,8 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
   const [budget, setBudget] = useState(0);
   const [warn, setWarn] = useState(true); // ⚠️ warn at 80% / 100%
   const [month, setMonth] = useState(monthKey(new Date()));
+  const [chart, setChart] = useState('6m'); // 📊 '6m' = last 6 months · 'year' = whole year
+  const [year, setYear] = useState(new Date().getFullYear());
   const [editing, setEditing] = useState(false);
   const [budgets, setBudgets] = useState({ month: 0, week: 0, tonight: 0, warn: true });
   const [editTab, setEditTab] = useState('month');
@@ -98,7 +100,9 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
   const bal = homeBalance(bills);
   const st = isNow ? budgetStatus(s.spent, budget) : null;
   const ringColor = !st ? C.lime : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.lime;
-  const maxBar = Math.max(1, ...s.months.map((m) => m.spent));
+  const y = yearSummary(bills, year, new Date(), expenses);
+  const bars = chart === 'year' ? y.months : s.months;
+  const maxBar = Math.max(1, ...bars.map((m) => m.spent));
   const h = habitsSummary(detailed, month, expenses);
   const monthSpends = expenses.filter((e) => monthKey(new Date(e.spent_at)) === month);
 
@@ -291,15 +295,38 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
 
         {/* 📊 Last 6 months */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>📊 Last 6 months</Text>
+          <View style={styles.chartHead}>
+            <Text style={[styles.cardTitle, { marginBottom: 0 }]}>📊 {chart === 'year' ? `Your ${year}` : 'Last 6 months'}</Text>
+            <View style={styles.chartSeg}>
+              {[['6m', '6 months'], ['year', 'Year']].map(([k, label]) => (
+                <TouchableOpacity key={k} style={[styles.chartSegBtn, chart === k && styles.chartSegOn]} onPress={() => setChart(k)}>
+                  <Text style={[styles.chartSegText, chart === k && styles.chartSegTextOn]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+          {chart === 'year' ? (
+            <View style={styles.yearRow}>
+              <TouchableOpacity onPress={() => setYear(year - 1)} hitSlop={12}><Text style={styles.yearArrow}>‹</Text></TouchableOpacity>
+              <View style={{ flex: 1, alignItems: 'center' }}>
+                <Text style={styles.yearTotal}>{inr(y.total)}</Text>
+                <Text style={styles.yearSub}>
+                  {y.total ? `${y.nights} ${y.nights === 1 ? 'night' : 'nights'} · ~${inr(y.avgMonth)}/month${y.biggest ? ` · top: ${y.biggest.label}` : ''}` : 'Nothing spent this year'}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => year < new Date().getFullYear() && setYear(year + 1)} hitSlop={12} disabled={year >= new Date().getFullYear()}>
+                <Text style={[styles.yearArrow, year >= new Date().getFullYear() && { opacity: 0.25 }]}>›</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
           <View style={styles.bars}>
-            {s.months.map((m) => (
-              <TouchableOpacity key={m.key} style={styles.barCol} onPress={() => setMonth(m.key)} activeOpacity={0.7}>
-                <Text style={styles.barAmt}>{m.spent ? `${Math.round(m.spent / 1000) || '<1'}k` : ''}</Text>
+            {bars.map((m) => (
+              <TouchableOpacity key={m.key} style={styles.barCol} onPress={() => m.key <= monthKey(new Date()) && setMonth(m.key)} activeOpacity={0.7}>
+                <Text style={[styles.barAmt, chart === 'year' && { fontSize: 8 }]}>{m.spent ? `${Math.round(m.spent / 1000) || '<1'}k` : ''}</Text>
                 <View style={styles.barTrack}>
                   <View style={[styles.barFill, { height: `${Math.max(m.spent ? 6 : 0, (m.spent / maxBar) * 100)}%` }, m.key === month && styles.barOn]} />
                 </View>
-                <Text style={[styles.barLabel, m.key === month && styles.barLabelOn]}>{m.label}</Text>
+                <Text style={[styles.barLabel, m.key === month && styles.barLabelOn, chart === 'year' && { fontSize: 9 }]}>{chart === 'year' ? m.label.slice(0, 1) : m.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -504,6 +531,16 @@ const styles = StyleSheet.create({
   barOn: { backgroundColor: C.lime },
   barLabel: { color: C.faint, fontSize: 11 },
   barLabelOn: { color: C.text, fontWeight: '700' },
+  chartHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  chartSeg: { flexDirection: 'row', backgroundColor: C.cardHi, borderRadius: 12, padding: 3 },
+  chartSegBtn: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 9 },
+  chartSegOn: { backgroundColor: C.lime },
+  chartSegText: { color: C.sub, fontSize: 12, fontWeight: '800' },
+  chartSegTextOn: { color: C.onLime },
+  yearRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+  yearArrow: { color: C.lime, fontSize: 28, fontWeight: '800', paddingHorizontal: 8 },
+  yearTotal: { fontFamily: F.display, color: C.text, fontSize: 26 },
+  yearSub: { color: C.sub, fontSize: 12, marginTop: 2, textAlign: 'center' },
   insight: { color: C.sub, fontSize: 14, lineHeight: 22, marginTop: 2 },
   b: { color: C.text, fontWeight: '700' },
   settle: { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 14, marginTop: 12 },

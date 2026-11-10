@@ -86,6 +86,31 @@ export function moneySummary(bills, key, now = new Date(), expenses = []) {
   };
 }
 
+// 📅 Year view: every month of a year (your share + quick spends), total, biggest month, average per month so far
+export function yearSummary(bills, year, now = new Date(), expenses = []) {
+  const rows = [
+    ...(bills || []).map((b) => ({ d: billDate(b), amt: myShare(b), night: true })),
+    ...(expenses || []).map((e) => ({ d: new Date(e.spent_at), amt: Math.round(Number(e.amount) || 0), night: false })),
+  ].filter((r) => r.amt > 0 && r.d.getFullYear() === year);
+  const months = [];
+  for (let m = 0; m < 12; m++) {
+    const key = `${year}-${pad(m + 1)}`;
+    months.push({ key, label: monthLabel(key), spent: rows.filter((r) => r.d.getMonth() === m).reduce((s, r) => s + r.amt, 0) });
+  }
+  const total = months.reduce((s, m) => s + m.spent, 0);
+  const biggest = months.reduce((top, m) => (m.spent > (top ? top.spent : 0) ? m : top), null);
+  // months that have started (whole year for past years)
+  const elapsed = year < now.getFullYear() ? 12 : year > now.getFullYear() ? 0 : now.getMonth() + 1;
+  return {
+    year,
+    months,
+    total,
+    nights: rows.filter((r) => r.night).length,
+    biggest,
+    avgMonth: elapsed ? Math.round(total / elapsed) : 0,
+  };
+}
+
 // Budget meter: how much is left, and a friendly status
 export function budgetStatus(spent, budget, now = new Date()) {
   if (!(budget > 0)) return null;
