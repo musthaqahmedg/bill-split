@@ -34,6 +34,7 @@ export const EXPENSE_CATS = {
   gift: { emoji: '🎁', label: 'Gift' },
   parking: { emoji: '🅿️', label: 'Parking' },
   other: { emoji: '➕', label: 'Other' },
+  split: { emoji: '✍️', label: 'Group splits' }, // your share of Manual Split expenses (not a Quick Add choice)
 };
 
 export function moneySummary(bills, key, now = new Date(), expenses = []) {

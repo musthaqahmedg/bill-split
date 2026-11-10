@@ -49,7 +49,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved, in
           <Text style={styles.title}>💸 Quick add</Text>
           <Text style={styles.sub}>Log a spend. It goes into your Vault, and only you see it.</Text>
           <View style={styles.cats}>
-            {Object.entries(EXPENSE_CATS).map(([k, v]) => (
+            {Object.entries(EXPENSE_CATS).filter(([k]) => k !== 'split').map(([k, v]) => (
               <TouchableOpacity key={k} style={[styles.cat, cat === k && styles.catOn]} onPress={() => setCat(k)} activeOpacity={0.8}>
                 <Text style={styles.catEmoji}>{v.emoji}</Text>
                 <Text style={[styles.catText, cat === k && styles.catTextOn]}>{v.label}</Text>

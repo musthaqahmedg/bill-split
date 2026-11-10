@@ -1,6 +1,6 @@
 import { supabase } from './supabaseClient';
 import { track } from './track';
-import { SETTLEMENT, settlementExpense } from './manualSplit';
+import { SETTLEMENT, groupBalances, settlementExpense } from './manualSplit';
 
 // ✍️ Manual Split: typed expenses inside a friend group.
 // Each expense is saved as a bill with kind = 'manual' and no items, so UPI pay,
@@ -85,6 +85,43 @@ export async function saveGroupExpense(e) {
   );
   if (e3) throw e3;
   return billId;
+}
+
+// 💰 For the Me page: your share of group expenses (as spends) + where you stand in each group
+export async function myGroupMoney() {
+  const { data, error } = await supabase
+    .from('bills')
+    .select('id, title, total, bill_date, created_at, category, group_id, friend_groups(id, name, emoji), bill_participants(name, amount_due, paid_amount)')
+    .eq('kind', 'manual')
+    .not('group_id', 'is', null)
+    .limit(1000);
+  if (error) throw error;
+  const rows = data || [];
+  const spends = rows
+    .filter((b) => b.category !== SETTLEMENT)
+    .map((b) => {
+      const me = (b.bill_participants || []).find((p) => p.name === 'Me');
+      return { id: `split-${b.id}`, spent_at: `${b.bill_date || String(b.created_at).slice(0, 10)}T12:00:00`, amount: me ? Number(me.amount_due) || 0 : 0, category: 'split', note: b.title };
+    })
+    .filter((x) => x.amount > 0);
+  const byGroup = {};
+  rows.forEach((b) => {
+    const g = b.friend_groups || { id: b.group_id, name: 'Group', emoji: '👥' };
+    (byGroup[g.id] = byGroup[g.id] || { group: g, list: [] }).list.push(asBalanceRow(b));
+  });
+  const groups = Object.values(byGroup)
+    .map(({ group, list }) => {
+      const me = groupBalances(list).people.find((p) => p.name === 'Me');
+      return { id: group.id, name: group.name, emoji: group.emoji || '👥', net: me ? me.net : 0 };
+    })
+    .filter((g) => Math.abs(g.net) >= 0.01)
+    .sort((a, b) => Math.abs(b.net) - Math.abs(a.net));
+  return {
+    spends,
+    groups,
+    owed: groups.filter((g) => g.net > 0).reduce((s, g) => s + g.net, 0),
+    owe: groups.filter((g) => g.net < 0).reduce((s, g) => s - g.net, 0),
+  };
 }
 
 export async function deleteGroupExpense(id) {

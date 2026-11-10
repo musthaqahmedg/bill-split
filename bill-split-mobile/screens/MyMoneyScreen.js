@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Modal, Pressable, RefreshControl, ScrollView, StyleSheet, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { listBills, listBillsDetailed } from '../services/bills';
 import { listExpenses, removeExpense } from '../services/expenses';
+import { myGroupMoney } from '../services/groupExpenses';
 import QuickAdd from './QuickAdd';
 import SetBudgetSheet from './SetBudgetSheet';
 import { getBudgets } from '../services/budget';
@@ -18,7 +19,7 @@ import NightSky from '../components/NightSky';
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour }) {
+export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour, onOpenGroup }) {
   const [myName, setMyName] = useState('');
   useEffect(() => {
     getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
@@ -26,6 +27,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
   const [bills, setBills] = useState(null);
   const [detailed, setDetailed] = useState([]); // items + claims, for the habits card
   const [expenses, setExpenses] = useState([]); // 💸 quick-add spends
+  const [gm, setGm] = useState({ spends: [], groups: [], owed: 0, owe: 0 }); // ✍️ Manual Split: your shares + group balances
   const [adding, setAdding] = useState(false);
   const [addCat, setAddCat] = useState(null); // quick-add chip that opened the sheet
   const [budget, setBudget] = useState(0);
@@ -58,6 +60,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
       setBills(b || []);
       listBillsDetailed().then(setDetailed).catch(() => setDetailed([]));
       listExpenses().then(setExpenses).catch(() => setExpenses([]));
+      myGroupMoney().then(setGm).catch(() => {});
       const id = u && u.data && u.data.user ? u.data.user.id : null;
       if (id) {
         const bs = await getBudgets();
@@ -96,11 +99,12 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
 
   const thisMonth = monthKey(new Date());
   const isNow = month === thisMonth;
-  const s = moneySummary(bills, month, new Date(), expenses);
+  const allSpends = [...expenses, ...gm.spends]; // quick-adds + your share of group expenses
+  const s = moneySummary(bills, month, new Date(), allSpends);
   const bal = homeBalance(bills);
   const st = isNow ? budgetStatus(s.spent, budget) : null;
   const ringColor = !st ? C.lime : st.left < 0 ? C.red : st.mood.emoji === '⚠️' ? C.amber : C.lime;
-  const y = yearSummary(bills, year, new Date(), expenses);
+  const y = yearSummary(bills, year, new Date(), allSpends);
   const bars = chart === 'year' ? y.months : s.months;
   const maxBar = Math.max(1, ...bars.map((m) => m.spent));
   const h = habitsSummary(detailed, month, expenses);
@@ -152,7 +156,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
         {/* ⚡ Tonight: today's allowance + quick add */}
         {isNow ? (
           (() => {
-            const t = todaySummary(bills, expenses, budget, new Date(), budgets.tonight);
+            const t = todaySummary(bills, allSpends, budget, new Date(), budgets.tonight);
             return (
               <View style={styles.today}>
                 <View style={styles.heroTop}>
@@ -275,7 +279,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
               </TouchableOpacity>
             </View>
             {budgets.week ? (() => {
-              const w = weekSummary(bills, expenses, budgets.week);
+              const w = weekSummary(bills, allSpends, budgets.week);
               return (
                 <>
                   <View style={styles.track}>
@@ -437,14 +441,29 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
         <View style={styles.settle}>
           <View style={styles.settleBox}>
             <Text style={styles.statLabel}>You'll get back</Text>
-            <Text style={[styles.settleBig, { color: bal.owed ? C.green : C.text }]}>{inr(bal.owed)}</Text>
+            <Text style={[styles.settleBig, { color: bal.owed + gm.owed ? C.green : C.text }]}>{inr(bal.owed + gm.owed)}</Text>
           </View>
           <View style={styles.settleLine} />
           <View style={styles.settleBox}>
             <Text style={styles.statLabel}>You owe</Text>
-            <Text style={[styles.settleBig, { color: bal.owe ? C.pink : C.text }]}>{inr(bal.owe)}</Text>
+            <Text style={[styles.settleBig, { color: bal.owe + gm.owe ? C.pink : C.text }]}>{inr(bal.owe + gm.owe)}</Text>
           </View>
         </View>
+
+        {/* ✍️ Manual Split groups where money is still open */}
+        {gm.groups.length ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>✍️ Group splits</Text>
+            {gm.groups.map((g, i) => (
+              <TouchableOpacity key={g.id} style={[styles.gRow, i > 0 && styles.gLine]} onPress={() => onOpenGroup && onOpenGroup(g.id)} disabled={!onOpenGroup} activeOpacity={0.7}>
+                <Text style={styles.gEmoji}>{g.emoji}</Text>
+                <Text style={styles.gName} numberOfLines={1}>{g.name}</Text>
+                <Text style={[styles.gNet, { color: g.net > 0 ? C.green : C.pink }]}>{g.net > 0 ? `gets ${inr(g.net)}` : `owe ${inr(-g.net)}`}</Text>
+                {onOpenGroup ? <Text style={styles.gGo}>›</Text> : null}
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
 
         <Text style={styles.foot}>🔒 Built only from bills in the app. We never read your bank or SMS.</Text>
       </ScrollView>
@@ -541,6 +560,12 @@ const styles = StyleSheet.create({
   yearArrow: { color: C.lime, fontSize: 28, fontWeight: '800', paddingHorizontal: 8 },
   yearTotal: { fontFamily: F.display, color: C.text, fontSize: 26 },
   yearSub: { color: C.sub, fontSize: 12, marginTop: 2, textAlign: 'center' },
+  gRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11 },
+  gLine: { borderTopWidth: 1, borderTopColor: C.border },
+  gEmoji: { fontSize: 20, marginRight: 10 },
+  gName: { flex: 1, color: C.text, fontSize: 15, fontWeight: '800' },
+  gNet: { fontSize: 14, fontWeight: '900' },
+  gGo: { color: C.faint, fontSize: 20, marginLeft: 8 },
   insight: { color: C.sub, fontSize: 14, lineHeight: 22, marginTop: 2 },
   b: { color: C.text, fontWeight: '700' },
   settle: { flexDirection: 'row', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingVertical: 14, marginTop: 12 },

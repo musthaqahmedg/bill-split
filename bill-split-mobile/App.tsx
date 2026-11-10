@@ -650,6 +650,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           fromMeTo('groups')();
         }}
         onNotifications={fromMeTo('notifications')}
+        onOpenGroup={(id: any) => {
+          setGroupsMode('split');
+          setOpenGroupId(id);
+          fromMeTo('group')();
+        }}
         onHelp={fromMeTo('help')}
         onTour={() => {
           resetTour();
@@ -787,7 +792,12 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           setExpenseEdit({ groupId: g.id, groupName: g.name, people, expense: x });
           setScreen('addExpense');
         }}
-        onBack={() => setScreen('groups')}
+        onBack={() => {
+          if (fromMe) {
+            setFromMe(false);
+            setScreen('money');
+          } else setScreen('groups');
+        }}
         onDeleted={() => setScreen('groups')}
         onPlan={(g: any) => {
           setEditPlan(null);
