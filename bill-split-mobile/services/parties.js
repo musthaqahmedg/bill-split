@@ -22,7 +22,7 @@ export async function listParties() {
 export async function getParty(id) {
   const { data, error } = await supabase
     .from('parties')
-    .select('*, event:events(poster_url), party_members(id, name, share, paid_at, paid_claimed_at, phone, email, rsvp, bill_requested_at, home_at, is_driver, covered_by, badge, live_status, live_at)')
+    .select('*, event:events(poster_url), party_members(id, name, share, paid_at, paid_claimed_at, phone, email, rsvp, bill_requested_at, cleanup, home_at, is_driver, covered_by, badge, live_status, live_at)')
     .eq('id', id)
     .single();
   if (error) throw error;
@@ -199,3 +199,9 @@ export const LIVE = {
   here: { emoji: '📍', label: 'Here', color: '#34D399' },
   home: { emoji: '🏠', label: 'Home safe', color: '#A98BFF' },
 };
+
+// 🧹 House party cleanup crew (host taps to add / remove someone)
+export async function setCleanup(memberId, on) {
+  const { error } = await supabase.from('party_members').update({ cleanup: !!on }).eq('id', memberId);
+  if (error) throw error;
+}

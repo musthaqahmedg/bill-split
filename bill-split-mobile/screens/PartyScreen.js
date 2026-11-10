@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Linking, Modal, Platform, RefreshControl, ScrollView, Share, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
-import { deleteParty, getParty, partyLink, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
+import { deleteParty, getParty, partyLink, setCleanup, setCoveredBy, setHideBill, setMemberPaid, waNumber } from '../services/parties';
 import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
 import SpaceTimeline from './SpaceTimeline';
@@ -208,6 +208,18 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
     ['timeline', '🕒 Timeline'],
   ];
 
+  // 🧹 tap to add / remove someone from the cleanup crew (house parties)
+  const toggleCleanup = async (m) => {
+    const on = !m.cleanup;
+    setParty((p) => ({ ...p, party_members: p.party_members.map((x) => (x.id === m.id ? { ...x, cleanup: on } : x)) }));
+    try {
+      await setCleanup(m.id, on);
+    } catch (e) {
+      setParty((p) => ({ ...p, party_members: p.party_members.map((x) => (x.id === m.id ? { ...x, cleanup: !on } : x)) }));
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
+
   const PersonRow = ({ m, i }) => (
     <View style={styles.person}>
       <View style={[styles.face, { backgroundColor: FACES[i % FACES.length] }]}>
@@ -216,7 +228,18 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
       <View style={styles.flex}>
         <Text style={styles.personName}>{show(m.name)}</Text>
         {m.name !== 'Me' ? <ActiveTag status={activeOf(m)} /> : <Text style={styles.personSub}>Host</Text>}
+        {m.cleanup ? <Text style={styles.crew}>🧹 Cleanup crew</Text> : null}
       </View>
+      {party.kind === 'house' ? (
+        <TouchableOpacity
+          style={[styles.crewBtn, m.cleanup && styles.crewOn]}
+          onPress={() => toggleCleanup(m)}
+          hitSlop={6}
+          accessibilityLabel={m.cleanup ? `Take ${show(m.name)} off cleanup crew` : `Put ${show(m.name)} on cleanup crew`}
+        >
+          <Text style={styles.crewBtnText}>🧹</Text>
+        </TouchableOpacity>
+      ) : null}
       {m.name !== 'Me' ? (
         <View style={{ alignItems: 'flex-end' }}>
           <Text style={[styles.rsvp, m.rsvp === 'in' && styles.rsvpIn, m.rsvp === 'out' && styles.rsvpOut]}>{m.rsvp ? BADGE[m.rsvp] : '⏳ No answer'}</Text>
@@ -525,6 +548,10 @@ function Countdown({ party }) {
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 
 const styles = StyleSheet.create({
+  crew: { color: C.lime, fontSize: 13, fontWeight: '800', marginTop: 2 },
+  crewBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 1, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginLeft: 8, opacity: 0.5 },
+  crewOn: { opacity: 1, borderColor: C.lime, backgroundColor: C.cardHi },
+  crewBtnText: { fontSize: 16 },
   themeLine: { color: C.lime, fontSize: 15, fontWeight: '800', marginTop: 4 },
   saysPaid: { color: C.lime, fontSize: 13, fontWeight: '800', marginRight: 8, alignSelf: 'center' },
   receivedBtn: { backgroundColor: C.lime, borderColor: C.lime },

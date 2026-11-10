@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string; is_pay?: boolean };
 type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null; asked_to?: string | null; asked_name?: string | null };
 type Poll = { id: string; question: string; options: string[]; votes: Record<string, number>; voters: { option: number; name: string }[] };
-type Member = { id: string; name: string; share: number | null; paid: boolean; says_paid?: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean };
+type Member = { id: string; name: string; share: number | null; paid: boolean; says_paid?: boolean; rsvp: 'in' | 'out' | 'maybe' | null; bill_requested?: boolean; cleanup?: boolean };
 
 export type SharedParty = {
   title: string;
@@ -553,7 +553,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
         <p style={{ ...s.label, marginTop: 22 }}>Guest list</p>
         {members.map((m) => (
           <div key={m.id} style={s.row}>
-            <span>{show(m.name)}{m.name === 'Me' ? ' (host)' : ''}</span>
+            <span>{show(m.name)}{m.name === 'Me' ? ' (host)' : ''}{m.cleanup ? ' 🧹' : ''}</span>
             <span style={{ color: m.rsvp === 'in' || m.name === 'Me' ? '#34D399' : m.rsvp === 'out' ? '#F87171' : '#8C7AAE' }}>
               {m.name === 'Me' ? '🙌 In' : m.rsvp ? BADGE[m.rsvp] : '⏳ Waiting'}
             </span>
