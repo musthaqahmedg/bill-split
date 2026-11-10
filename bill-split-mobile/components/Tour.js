@@ -24,7 +24,7 @@ const STEPS = [
   { tab: 2, emoji: '👥', title: 'Squad', body: 'Your rooms: plan a night with friends, vote on the place, chat and split.' },
   { tab: 3, emoji: '🪩', title: 'Night', body: 'On the night: squad radar, bill so far, and get home safe.' },
   { tab: 4, emoji: '👤', title: 'Me', body: 'Your budget, spends and memories. Only you see your money.' },
-  { tab: null, emoji: '🗂️', title: 'Everything else', body: 'Tap the lime menu button (three lines) at the top of Tonight to see every feature in one place.' },
+  { tab: null, emoji: '🗂️', title: 'Everything else', body: 'Friends, groups, memories, alerts, help and this tour all live in the Me tab.' },
 ];
 
 export default function Tour({ visible, onDone }) {

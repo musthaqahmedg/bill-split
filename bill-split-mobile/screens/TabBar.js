@@ -7,7 +7,7 @@ import { C, F, G } from '../services/theme';
 import QuickAdd from './QuickAdd';
 
 // 📱 Bottom tabs (new UX, Nov): Tonight · Discover · Squad · Night · Me
-// Split a bill now lives in the quick buttons on Tonight (and the Menu).
+// Split a bill lives on the Split Bills tile on Tonight.
 const TABS = [
   { key: 'home', icon: '🌙', label: 'Tonight' },
   { key: 'discover', icon: '🧭', label: 'Discover' },

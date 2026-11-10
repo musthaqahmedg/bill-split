@@ -43,7 +43,6 @@ import GuestGate from './screens/GuestGate';
 import YourDataScreen from './screens/YourDataScreen';
 import MyMoneyScreen from './screens/MyMoneyScreen';
 import MemoriesScreen from './screens/MemoriesScreen';
-import MenuScreen from './screens/MenuScreen';
 import NightTabScreen from './screens/NightTabScreen';
 import LocationPrime from './components/LocationPrime';
 import SquadScreen from './screens/SquadScreen';
@@ -230,6 +229,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     } // a Discover place only prefills the plan started from it
   }, [screen]);
   const [openGroupId, setOpenGroupId] = useState<any>(null);
+  const [fromMe, setFromMe] = useState(false); // 👤 opened from a Me shortcut → Back returns to Me
+  useEffect(() => {
+    if (['home', 'money', 'discover', 'squad', 'night'].includes(screen)) setFromMe(false);
+  }, [screen]);
   const [eventOpen, setEventOpen] = useState<any>(null); // 🎟️ the event page open from Plan a Night
   const [expenseEdit, setExpenseEdit] = useState<any>(null); // ✍️ { groupId, groupName, people, expense? } for Add / Edit expense
   const [groupsMode, setGroupsMode] = useState<'plan' | 'split'>('plan'); // ✍️ 'split' = opened from Split Bills → Manual Split
@@ -629,7 +632,32 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'money') {
-    return <MyMoneyScreen onProfile={() => setScreen('profile')} onMemories={() => setScreen('memories')} onYourData={() => setScreen('yourData')} />;
+    const fromMeTo = (s: string) => () => {
+      setFromMe(true);
+      setScreen(s);
+    };
+    return (
+      <MyMoneyScreen
+        onProfile={() => setScreen('profile')}
+        onMemories={() => setScreen('memories')}
+        onYourData={() => setScreen('yourData')}
+        onFriends={() => {
+          setFriendsAdd(false);
+          fromMeTo('friends')();
+        }}
+        onGroups={() => {
+          setGroupsMode('plan');
+          fromMeTo('groups')();
+        }}
+        onNotifications={fromMeTo('notifications')}
+        onHelp={fromMeTo('help')}
+        onTour={() => {
+          resetTour();
+          setScreen('home');
+          setShowTour(true);
+        }}
+      />
+    );
   }
 
   if (screen === 'yourData') {
@@ -654,7 +682,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   if (screen === 'help') {
     return (
       <HelpScreen
-        onBack={() => setScreen('profile')}
+        onBack={() => {
+          setScreen(fromMe ? 'money' : 'profile');
+          setFromMe(false);
+        }}
         onChat={() => {
           setSupportThread(null);
           setScreen('support');
@@ -715,7 +746,10 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     return (
       <GroupsScreen
         mode={groupsMode}
-        onBack={() => setScreen(groupsMode === 'split' ? 'bills' : 'parties')}
+        onBack={() => {
+          setScreen(groupsMode === 'split' ? 'bills' : fromMe ? 'money' : 'parties');
+          setFromMe(false);
+        }}
         onOpenGroup={(id: any) => {
           setOpenGroupId(id);
           setScreen('group');
@@ -956,43 +990,25 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     );
   }
 
-  if (screen === 'menu') {
+  if (screen === 'notifications') {
     return (
-      <MenuScreen
-        onBack={() => setScreen('home')}
-        go={(k: string) => {
-          if (k === 'plan') {
-            setPlanKind(null);
-            setPlanGroup(null);
-            setEditPlan(null);
-            setScreen('newParty');
-          } else if (k === 'scan') startNewBill();
-          else if (k === 'tour') {
-            resetTour();
-            setScreen('home');
-            setShowTour(true);
-          } else if (k === 'friends') {
-            setFriendsAdd(false);
-            setScreen('friends');
-          } else {
-            const to: any = { pullUp: 'pullUp', squad: 'squad', night: 'night', rooms: 'parties', nearby: 'discover', groups: 'groups', money: 'money', spend: 'money', memories: 'memories', notifications: 'notifications', profile: 'profile', yourData: 'yourData', help: 'help' };
-            if (k === 'groups') setGroupsMode('plan');
-            setScreen(to[k] || 'home');
-          }
+      <NotificationsScreen
+        onBack={() => {
+          setScreen(fromMe ? 'money' : 'home');
+          setFromMe(false);
         }}
       />
     );
-  }
-
-  if (screen === 'notifications') {
-    return <NotificationsScreen onBack={() => setScreen('home')} />;
   }
 
   if (screen === 'friends') {
     if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} onBack={() => setScreen('home')} />;
     return (
       <FriendsScreen
-        onBack={() => setScreen('home')}
+        onBack={() => {
+          setScreen(fromMe ? 'money' : 'home');
+          setFromMe(false);
+        }}
         startAdding={friendsAdd}
         onOpenPlan={(id: any) => {
           setOpenPartyId(id);
@@ -1081,7 +1097,6 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       onNewBill={startNewBill}
       onLogout={logout}
       onProfile={() => setScreen('profile')}
-      onMenu={() => setScreen('menu')}
       onPlanEvent={(e: any) => {
         setPlanEvent(e);
         setPlanPlace(e.venue_name + (e.city ? `, ${e.city}` : ''));

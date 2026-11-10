@@ -18,7 +18,7 @@ import NightSky from '../components/NightSky';
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData }) {
+export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour }) {
   const [myName, setMyName] = useState('');
   useEffect(() => {
     getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
@@ -131,8 +131,13 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
         <View style={styles.meLinks}>
           {[
             ['📸', 'Memories', C.pink, onMemories],
+            ['🫶', 'Friends', C.cyan, onFriends],
+            ['👥', 'Groups', '#FFD84D', onGroups],
+            ['🔔', 'Alerts', '#FFB3D9', onNotifications],
             ['⚙️', 'Profile', C.lime, onProfile],
             ['🔒', 'Your data', C.cyan, onYourData],
+            ['💡', 'Help', '#7CFFB2', onHelp],
+            ['🧭', 'Tour', C.violet, onTour],
           ].filter((x) => x[3]).map(([e, label, bg, go]) => (
             <TouchableOpacity key={label} style={[styles.meLink, { backgroundColor: bg }]} onPress={go} activeOpacity={0.85}>
               <Text style={styles.meLinkEmoji}>{e}</Text>
@@ -432,8 +437,8 @@ const styles = StyleSheet.create({
   meFace: { width: 52, height: 52, borderRadius: 26, backgroundColor: C.violet, alignItems: 'center', justifyContent: 'center', marginRight: 12, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   meFaceText: { fontFamily: F.display, color: C.onLime, fontSize: 22 },
   meName: { color: C.sub, fontSize: 14, fontWeight: '700' },
-  meLinks: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
-  meLink: { width: '31.5%', borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  meLinks: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginBottom: 8 },
+  meLink: { width: '23.5%', marginBottom: 8, borderRadius: 18, paddingVertical: 12, alignItems: 'center', borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   meLinkEmoji: { fontSize: 22 },
   meLinkText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, marginTop: 4 },
   page: { flex: 1, backgroundColor: C.bg },
