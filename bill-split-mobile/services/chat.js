@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from './supabaseClient';
 import { track } from './track';
 
@@ -80,6 +81,41 @@ export async function react({ token, memberId, messageId, emoji }) {
 }
 
 // 👥 Squad inbox: the latest message in each Space (only Spaces you can see)
+// 💬 Unread chat per Space (on this phone): messages from others since you last opened that chat
+const SEEN = 'chat_seen_v1';
+async function seenMap() {
+  try { return JSON.parse((await AsyncStorage.getItem(SEEN)) || '{}'); } catch (e) { return {}; }
+}
+export async function markChatSeen(partyId) {
+  const m = await seenMap();
+  m[partyId] = new Date().toISOString();
+  try { await AsyncStorage.setItem(SEEN, JSON.stringify(m)); } catch (e) {}
+}
+// spaces: [{ id, party_members: [{ id, name }] }] → { [partyId]: count }
+export async function unreadPerSpace(spaces) {
+  if (!spaces.length) return {};
+  const seen = await seenMap();
+  let changed = false;
+  const now = new Date().toISOString();
+  spaces.forEach((p) => { if (!seen[p.id]) { seen[p.id] = now; changed = true; } }); // first time: start counting from now
+  if (changed) { try { await AsyncStorage.setItem(SEEN, JSON.stringify(seen)); } catch (e) {} }
+  const oldest = spaces.map((p) => seen[p.id]).sort()[0];
+  const { data, error } = await supabase
+    .from('party_messages')
+    .select('party_id, member_id, kind, created_at')
+    .in('party_id', spaces.map((p) => p.id).slice(0, 50))
+    .gt('created_at', oldest)
+    .limit(500);
+  if (error) return {};
+  const mine = new Set(spaces.flatMap((p) => (p.party_members || []).filter((m) => m.name === 'Me').map((m) => m.id)));
+  const out = {};
+  (data || []).forEach((m) => {
+    if (m.created_at <= seen[m.party_id] || mine.has(m.member_id)) return;
+    out[m.party_id] = (out[m.party_id] || 0) + 1;
+  });
+  return out;
+}
+
 export async function latestPerSpace(partyIds) {
   if (!partyIds.length) return {};
   const { data, error } = await supabase

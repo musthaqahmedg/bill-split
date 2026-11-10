@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
-import { REACTIONS, createPoll, getPolls, getReactions, listMessages, onNewMessage, react, sendMessage, votePoll, postPayRequest } from '../services/chat';
+import { REACTIONS, createPoll, getPolls, getReactions, listMessages, markChatSeen, onNewMessage, react, sendMessage, votePoll, postPayRequest } from '../services/chat';
 import FloatUp from './FloatUp';
 import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
@@ -40,11 +40,17 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
     getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
     getParty(partyId).then(setParty).catch(() => {});
     listMessages(partyId).then(setMessages).catch(() => setMessages([]));
+    markChatSeen(partyId); // 💬 clears the "new" badge on Home
     // Live: add new messages as they arrive (skip ones we already have)
-    return onNewMessage(partyId, (m) => {
+    const stop = onNewMessage(partyId, (m) => {
+      markChatSeen(partyId);
       setMessages((list) => (list && !list.some((x) => x.id === m.id) ? [...list, m] : list));
       if (m.kind === 'system') getParty(partyId).then(setParty).catch(() => {}); // e.g. someone paid
     });
+    return () => {
+      stop && stop();
+      markChatSeen(partyId);
+    };
   }, [partyId]);
 
   const me = party && (party.party_members || []).find((m) => m.name === 'Me');

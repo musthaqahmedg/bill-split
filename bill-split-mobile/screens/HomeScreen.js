@@ -13,6 +13,7 @@ import { getBudgets } from '../services/budget';
 import { VIBES } from './PullUpScreen';
 import { listBills } from '../services/bills';
 import { listParties } from '../services/parties';
+import { unreadPerSpace } from '../services/chat';
 import { kindOf } from '../services/partyKinds';
 import { countdown, planBucket, sortPlans, startTime } from '../services/when';
 import { show } from '../services/names';
@@ -69,6 +70,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const [tonightBudget, setTonightBudget] = useState(0); // 🎯 budget set just for tonight
   const [events, setEvents] = useState([]); // 🎉 big events near you
   const [plans, setPlans] = useState([]); // 🗂️ Your Spaces
+  const [chatNew, setChatNew] = useState({}); // 💬 new chat messages per Space
   // 🔔 opened from an event alert → show that event's pop-up
   useEffect(() => {
     if (!openEventId) return;
@@ -200,6 +202,13 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
   const upcoming = sortPlans(plans.filter((p) => planBucket(p) === 'upcoming'), 'upcoming');
   const pendingSpaces = plans.filter((p) => planBucket(p) === 'past' && active.some((b) => b.party_id === p.id && (() => { const x = billBalance(b); return x.owed || x.owe || x.open; })()));
   const spaces = [...live, ...upcoming, ...pendingSpaces].slice(0, 3);
+  const spaceIds = spaces.map((p) => p.id).join(',');
+  useEffect(() => {
+    if (!spaces.length) return;
+    let live = true;
+    unreadPerSpace(spaces).then((u) => live && setChatNew(u)).catch(() => {});
+    return () => { live = false; };
+  }, [spaceIds]);
   const goingOf = (p) => (p.party_members || []).filter((m) => m.rsvp === 'in' || m.name === 'Me').length;
   const outOf = (p) => (p.party_members || []).filter((m) => m.live_status === 'omw' || m.live_status === 'here').length;
   const nextLine = (p) => {
@@ -341,7 +350,9 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
                 <Text style={styles.spaceName} numberOfLines={1}>{p.title}</Text>
                 <Text style={styles.spaceLine} numberOfLines={1}>{nextLine(p)}</Text>
               </View>
-              {planBucket(p) === 'live' ? <View style={styles.liveDot} /> : <Text style={styles.spaceGo}>›</Text>}
+              {chatNew[p.id] ? (
+                <View style={styles.unread}><Text style={styles.unreadText}>💬 {chatNew[p.id] > 9 ? '9+' : chatNew[p.id]} new</Text></View>
+              ) : planBucket(p) === 'live' ? <View style={styles.liveDot} /> : <Text style={styles.spaceGo}>›</Text>}
             </TouchableOpacity>
           ))}
         </View>
@@ -458,6 +469,8 @@ const styles = StyleSheet.create({
   spaceName: { color: C.text, fontSize: 16, fontWeight: '800' },
   spaceLine: { color: C.sub, fontSize: 13, marginTop: 2 },
   spaceGo: { color: C.faint, fontSize: 24, marginLeft: 8 },
+  unread: { backgroundColor: C.lime, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  unreadText: { color: C.onLime, fontSize: 11, fontWeight: '900' },
   liveDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: C.lime, marginLeft: 8 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 14 },
   tile: { width: '48.5%', minHeight: 150, borderRadius: 28, padding: 16, marginBottom: 10, justifyContent: 'space-between', borderRightWidth: 3, borderBottomWidth: 5, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
