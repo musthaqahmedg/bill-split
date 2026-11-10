@@ -12,6 +12,7 @@ export type SharedParty = {
   kind?: string;
   party_date: string | null;
   place: string | null;
+  theme?: string | null;
   budget: number | null;
   hide_bill?: boolean;
   split_mode: 'equal' | 'treat' | 'free';
@@ -270,6 +271,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           <p style={s.inviteKicker}>YOU&apos;RE INVITED · {k.label.toUpperCase()}</p>
           <h1 style={s.inviteTitle}>{party.title}</h1>
           {details && <p style={s.inviteSub}>📍 {details}</p>}
+          {party.theme && <p style={s.inviteSub}>👗 Theme: {party.theme}</p>}
           <p style={s.inviteSub}>Hosted by <b>{host}</b> · {going} going</p>
         </div>
 

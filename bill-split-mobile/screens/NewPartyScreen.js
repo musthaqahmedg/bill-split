@@ -107,6 +107,7 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
   const ex = editing;
   const exMembers = (ex && ex.party_members) || [];
   const [title, setTitle] = useState(ex ? ex.title : initialTitle || ''); // 🎉 prefilled from a big event
+  const [theme, setTheme] = useState(ex && ex.theme ? ex.theme : ''); // 👗 theme / dress code (optional)
   const [kind, setKind] = useState(ex ? ex.kind || 'party' : initialKind || 'party'); // birthday, trip, movie…
   const [dateObj, setDateObj] = useState(initialDate ? new Date(initialDate) : null); // picked from the calendar (or the event's day)
   const [showCal, setShowCal] = useState(false);
@@ -261,10 +262,10 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
     setSaving(true);
     try {
       if (ex) {
-        await updateParty(ex, { title, kind, party_date: date, place, budget, people, mode, special, phones, emails });
+        await updateParty(ex, { title, kind, party_date: date, place, budget, people, mode, special, phones, emails, theme });
         onCreated(ex.id);
       } else {
-        const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, groupId: group ? group.id : null, eventId: ex ? null : eventId });
+        const party = await createParty({ title, kind, party_date: date, place, budget, people, mode, special, phones, emails, theme, groupId: group ? group.id : null, eventId: ex ? null : eventId });
         AsyncStorage.removeItem(DRAFT).catch(() => {});
         if (isHouse && needs.length) {
           // 🏠 what's needed → the shared "who brings what" list (with rough costs)
@@ -343,6 +344,18 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
         <TextInput
           inputAccessoryViewID={DONE_ID} style={styles.input} value={title} onChangeText={setTitle}
           placeholder={kindOf(kind).ideas[idea % kindOf(kind).ideas.length]} placeholderTextColor={C.faint} keyboardAppearance="dark" />
+
+        <Text style={styles.label}>👗 Theme / dress code (optional)</Text>
+        <TextInput
+          inputAccessoryViewID={DONE_ID} style={styles.input} value={theme} onChangeText={setTheme} maxLength={60}
+          placeholder="e.g. All black 🖤" placeholderTextColor={C.faint} keyboardAppearance="dark" />
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" style={{ marginTop: 8 }}>
+          {['🖤 All black', '🤍 All white', '🕺 Retro 80s', '🌴 Tropical', '🎭 Bollywood', '🧸 Comfy / PJs'].map((t) => (
+            <TouchableOpacity key={t} style={[styles.themeChip, theme === t && styles.themeChipOn]} onPress={() => setTheme(theme === t ? '' : t)}>
+              <Text style={[styles.themeChipText, theme === t && { color: C.onLime }]}>{t}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
           </>
         )}
@@ -623,6 +636,9 @@ export default function NewPartyScreen({ onBack, onCreated, group = null, editin
 }
 
 const styles = StyleSheet.create({
+  themeChip: { borderWidth: 1, borderColor: C.border, backgroundColor: C.card, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 12, marginRight: 8 },
+  themeChipOn: { backgroundColor: C.lime, borderColor: C.lime },
+  themeChipText: { color: C.text, fontSize: 13, fontWeight: '800' },
   needRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, padding: 12, marginBottom: 8 },
   needName: { flex: 1, color: C.text, fontSize: 14, fontWeight: '700', marginRight: 8 },
   needCost: { color: C.lime, fontSize: 14, fontWeight: '900' },

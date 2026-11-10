@@ -139,7 +139,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
   const shareAll = () =>
     Share.share({
       message:
-        `🎉 You're invited: ${party.title}${details ? `\n📍 ${details}` : ''}` +
+        `🎉 You're invited: ${party.title}${details ? `\n📍 ${details}` : ''}${party.theme ? `\n👗 Theme: ${party.theme}` : ''}` +
         `${myName ? `\n🙋 Hosted by ${myName}` : ''}\n\nTap your name and tell us if you're coming 👇\n${link}`,
     });
 
@@ -269,6 +269,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
             <Text style={[styles.kickerText, bucket === 'live' && { color: C.onLime }]}>{bucket === 'live' ? '● LIVE TONIGHT' : `${kindOf(party.kind).emoji} ${when.toUpperCase()}`}</Text>
           </View>
           <Text style={styles.title}>{party.title}</Text>
+          {party.theme ? <Text style={styles.themeLine}>👗 {party.theme}</Text> : null}
           {details ? (
             <TouchableOpacity onPress={() => party.place && setPlaceOpen(true)}>
               <Text style={styles.meta}>📍 {details}{party.place ? '  ›' : ''}</Text>
@@ -524,6 +525,7 @@ function Countdown({ party }) {
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF'];
 
 const styles = StyleSheet.create({
+  themeLine: { color: C.lime, fontSize: 15, fontWeight: '800', marginTop: 4 },
   saysPaid: { color: C.lime, fontSize: 13, fontWeight: '800', marginRight: 8, alignSelf: 'center' },
   receivedBtn: { backgroundColor: C.lime, borderColor: C.lime },
   evCover: { width: '100%', height: 180, borderRadius: 20, marginBottom: 14, backgroundColor: C.card, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },

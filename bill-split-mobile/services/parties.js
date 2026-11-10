@@ -47,7 +47,7 @@ export function sharesFor(budget, people, mode, special) {
 }
 
 // people: list of names
-export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null, eventId = null }) {
+export async function createParty({ title, kind = 'party', party_date, place, budget, people, mode = 'equal', special = null, phones = {}, emails = {}, groupId = null, eventId = null, theme = '' }) {
   track('newParty', 'created a plan', kind + ': ' + title);
   const { data: party, error: e1 } = await supabase
     .from('parties')
@@ -58,6 +58,7 @@ export async function createParty({ title, kind = 'party', party_date, place, bu
       event_id: eventId, // 🎉 made from a big event → its poster is the room cover
       party_date: party_date.trim() || null,
       place: place.trim() || null,
+      theme: (theme || '').trim().slice(0, 60) || null, // 👗 theme / dress code
       budget: Math.round(Number(budget) || 0),
       split_mode: mode,
       special_person: mode === 'equal' ? null : special,
@@ -113,7 +114,7 @@ export async function setHideBill(party, hide, hostName) {
 
 // Edit a plan: update details, add/remove people, and work out everyone's share again.
 // People who stay keep their answers (I'm in), paid ticks and chat.
-export async function updateParty(party, { title, kind, party_date, place, budget, people, mode, special, phones = {}, emails = {} }) {
+export async function updateParty(party, { title, kind, party_date, place, budget, people, mode, special, phones = {}, emails = {}, theme = '' }) {
   const { error: e1 } = await supabase
     .from('parties')
     .update({
@@ -121,6 +122,7 @@ export async function updateParty(party, { title, kind, party_date, place, budge
       kind,
       party_date: (party_date || '').trim() || null,
       place: (place || '').trim() || null,
+      theme: (theme || '').trim().slice(0, 60) || null,
       budget: Math.round(Number(budget) || 0),
       split_mode: mode,
       special_person: mode === 'equal' ? null : special,
