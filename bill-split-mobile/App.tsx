@@ -1002,7 +1002,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   }
 
   if (screen === 'friends') {
-    if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} onBack={() => setScreen('home')} />;
+    if (guest) return <GuestGate emoji="👥" title="Add your friends" body="Save your account so friends can find you, see who's out tonight and get birthday reminders." onSave={() => setScreen('saveAccount')} onBack={() => { setScreen(fromMe ? 'money' : 'home'); setFromMe(false); }} />;
     return (
       <FriendsScreen
         onBack={() => {
