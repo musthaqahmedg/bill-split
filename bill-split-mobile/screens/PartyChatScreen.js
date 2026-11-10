@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { REACTIONS, createPoll, getPolls, getReactions, listMessages, onNewMessage, react, sendMessage, votePoll, postPayRequest } from '../services/chat';
 import FloatUp from './FloatUp';
 import NewPollSheet from './NewPollSheet';
 import PollCard from './PollCard';
 import { getParty } from '../services/parties';
+import { addPhotos, photoUrl } from '../services/photos';
 import { STATUS, partyBooking } from '../services/bookings';
 import { getProfile } from '../services/profile';
 import { C, F } from '../services/theme';
@@ -31,6 +32,8 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
   const [myName, setMyName] = useState('');
   const [polls, setPolls] = useState({}); // poll id -> poll
   const [pollOpen, setPollOpen] = useState(false);
+  const [uploading, setUploading] = useState(null); // 📸 "1/3" while photos upload
+  const [viewer, setViewer] = useState(null); // 📸 full-screen photo
   const listRef = useRef(null);
 
   useEffect(() => {
@@ -132,8 +135,50 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
 
   const isMine = (m) => me && m.member_id === me.id && m.kind !== 'system';
 
+  // 📸 Send photos into the chat (they also land in the Space's Memories)
+  const sendPhotos = () => {
+    const go = async (cam) => {
+      try {
+        setUploading('…');
+        const n = await addPhotos(partyId, cam, (i, total) => setUploading(`${i}/${total}`));
+        if (n) listMessages(partyId).then(setMessages).catch(() => {});
+      } catch (e) {
+        Alert.alert("Couldn't send the photo", e.message);
+      }
+      setUploading(null);
+    };
+    Alert.alert('Send a photo', null, [
+      { text: '📷 Camera', onPress: () => go(true) },
+      { text: '🖼️ Gallery', onPress: () => go(false) },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const renderItem = ({ item }) => {
     if (item.is_pay) return <PayCard party={party} />;
+    // 📸 photos sent to the group
+    if (item.ref && item.ref.type === 'photos' && Array.isArray(item.ref.paths) && item.ref.paths.length) {
+      const mine = me && item.member_id === me.id;
+      const paths = item.ref.paths;
+      const shown = paths.slice(0, 4);
+      return (
+        <View style={[styles.bubble, mine ? styles.mine : styles.theirs, { padding: 6 }]}>
+          {!mine ? <Text style={[styles.sender, { color: colorFor(item.sender_name), marginLeft: 4 }]}>{item.sender_name}</Text> : null}
+          <View style={styles.photoGrid}>
+            {shown.map((pth, i) => (
+              <TouchableOpacity key={pth} onPress={() => setViewer(photoUrl(pth))} activeOpacity={0.85}
+                style={[styles.photoCell, shown.length === 1 && styles.photoOne]}>
+                <Image source={{ uri: photoUrl(pth) }} style={styles.photoImg} resizeMode="cover" />
+                {i === 3 && paths.length > 4 ? (
+                  <View style={styles.photoMore}><Text style={styles.photoMoreText}>+{paths.length - 4}</Text></View>
+                ) : null}
+              </TouchableOpacity>
+            ))}
+          </View>
+          <Text style={[styles.time, { marginRight: 4 }]}>{time(item.created_at)}</Text>
+        </View>
+      );
+    }
     if (item.kind === 'system') {
       return <Text style={styles.system}>{item.body}</Text>;
     }
@@ -251,6 +296,9 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
         <TouchableOpacity style={styles.pollBtn} onPress={askToPay} disabled={!party}>
           <Text style={styles.pollText}>💸</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.pollBtn} onPress={sendPhotos} disabled={!!uploading} accessibilityLabel="Send a photo">
+          {uploading ? <Text style={styles.upText}>{uploading}</Text> : <Text style={styles.pollText}>📷</Text>}
+        </TouchableOpacity>
         <TextInput
           style={styles.input}
           value={text}
@@ -266,6 +314,12 @@ export default function PartyChatScreen({ partyId, onBack, onOpenBill, onOpenBoo
         </TouchableOpacity>
       </View>
       <FloatUp ref={floater} />
+      <Modal visible={!!viewer} transparent animationType="fade" onRequestClose={() => setViewer(null)}>
+        <TouchableOpacity style={styles.viewer} activeOpacity={1} onPress={() => setViewer(null)}>
+          {viewer ? <Image source={{ uri: viewer }} style={styles.viewerImg} resizeMode="contain" /> : null}
+          <Text style={styles.viewerHint}>Tap to close</Text>
+        </TouchableOpacity>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
@@ -308,6 +362,16 @@ const styles = StyleSheet.create({
   stickers: { flexDirection: 'row', paddingHorizontal: 10, paddingTop: 8, backgroundColor: C.bg },
   stick: { flex: 1, borderRadius: 12, paddingVertical: 8, alignItems: 'center', marginHorizontal: 3, transform: [{ rotate: '-2deg' }], borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   stickText: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
+  photoGrid: { flexDirection: 'row', flexWrap: 'wrap', width: 220 },
+  photoCell: { width: 106, height: 106, margin: 2, borderRadius: 12, overflow: 'hidden', backgroundColor: C.cardHi },
+  photoOne: { width: 216, height: 216 },
+  photoImg: { width: '100%', height: '100%' },
+  photoMore: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
+  photoMoreText: { color: '#fff', fontSize: 22, fontWeight: '900' },
+  upText: { color: C.text, fontSize: 11, fontWeight: '800' },
+  viewer: { flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', alignItems: 'center', justifyContent: 'center' },
+  viewerImg: { width: '100%', height: '80%' },
+  viewerHint: { color: C.sub, fontSize: 13, marginTop: 14 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', padding: 10, paddingBottom: 28, borderTopWidth: 1, borderTopColor: C.border, backgroundColor: C.bg },
   input: { flex: 1, backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 20, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10, fontSize: 16, color: C.text, maxHeight: 120 },
   pollBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.cardHi, alignItems: 'center', justifyContent: 'center', marginRight: 8 },
