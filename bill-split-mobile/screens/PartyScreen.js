@@ -287,13 +287,13 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
 
         {/* 🗂️ Room tabs */}
         <View style={styles.tabsWrap}>
-          <View style={styles.tabs}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
             {TABS.map(([k, label]) => (
               <TouchableOpacity key={k} style={[styles.tab, tab === k && styles.tabOn]} onPress={() => (k === 'chat' ? onChat() : setTab(k))} activeOpacity={0.85}>
                 <Text style={[styles.tabText, tab === k && styles.tabTextOn]}>{label}</Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </ScrollView>
         </View>
 
         <View style={styles.tabBody}>
@@ -551,8 +551,8 @@ const styles = StyleSheet.create({
   nightSub: { color: C.onLime, opacity: 0.75, fontSize: 12, fontWeight: '600', marginTop: 2 },
   nightChev: { color: C.onLime, fontSize: 26, marginLeft: 8 },
   tabsWrap: { backgroundColor: C.bg, paddingTop: 14, paddingBottom: 10 },
-  tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border },
-  tab: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 12 },
+  tabs: { flexDirection: 'row', backgroundColor: C.card, borderRadius: 16, padding: 4, borderWidth: 1, borderColor: C.border, flexGrow: 1 },
+  tab: { alignItems: 'center', paddingVertical: 9, paddingHorizontal: 12, borderRadius: 12 },
   tabOn: { backgroundColor: C.lime },
   tabText: { color: C.sub, fontSize: 13, fontWeight: '800' },
   tabTextOn: { color: C.onLime },
