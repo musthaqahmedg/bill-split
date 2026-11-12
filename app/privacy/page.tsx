@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = { title: 'Privacy Policy · Vibe Out' };
 
 const CONTACT = 'maginfosystems@gmail.com';
-const UPDATED = '2 November 2026';
+const UPDATED = '12 November 2026';
 
 export default function Privacy() {
   return (
@@ -30,6 +30,10 @@ export default function Privacy() {
           <li><b>Your location</b>, only when you allow it: to show places near you, and to share your live location with a plan&apos;s crew when you turn it on (15 minutes to 8 hours). Only that plan&apos;s crew can see it, and it is deleted as soon as sharing ends. We never track you in the background.</li>
           <li><b>Your spends and budget</b>: amounts you log in My money (like a cab or snacks) and the monthly budget you set. Only you can see them.</li>
           <li><b>Big events</b>: if you allow location, we work out your nearest city and save only the <b>city name</b> (never your exact location) so we can alert you about big events there. When you tap “I’m going” on an event, your accepted friends can see your name; everyone else sees only a count. Turn event alerts off any time in Profile.</li>
+          <li><b>Group expenses</b> (Manual Split): the groups you make, the names you add, each expense (title, amount, date, who paid, how it was split) and settle-ups you record. Only you can see them in the app.</li>
+          <li><b>Plan photos</b>: photos you add to a plan’s chat or Memories. People in that plan can see them. They are deleted with the plan or your account.</li>
+          <li><b>Plan extras</b>: a theme or dress code, a cleanup crew, and song requests with votes. People in that plan (and anyone with its invite link) can see them.</li>
+          <li><b>Invites</b>: your invite code and, if you used one, who invited you. When someone uses your code you become friends automatically. Your invite link shows your <b>first name only</b> to anyone who opens it.</li>
           <li><b>Feedback</b>: your answers to the short feedback questions after a bill, so we can improve the app.</li>
           <li><b>Bill photos</b> you scan. They are sent to Google Gemini to read the items, and we do not keep the photo.</li>
         </ul>
@@ -46,6 +50,10 @@ export default function Privacy() {
         <p style={s.p}>
           When you share a bill link, anyone with that link can see that bill, the names on it, and your UPI ID.
           Only share it with the people at the table.
+        </p>
+        <p style={s.p}>
+          A plan’s invite link lets anyone with it see the plan’s title, date, place, guest names, chat, list, photos and songs.
+          Your personal invite link shows only your first name and your code.
         </p>
 
         <h2 style={s.h2}>Where it is stored</h2>

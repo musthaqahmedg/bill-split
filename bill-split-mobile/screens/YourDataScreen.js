@@ -51,11 +51,28 @@ export default function YourDataScreen({ onBack, onDelete }) {
           return [];
         }
       };
-      const [profile, bills, plans, spends, going, places, groups, feedback, notifications] = await Promise.all([
+      const groupExpenses = async () => {
+        try {
+          const { data } = await supabase.from('bills').select('*, bill_participants(name, amount_due, paid_amount)').eq('kind', 'manual').limit(5000);
+          return data || [];
+        } catch (e) {
+          return [];
+        }
+      };
+      const invite = async () => {
+        try {
+          const { data } = await supabase.rpc('my_invite');
+          return data || null;
+        } catch (e) {
+          return null;
+        }
+      };
+      const [profile, bills, plans, spends, going, places, groups, feedback, notifications, group_expenses, invites] = await Promise.all([
         getProfile(), listBills(), listParties(),
         mine('expenses'), mine('event_going'), mine('saved_places'), mine('friend_groups'), mine('feedback', 'user_id'), mine('notifications'),
+        groupExpenses(), invite(),
       ]);
-      const data = { exported_at: new Date().toISOString(), profile, bills, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications };
+      const data = { exported_at: new Date().toISOString(), profile, bills, group_expenses, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications, invites };
       await Share.share({ title: 'My Vibe Out data', message: JSON.stringify(data, null, 2) });
     } catch (e) {
       Alert.alert("Couldn't export", e.message);
