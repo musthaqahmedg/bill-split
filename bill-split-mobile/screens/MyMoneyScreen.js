@@ -19,7 +19,7 @@ import NightSky from '../components/NightSky';
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour, onOpenGroup }) {
+export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour, onOpenGroup, onInvite }) {
   const [myName, setMyName] = useState('');
   useEffect(() => {
     getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
@@ -141,7 +141,7 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
             ['📸', 'Memories', C.pink, onMemories],
             ['🫶', 'Friends', C.cyan, onFriends],
             ['👥', 'Groups', '#FFD84D', onGroups],
-            ['🔔', 'Alerts', '#FFB3D9', onNotifications],
+            ['🎁', 'Invite', '#FFB3D9', onInvite],
             ['⚙️', 'Profile', C.lime, onProfile],
             ['🔒', 'Your data', C.cyan, onYourData],
             ['💡', 'Help', '#7CFFB2', onHelp],

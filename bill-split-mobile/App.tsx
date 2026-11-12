@@ -7,6 +7,7 @@ import BillDetailScreen from './screens/BillDetailScreen';
 import GroupScreen from './screens/GroupScreen';
 import GroupsScreen from './screens/GroupsScreen';
 import AddExpenseScreen from './screens/AddExpenseScreen';
+import InviteScreen from './screens/InviteScreen';
 import FriendsScreen from './screens/FriendsScreen';
 import NotificationBanner from './screens/NotificationBanner';
 import OfflineBanner from './components/OfflineBanner';
@@ -650,6 +651,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
           fromMeTo('groups')();
         }}
         onNotifications={fromMeTo('notifications')}
+        onInvite={fromMeTo('invite')}
         onOpenGroup={(id: any) => {
           setGroupsMode('split');
           setOpenGroupId(id);
@@ -758,6 +760,17 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onOpenGroup={(id: any) => {
           setOpenGroupId(id);
           setScreen('group');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'invite') {
+    return (
+      <InviteScreen
+        onBack={() => {
+          setScreen(fromMe ? 'money' : 'home');
+          setFromMe(false);
         }}
       />
     );
