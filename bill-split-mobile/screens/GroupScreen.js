@@ -5,6 +5,7 @@ import KeyboardDone from './KeyboardDone';
 import { addMembers, deleteGroup, getGroup, removeMember, renameGroup, setAdmin } from '../services/groups';
 import { EMOJIS } from './GroupsScreen';
 import { kindOf } from '../services/partyKinds';
+import LoadError from '../components/LoadError';
 import { C, F } from '../services/theme';
 import ActiveTag from './ActiveTag';
 import GroupMoney from './GroupMoney';
@@ -25,6 +26,7 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
   const [newName, setNewName] = useState('');
   const [newEmoji, setNewEmoji] = useState('👥');
   const activeOf = useFriendsActive();
+  const [loadErr, setLoadErr] = useState(false);
   const [group, setGroup] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [name, setName] = useState('');
@@ -38,13 +40,16 @@ export default function GroupScreen({ groupId, onBack, onDeleted, onPlan, onOpen
   const load = async () => {
     try {
       setGroup(await getGroup(groupId));
+      setLoadErr(false);
     } catch (e) {
-      Alert.alert('Error', e.message);
+      if (!group) setLoadErr(true);
+      else Alert.alert('Error', e.message);
     }
   };
 
   useEffect(() => { load(); }, [groupId]);
 
+  if (!group && loadErr) return <LoadError what="this group" onRetry={() => { setLoadErr(false); load(); }} onBack={onBack} />;
   if (!group) {
     return (
       <View style={[styles.container, styles.center]}>

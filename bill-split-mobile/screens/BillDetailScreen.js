@@ -6,6 +6,7 @@ import PayUpiSheet from './PayUpiSheet';
 import { getProfile } from '../services/profile';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
+import LoadError from '../components/LoadError';
 import { C, F } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
@@ -14,6 +15,8 @@ const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => '₹' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
 
 export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, onAddRound }) {
+  const [loadErr, setLoadErr] = useState(false);
+  const [loadTry, setLoadTry] = useState(0);
   const [bill, setBill] = useState(null);
   const [recapOpen, setRecapOpen] = useState(false);
   const [infoItem, setInfoItem] = useState(null); // "What's this?" pop-up
@@ -37,10 +40,12 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       .then((b) => {
         setBill(b);
         setNoteText(b.note || '');
+        setLoadErr(false);
       })
-      .catch((e) => Alert.alert('Error', e.message));
-  }, [billId]);
+      .catch(() => setLoadErr(true));
+  }, [billId, loadTry]);
 
+  if (!bill && loadErr) return <LoadError what="this bill" onRetry={() => { setLoadErr(false); setLoadTry((n) => n + 1); }} onBack={onBack} />;
   if (!bill) {
     return (
       <View style={[styles.container, styles.center]}>

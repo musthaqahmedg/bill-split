@@ -20,6 +20,7 @@ import PopularHere from './PopularHere';
 import { show } from '../services/names';
 import { getProfile } from '../services/profile';
 import { kindOf } from '../services/partyKinds';
+import LoadError from '../components/LoadError';
 import { C, F } from '../services/theme';
 import { countdown, planBucket, untilStart } from '../services/when';
 import VoteTab from './VoteTab';
@@ -35,6 +36,8 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
   const [inviteOpen, setInviteOpen] = useState(false); // 📨 QR + link
   const [tab, setTab] = useState(initialTab || 'plan'); // 🗂️ Space tabs: Chat · Plan · Booking · Bills · Budget · Memories
   const activeOf = useFriendsActive();
+  const [loadErr, setLoadErr] = useState(false); // 📡 couldn't load → show Try again instead of spinning
+  const [loadTry, setLoadTry] = useState(0);
   const [party, setParty] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [placeOpen, setPlaceOpen] = useState(false); // tap the place → preview card
@@ -51,8 +54,8 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
   }, []);
 
   useEffect(() => {
-    getParty(partyId).then(setParty).catch((e) => Alert.alert('Error', e.message));
-  }, [partyId]);
+    getParty(partyId).then((p) => { setParty(p); setLoadErr(false); }).catch(() => setLoadErr(true));
+  }, [partyId, loadTry]);
 
   // Pull down to see who has answered
   const reload = async () => {
@@ -63,6 +66,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
     setRefreshing(false);
   };
 
+  if (!party && loadErr) return <LoadError what="this plan" onRetry={() => { setLoadErr(false); setLoadTry((n) => n + 1); }} onBack={onBack} />;
   if (!party) {
     return (
       <View style={[styles.container, styles.center]}>
