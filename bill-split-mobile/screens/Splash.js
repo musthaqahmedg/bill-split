@@ -1,75 +1,128 @@
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { C, F } from '../services/theme';
+import { BRAND, C, F } from '../services/theme';
 
-// 🕹️ Opening moment (v14 sticker pop): a game-style loading screen. Pixel hearts, VIBE OUT, a block loading bar.
-const LINES = ['Warming up the dance floor', 'Finding your crew', 'Doing the maths for you', 'Polishing the disco ball', 'Checking who owes you 👀'];
-const BLOCKS = 10;
+// 🌙 Opening moment: "night system booting" — glitch title, spinning neon ring with cycling emojis,
+// a segmented loading bar and terminal lines. Only shows while the app is actually starting.
+const EMOJIS = ['🍹', '😈', '🔥', '🥳', '🪩', '👾'];
+const LINES = ['syncing squad', 'splitting the bill', "finding tonight's vibe"];
+const SEGMENTS = 16;
+const MAGENTA = '#FF2BD6';
 
 export default function Splash() {
-  const pop = useRef(new Animated.Value(0)).current;
+  const spin = useRef(new Animated.Value(0)).current;
+  const pulse = useRef(new Animated.Value(0)).current;
+  const [emoji, setEmoji] = useState(0);
   const [filled, setFilled] = useState(1);
-  const [line] = useState(() => LINES[Math.floor(Math.random() * LINES.length)]);
+  const [shown, setShown] = useState(0); // terminal lines visible
+  const [blink, setBlink] = useState(true);
+  const [glitch, setGlitch] = useState(0);
 
   useEffect(() => {
-    Animated.spring(pop, { toValue: 1, friction: 5, useNativeDriver: true }).start();
-    const t = setInterval(() => setFilled((n) => (n >= BLOCKS ? BLOCKS : n + 1)), 110);
-    return () => clearInterval(t);
+    Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1400, easing: Easing.linear, useNativeDriver: true })).start();
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0, duration: 500, useNativeDriver: true }),
+      ])
+    ).start();
+    const t1 = setInterval(() => setEmoji((n) => (n + 1) % EMOJIS.length), 320);
+    const t2 = setInterval(() => setFilled((n) => Math.min(SEGMENTS, n + 1)), 65);
+    const t3 = setInterval(() => setShown((n) => Math.min(LINES.length, n + 1)), 300);
+    const t4 = setInterval(() => setBlink((b) => !b), 400);
+    const t5 = setInterval(() => setGlitch((g) => (g + 1) % 7), 120);
+    return () => [t1, t2, t3, t4, t5].forEach(clearInterval);
   }, []);
+
+  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
+  const rotateBack = spin.interpolate({ inputRange: [0, 1], outputRange: ['360deg', '0deg'] });
+  const jitter = glitch === 3 ? 2 : glitch === 5 ? -2 : 0; // a tiny glitch every so often
 
   return (
     <View style={styles.page}>
-      {/* lime swooshes in the corners */}
-      <View style={[styles.arc, styles.arcTop]} />
-      <View style={[styles.arc, styles.arcBottom]} />
+      <View style={styles.glow} />
+      {/* corner brackets */}
+      <View style={[styles.corner, { top: 54, left: 18, borderTopWidth: 2, borderLeftWidth: 2 }]} />
+      <View style={[styles.corner, { top: 54, right: 18, borderTopWidth: 2, borderRightWidth: 2 }]} />
+      <View style={[styles.corner, { bottom: 40, left: 18, borderBottomWidth: 2, borderLeftWidth: 2 }]} />
+      <View style={[styles.corner, { bottom: 40, right: 18, borderBottomWidth: 2, borderRightWidth: 2 }]} />
 
-      <View style={styles.hearts}>
-        <Text style={[styles.heart, { color: C.pink }]}>♥</Text>
-        <Text style={[styles.heart, { color: C.pink }]}>♥</Text>
-        <Text style={[styles.heart, { color: 'rgba(255,79,160,0.35)' }]}>♥</Text>
+      <View style={styles.topBar}>
+        <Text style={styles.sys}>{BRAND.upper}//OS</Text>
+        <Text style={styles.sys}>
+          <Text style={{ color: blink ? C.lime : 'transparent' }}>● </Text>ONLINE
+        </Text>
       </View>
 
-      <Animated.View style={{ alignItems: 'center', transform: [{ scale: pop.interpolate({ inputRange: [0, 1], outputRange: [0.6, 1] }) }, { rotate: '-4deg' }] }}>
-        <Text style={styles.bolt}>⚡</Text>
-        <Text style={styles.word}>VIBE OUT</Text>
-        <View style={styles.pill}>
-          <Text style={styles.pillText}>night-out assistant</Text>
-        </View>
-        <Text style={styles.hand}>🤟</Text>
-      </Animated.View>
+      {/* glitch title: cyan + magenta ghosts behind the white word */}
+      <View style={styles.titleWrap}>
+        <Text style={[styles.title, styles.ghost, { color: C.cyan, transform: [{ translateX: -2 + jitter }] }]}>{BRAND.upper}</Text>
+        <Text style={[styles.title, styles.ghost, { color: MAGENTA, transform: [{ translateX: 2 - jitter }] }]}>{BRAND.upper}</Text>
+        <Text style={styles.title}>{BRAND.upper}</Text>
+      </View>
+      <View style={styles.rule} />
+      <Text style={styles.tagline}>{BRAND.tagline}</Text>
 
+      {/* neon ring */}
+      <View style={styles.ringBox}>
+        <Animated.View style={[styles.dashed, { transform: [{ rotate: rotateBack }] }]} />
+        <Animated.View style={[styles.arc, { transform: [{ rotate }] }]} />
+        <Animated.View style={[styles.core, { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1] }) }]}>
+          <Text style={styles.emoji}>{EMOJIS[emoji]}</Text>
+        </Animated.View>
+      </View>
+
+      {/* loading bar */}
+      <View style={styles.barHead}>
+        <Text style={styles.small}>BOOTING NIGHT SYSTEM</Text>
+        <Text style={styles.small}>LVL 01</Text>
+      </View>
       <View style={styles.bar}>
-        {Array.from({ length: BLOCKS }).map((_, i) => (
-          <View key={i} style={[styles.block, i < filled && styles.blockOn]} />
+        {Array.from({ length: SEGMENTS }).map((_, i) => (
+          <View key={i} style={[styles.seg, i < filled && { backgroundColor: i < SEGMENTS / 2 ? C.cyan : i < SEGMENTS * 0.75 ? C.violet : MAGENTA }]} />
         ))}
       </View>
-      <Text style={styles.loading}>LOADING</Text>
-      <Text style={styles.line}>{line}…</Text>
 
-      <View style={styles.city}>
-        <Text style={styles.cityText}>⏳ TONIGHT</Text>
+      {/* terminal lines */}
+      <View style={styles.term}>
+        {LINES.map((l, i) =>
+          i < shown ? (
+            <Text key={l} style={styles.termLine}>
+              {'> '}{l}{i < LINES.length - 1 ? ' ... ok' : blink ? '_' : ' '}
+            </Text>
+          ) : null
+        )}
       </View>
+
+      <Text style={styles.footer}>
+        <Text style={{ color: MAGENTA }}>// </Text>{BRAND.footer}<Text style={{ color: MAGENTA }}> //</Text>
+      </Text>
     </View>
   );
 }
 
+const RING = 150;
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#3B1FE0', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  arc: { position: 'absolute', width: 420, height: 420, borderRadius: 210, borderWidth: 34, borderColor: C.lime },
-  arcTop: { top: -250, right: -250 },
-  arcBottom: { bottom: -260, left: -270 },
-  hearts: { position: 'absolute', top: 110, right: 40, flexDirection: 'row' },
-  heart: { fontFamily: F.pixel, fontSize: 34, marginLeft: 4 },
-  bolt: { position: 'absolute', left: -26, top: -6, fontSize: 34 },
-  word: { fontFamily: F.logo, color: '#fff', fontSize: 52, letterSpacing: 1, textShadowColor: C.pink, textShadowOffset: { width: 4, height: 4 }, textShadowRadius: 0 },
-  pill: { backgroundColor: C.pink, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 12, marginTop: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
-  pillText: { fontFamily: F.pixel, color: '#fff', fontSize: 13 },
-  hand: { position: 'absolute', right: -40, bottom: -36, fontSize: 40 },
-  bar: { flexDirection: 'row', backgroundColor: C.pink, padding: 5, borderRadius: 4, marginTop: 70, borderWidth: 3, borderColor: '#0E0E12' },
-  block: { width: 20, height: 22, marginHorizontal: 2, backgroundColor: 'rgba(14,14,18,0.25)' },
-  blockOn: { backgroundColor: '#0E0E12' },
-  loading: { fontFamily: F.pixel, color: '#0E0E12', fontSize: 30, letterSpacing: 4, marginTop: 10 },
-  line: { color: 'rgba(255,255,255,0.8)', fontSize: 13, fontWeight: '700', marginTop: 8 },
-  city: { position: 'absolute', bottom: 70, backgroundColor: C.pink, borderRadius: 6, paddingVertical: 5, paddingHorizontal: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#0E0E12', borderBottomColor: '#0E0E12' },
-  cityText: { fontFamily: F.pixel, color: '#fff', fontSize: 14 },
+  page: { flex: 1, backgroundColor: '#07060C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, overflow: 'hidden' },
+  glow: { position: 'absolute', width: 520, height: 520, borderRadius: 260, backgroundColor: '#3A0D52', opacity: 0.55, top: '22%' },
+  corner: { position: 'absolute', width: 26, height: 26, borderColor: C.cyan },
+  topBar: { position: 'absolute', top: 66, left: 30, right: 30, flexDirection: 'row', justifyContent: 'space-between' },
+  sys: { fontFamily: F.pixel, color: C.cyan, fontSize: 11, opacity: 0.85 },
+  titleWrap: { alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: F.logo, color: '#FFFFFF', fontSize: 46, letterSpacing: 2 },
+  ghost: { position: 'absolute', opacity: 0.7 },
+  rule: { width: 200, height: 1, backgroundColor: C.cyan, opacity: 0.5, marginTop: 10 },
+  tagline: { fontFamily: F.pixel, color: '#E8E8F0', fontSize: 12, letterSpacing: 5, marginTop: 10 },
+  ringBox: { width: RING + 20, height: RING + 20, alignItems: 'center', justifyContent: 'center', marginTop: 34 },
+  dashed: { position: 'absolute', width: RING + 16, height: RING + 16, borderRadius: (RING + 16) / 2, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.cyan, opacity: 0.7 },
+  arc: { position: 'absolute', width: RING - 4, height: RING - 4, borderRadius: (RING - 4) / 2, borderWidth: 4, borderColor: 'transparent', borderTopColor: MAGENTA, borderRightColor: MAGENTA },
+  core: { width: RING - 46, height: RING - 46, borderRadius: (RING - 46) / 2, borderWidth: 1, borderColor: 'rgba(85,224,240,0.35)', backgroundColor: 'rgba(58,13,82,0.6)', alignItems: 'center', justifyContent: 'center' },
+  emoji: { fontSize: 42 },
+  barHead: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginTop: 34 },
+  small: { fontFamily: F.pixel, color: C.lime, fontSize: 11 },
+  bar: { width: '100%', flexDirection: 'row', borderWidth: 1.5, borderColor: C.cyan, borderRadius: 4, padding: 3, marginTop: 8 },
+  seg: { flex: 1, height: 12, marginHorizontal: 1.5, borderRadius: 1, backgroundColor: 'rgba(85,224,240,0.08)' },
+  term: { width: '100%', minHeight: 60, marginTop: 14 },
+  termLine: { fontFamily: F.pixel, color: '#C9C9D6', fontSize: 11, marginBottom: 5 },
+  footer: { position: 'absolute', bottom: 80, fontFamily: F.pixel, color: '#E8E8F0', fontSize: 11, letterSpacing: 2, textAlign: 'center' },
 });

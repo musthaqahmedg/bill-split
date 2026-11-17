@@ -59,3 +59,11 @@ export const F = {
 
 // 🏷️ Sticker shadow (v14): a hard light edge under the right + bottom of a card or button, like a sticker
 export const STICK = { borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' };
+
+// 🏷️ Brand words in ONE place: change the app name here when it's final
+export const BRAND = {
+  name: 'VibeOut',
+  upper: 'VIBEOUT',
+  tagline: 'PULL UP ✦ LINK UP',
+  footer: 'PLAN IT. PULL UP. GET HOME SAFE.',
+};
