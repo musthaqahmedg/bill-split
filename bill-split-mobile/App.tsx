@@ -84,6 +84,7 @@ function matchItems(oldItems: any[], newItems: any[]) {
 function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void; registerNav?: (go: (s: string) => void) => void; onBug?: () => void }) {
   const [loggedIn, setLoggedIn] = useState(false);
   const [checking, setChecking] = useState(true); // looking for a saved login
+  const [introDone, setIntroDone] = useState(false); // 💡 neon logo intro played (or skipped)
   const [welcomed, setWelcomed] = useState(true); // seen the welcome slides on this phone?
   const [guest, setGuest] = useState(false); // 👤 trying the app without an account
   useEffect(() => {
@@ -417,7 +418,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     setScreen('home');
   };
 
-  if (checking) return <Splash />; // ✨ branded opening moment
+  if (checking || !introDone) return <Splash onDone={() => setIntroDone(true)} />; // 💡 neon logo intro
 
   if (locked) {
     return (

@@ -1,128 +1,116 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet, Text, View } from 'react-native';
-import { BRAND, C, F } from '../services/theme';
+import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { BRAND, F } from '../services/theme';
 
-// 🌙 Opening moment: "night system booting" — glitch title, spinning neon ring with cycling emojis,
-// a segmented loading bar and terminal lines. Only shows while the app is actually starting.
-const EMOJIS = ['🍹', '😈', '🔥', '🥳', '🪩', '👾'];
-const LINES = ['syncing squad', 'splitting the bill', "finding tonight's vibe"];
-const SEGMENTS = 16;
-const MAGENTA = '#FF2BD6';
+// 💡 Opening moment: a neon sign that switches on letter by letter, with a buzz + hum.
+// Plays once at app start (about 3 s), tap anywhere to skip. Sound follows the phone's silent switch.
+const PINK = '#FF2BD6';
+const BLUE = '#4D6BFF';
+const LETTER_AT = [350, 550, 750, 1220, 1450, 1600, 1750]; // ms, the sound file uses the same timings
+const FRAME_AT = 2000;
+const DONE_AT = 2900;
 
-export default function Splash() {
-  const spin = useRef(new Animated.Value(0)).current;
-  const pulse = useRef(new Animated.Value(0)).current;
-  const [emoji, setEmoji] = useState(0);
-  const [filled, setFilled] = useState(1);
-  const [shown, setShown] = useState(0); // terminal lines visible
-  const [blink, setBlink] = useState(true);
-  const [glitch, setGlitch] = useState(0);
+// expo-audio is optional: an older build without it still opens fine, just silently
+let Audio = null;
+try {
+  Audio = require('expo-audio');
+} catch (e) {}
+
+export default function Splash({ onDone }) {
+  const { width } = useWindowDimensions();
+  const word = BRAND.upper;
+  const [lit, setLit] = useState(() => word.split('').map(() => false));
+  const [frame, setFrame] = useState(false);
+  const tag = useRef(new Animated.Value(0)).current;
+  const smoke = useRef(new Animated.Value(0)).current;
+  const finished = useRef(false);
+
+  const finish = () => {
+    if (finished.current) return;
+    finished.current = true;
+    onDone && onDone();
+  };
 
   useEffect(() => {
-    Animated.loop(Animated.timing(spin, { toValue: 1, duration: 1400, easing: Easing.linear, useNativeDriver: true })).start();
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 500, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ])
-    ).start();
-    const t1 = setInterval(() => setEmoji((n) => (n + 1) % EMOJIS.length), 320);
-    const t2 = setInterval(() => setFilled((n) => Math.min(SEGMENTS, n + 1)), 65);
-    const t3 = setInterval(() => setShown((n) => Math.min(LINES.length, n + 1)), 300);
-    const t4 = setInterval(() => setBlink((b) => !b), 400);
-    const t5 = setInterval(() => setGlitch((g) => (g + 1) % 7), 120);
-    return () => [t1, t2, t3, t4, t5].forEach(clearInterval);
+    const timers = [];
+    const on = (i, v) => setLit((l) => l.map((x, j) => (j === i ? v : x)));
+    word.split('').forEach((_, i) => {
+      const at = LETTER_AT[Math.min(i, LETTER_AT.length - 1)] + Math.max(0, i - LETTER_AT.length + 1) * 150;
+      // the 4th letter flickers before it catches, like a real tube
+      if (i === 3) {
+        timers.push(setTimeout(() => on(i, true), 950));
+        timers.push(setTimeout(() => on(i, false), 1010));
+        timers.push(setTimeout(() => on(i, true), 1050));
+        timers.push(setTimeout(() => on(i, false), 1120));
+      }
+      timers.push(setTimeout(() => on(i, true), at));
+    });
+    timers.push(setTimeout(() => setFrame(true), FRAME_AT));
+    timers.push(setTimeout(() => setFrame(false), FRAME_AT + 60));
+    timers.push(setTimeout(() => setFrame(true), FRAME_AT + 110));
+    timers.push(setTimeout(() => Animated.timing(tag, { toValue: 1, duration: 500, useNativeDriver: true }).start(), FRAME_AT + 200));
+    timers.push(setTimeout(finish, DONE_AT));
+    Animated.loop(Animated.timing(smoke, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true })).start();
+
+    let player = null;
+    try {
+      if (Audio) {
+        player = Audio.createAudioPlayer(require('../assets/sounds/neon-on.m4a'));
+        player.play();
+      }
+    } catch (e) {}
+
+    return () => {
+      timers.forEach(clearTimeout);
+      try {
+        player && player.remove();
+      } catch (e) {}
+    };
   }, []);
 
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const rotateBack = spin.interpolate({ inputRange: [0, 1], outputRange: ['360deg', '0deg'] });
-  const jitter = glitch === 3 ? 2 : glitch === 5 ? -2 : 0; // a tiny glitch every so often
-
-  return (
-    <View style={styles.page}>
-      <View style={styles.glow} />
-      {/* corner brackets */}
-      <View style={[styles.corner, { top: 54, left: 18, borderTopWidth: 2, borderLeftWidth: 2 }]} />
-      <View style={[styles.corner, { top: 54, right: 18, borderTopWidth: 2, borderRightWidth: 2 }]} />
-      <View style={[styles.corner, { bottom: 40, left: 18, borderBottomWidth: 2, borderLeftWidth: 2 }]} />
-      <View style={[styles.corner, { bottom: 40, right: 18, borderBottomWidth: 2, borderRightWidth: 2 }]} />
-
-      <View style={styles.topBar}>
-        <Text style={styles.sys}>{BRAND.upper}//OS</Text>
-        <Text style={styles.sys}>
-          <Text style={{ color: blink ? C.lime : 'transparent' }}>● </Text>ONLINE
-        </Text>
-      </View>
-
-      {/* glitch title: cyan + magenta ghosts behind the white word */}
-      <View style={styles.titleWrap}>
-        <Text style={[styles.title, styles.ghost, { color: C.cyan, transform: [{ translateX: -2 + jitter }] }]}>{BRAND.upper}</Text>
-        <Text style={[styles.title, styles.ghost, { color: MAGENTA, transform: [{ translateX: 2 - jitter }] }]}>{BRAND.upper}</Text>
-        <Text style={styles.title}>{BRAND.upper}</Text>
-      </View>
-      <View style={styles.rule} />
-      <Text style={styles.tagline}>{BRAND.tagline}</Text>
-
-      {/* neon ring */}
-      <View style={styles.ringBox}>
-        <Animated.View style={[styles.dashed, { transform: [{ rotate: rotateBack }] }]} />
-        <Animated.View style={[styles.arc, { transform: [{ rotate }] }]} />
-        <Animated.View style={[styles.core, { opacity: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1] }) }]}>
-          <Text style={styles.emoji}>{EMOJIS[emoji]}</Text>
-        </Animated.View>
-      </View>
-
-      {/* loading bar */}
-      <View style={styles.barHead}>
-        <Text style={styles.small}>BOOTING NIGHT SYSTEM</Text>
-        <Text style={styles.small}>LVL 01</Text>
-      </View>
-      <View style={styles.bar}>
-        {Array.from({ length: SEGMENTS }).map((_, i) => (
-          <View key={i} style={[styles.seg, i < filled && { backgroundColor: i < SEGMENTS / 2 ? C.cyan : i < SEGMENTS * 0.75 ? C.violet : MAGENTA }]} />
+  const size = Math.min(54, (width - 90) / (word.length * 0.74));
+  const Sign = ({ mirror }) => (
+    <View style={[styles.frame, { borderColor: frame ? BLUE : 'rgba(77,107,255,0.14)' }, frame && styles.frameLit, mirror && styles.mirror]}>
+      <View style={styles.row}>
+        {word.split('').map((ch, i) => (
+          <Text key={i} style={[styles.letter, { fontSize: size }, lit[i] ? styles.on : styles.off]}>
+            {ch}
+          </Text>
         ))}
       </View>
+    </View>
+  );
 
-      {/* terminal lines */}
-      <View style={styles.term}>
-        {LINES.map((l, i) =>
-          i < shown ? (
-            <Text key={l} style={styles.termLine}>
-              {'> '}{l}{i < LINES.length - 1 ? ' ... ok' : blink ? '_' : ' '}
-            </Text>
-          ) : null
-        )}
+  const drift = smoke.interpolate({ inputRange: [0, 0.5, 1], outputRange: [0, 24, 0] });
+
+  return (
+    <Pressable style={styles.page} onPress={finish}>
+      <Animated.View style={[styles.smoke, { left: -60, transform: [{ translateX: drift }] }]} />
+      <Animated.View style={[styles.smoke, { right: -80, bottom: '30%', transform: [{ translateX: Animated.multiply(drift, -1) }] }]} />
+
+      <Sign />
+      {/* floor reflection */}
+      <View style={styles.reflection} pointerEvents="none">
+        <Sign mirror />
       </View>
 
-      <Text style={styles.footer}>
-        <Text style={{ color: MAGENTA }}>// </Text>{BRAND.footer}<Text style={{ color: MAGENTA }}> //</Text>
-      </Text>
-    </View>
+      <Animated.Text style={[styles.tagline, { opacity: tag }]}>{BRAND.tagline}</Animated.Text>
+      <Text style={styles.skip}>tap to skip</Text>
+    </Pressable>
   );
 }
 
-const RING = 150;
 const styles = StyleSheet.create({
-  page: { flex: 1, backgroundColor: '#07060C', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28, overflow: 'hidden' },
-  glow: { position: 'absolute', width: 520, height: 520, borderRadius: 260, backgroundColor: '#3A0D52', opacity: 0.55, top: '22%' },
-  corner: { position: 'absolute', width: 26, height: 26, borderColor: C.cyan },
-  topBar: { position: 'absolute', top: 66, left: 30, right: 30, flexDirection: 'row', justifyContent: 'space-between' },
-  sys: { fontFamily: F.pixel, color: C.cyan, fontSize: 11, opacity: 0.85 },
-  titleWrap: { alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: F.logo, color: '#FFFFFF', fontSize: 46, letterSpacing: 2 },
-  ghost: { position: 'absolute', opacity: 0.7 },
-  rule: { width: 200, height: 1, backgroundColor: C.cyan, opacity: 0.5, marginTop: 10 },
-  tagline: { fontFamily: F.pixel, color: '#E8E8F0', fontSize: 12, letterSpacing: 5, marginTop: 10 },
-  ringBox: { width: RING + 20, height: RING + 20, alignItems: 'center', justifyContent: 'center', marginTop: 34 },
-  dashed: { position: 'absolute', width: RING + 16, height: RING + 16, borderRadius: (RING + 16) / 2, borderWidth: 1.5, borderStyle: 'dashed', borderColor: C.cyan, opacity: 0.7 },
-  arc: { position: 'absolute', width: RING - 4, height: RING - 4, borderRadius: (RING - 4) / 2, borderWidth: 4, borderColor: 'transparent', borderTopColor: MAGENTA, borderRightColor: MAGENTA },
-  core: { width: RING - 46, height: RING - 46, borderRadius: (RING - 46) / 2, borderWidth: 1, borderColor: 'rgba(85,224,240,0.35)', backgroundColor: 'rgba(58,13,82,0.6)', alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 42 },
-  barHead: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', marginTop: 34 },
-  small: { fontFamily: F.pixel, color: C.lime, fontSize: 11 },
-  bar: { width: '100%', flexDirection: 'row', borderWidth: 1.5, borderColor: C.cyan, borderRadius: 4, padding: 3, marginTop: 8 },
-  seg: { flex: 1, height: 12, marginHorizontal: 1.5, borderRadius: 1, backgroundColor: 'rgba(85,224,240,0.08)' },
-  term: { width: '100%', minHeight: 60, marginTop: 14 },
-  termLine: { fontFamily: F.pixel, color: '#C9C9D6', fontSize: 11, marginBottom: 5 },
-  footer: { position: 'absolute', bottom: 80, fontFamily: F.pixel, color: '#E8E8F0', fontSize: 11, letterSpacing: 2, textAlign: 'center' },
+  page: { flex: 1, backgroundColor: '#05040A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  smoke: { position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(160,140,200,0.06)', bottom: '18%' },
+  frame: { borderWidth: 2.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 10 },
+  frameLit: { shadowColor: BLUE, shadowOpacity: 1, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, backgroundColor: 'rgba(77,107,255,0.05)' },
+  row: { flexDirection: 'row' },
+  letter: { fontWeight: '700', letterSpacing: 3, marginHorizontal: 1 },
+  on: { color: '#FFE6F8', textShadowColor: PINK, textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 } },
+  off: { color: 'rgba(255,255,255,0.08)' },
+  mirror: { transform: [{ scaleY: -1 }] },
+  reflection: { marginTop: 6, opacity: 0.18, height: 46, overflow: 'hidden', justifyContent: 'flex-start' },
+  tagline: { fontFamily: F.pixel, color: '#E8E8F0', fontSize: 12, letterSpacing: 5, marginTop: 26 },
+  skip: { position: 'absolute', bottom: 60, fontFamily: F.pixel, color: 'rgba(232,232,240,0.45)', fontSize: 10, letterSpacing: 2 },
 });
