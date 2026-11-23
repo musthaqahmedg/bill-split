@@ -51,6 +51,7 @@ import PullUpScreen from './screens/PullUpScreen';
 import PlanNightScreen from './screens/PlanNightScreen';
 import EventScreen from './screens/EventScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
+import IntroStory from './screens/IntroStory';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
 import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
@@ -218,6 +219,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [planKind, setPlanKind] = useState<any>(null); // 🎛️ plan type picked from a Home vibe chip
   // 🧭 First-time guided tour (once, on Home)
   const [showTour, setShowTour] = useState(false);
+  const [showStory, setShowStory] = useState(false); // 🎬 replay the LET'S GO! story from Me → Tour
   const tourChecked = useRef(false);
   useEffect(() => {
     if (screen !== 'home' || tourChecked.current) return;
@@ -478,6 +480,11 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <View style={{ flex: 1 }}>{page}</View>
       <Tour visible={showTour && screen === 'home'} onDone={() => setShowTour(false)} />
+      {showStory && (
+        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 50, elevation: 50 }}>
+          <IntroStory onDone={() => { setShowStory(false); setShowTour(true); }} />
+        </View>
+      )}
       <LocationPrime />
       <TabBar
         current={screen}
@@ -662,7 +669,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onTour={() => {
           resetTour();
           setScreen('home');
-          setShowTour(true);
+          setShowStory(true); // story first, then the tour
         }}
       />
     );

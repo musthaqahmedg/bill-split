@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Dimensions, Easing, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { C, F, G } from '../services/theme';
+import IntroStory from './IntroStory';
 
 // 👋 First open: 3 punchy slides (Gautham's "PULL UP. LINK UP. VIBE OUT." design), then straight in as a guest
 const SLIDES = [
@@ -83,7 +84,14 @@ function Stickers({ hero, stickers }) {
   );
 }
 
-export default function WelcomeScreen({ onGuest, onSignIn }) {
+// 🎬 First the short "LET'S GO!" story, then the slides
+export default function WelcomeScreen(props) {
+  const [story, setStory] = useState(true);
+  if (story) return <IntroStory onDone={() => setStory(false)} />;
+  return <WelcomeSlides {...props} />;
+}
+
+function WelcomeSlides({ onGuest, onSignIn }) {
   const { width } = Dimensions.get('window');
   const [page, setPage] = useState(0);
   const [busy, setBusy] = useState(false);
