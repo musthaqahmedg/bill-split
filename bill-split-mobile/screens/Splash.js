@@ -56,7 +56,16 @@ export default function Splash({ onDone }) {
     try {
       if (Audio) {
         player = Audio.createAudioPlayer(require('../assets/sounds/neon-on.m4a'));
-        player.play();
+        let started = false;
+        const start = () => {
+          if (started) return;
+          started = true;
+          try { player.play(); } catch (e) {}
+        };
+        if (player.isLoaded) start();
+        const sub = player.addListener('playbackStatusUpdate', (st) => st && st.isLoaded && start());
+        timers.push(setTimeout(start, 400)); // fallback if no status event comes
+        timers.push(setTimeout(() => { try { sub && sub.remove(); } catch (e) {} }, DONE_AT));
       }
     } catch (e) {}
 
@@ -70,14 +79,18 @@ export default function Splash({ onDone }) {
 
   const size = Math.min(54, (width - 90) / (word.length * 0.74));
   const Sign = ({ mirror }) => (
-    <View style={[styles.frame, { borderColor: frame ? BLUE : 'rgba(77,107,255,0.14)' }, frame && styles.frameLit, mirror && styles.mirror]}>
+    <View style={[styles.halo, frame && styles.haloLit, mirror && styles.mirror]}>
+    <View style={[styles.frame, { borderColor: frame ? '#8FA2FF' : 'rgba(77,107,255,0.22)' }, frame && styles.frameLit]}>
       <View style={styles.row}>
         {word.split('').map((ch, i) => (
-          <Text key={i} style={[styles.letter, { fontSize: size }, lit[i] ? styles.on : styles.off]}>
-            {ch}
-          </Text>
+          <View key={i}>
+            {lit[i] && <Text style={[styles.letter, styles.glowWide, { fontSize: size }]}>{ch}</Text>}
+            {lit[i] && <Text style={[styles.letter, styles.glowMid, { fontSize: size }]}>{ch}</Text>}
+            <Text style={[styles.letter, { fontSize: size }, lit[i] ? styles.on : styles.off]}>{ch}</Text>
+          </View>
         ))}
       </View>
+    </View>
     </View>
   );
 
@@ -104,11 +117,15 @@ const styles = StyleSheet.create({
   page: { flex: 1, backgroundColor: '#05040A', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
   smoke: { position: 'absolute', width: 260, height: 260, borderRadius: 130, backgroundColor: 'rgba(160,140,200,0.06)', bottom: '18%' },
   frame: { borderWidth: 2.5, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 10 },
-  frameLit: { shadowColor: BLUE, shadowOpacity: 1, shadowRadius: 16, shadowOffset: { width: 0, height: 0 }, backgroundColor: 'rgba(77,107,255,0.05)' },
+  frameLit: { shadowColor: BLUE, shadowOpacity: 1, shadowRadius: 10, shadowOffset: { width: 0, height: 0 }, backgroundColor: 'rgba(77,107,255,0.06)' },
   row: { flexDirection: 'row' },
-  letter: { fontWeight: '700', letterSpacing: 3, marginHorizontal: 1 },
-  on: { color: '#FFE6F8', textShadowColor: PINK, textShadowRadius: 18, textShadowOffset: { width: 0, height: 0 } },
-  off: { color: 'rgba(255,255,255,0.08)' },
+  letter: { fontWeight: '600', letterSpacing: 3, marginHorizontal: 1 },
+  glowWide: { position: 'absolute', color: PINK, opacity: 0.9, textShadowColor: PINK, textShadowRadius: 28, textShadowOffset: { width: 0, height: 0 } },
+  glowMid: { position: 'absolute', color: PINK, textShadowColor: '#FF5CE1', textShadowRadius: 12, textShadowOffset: { width: 0, height: 0 } },
+  on: { color: '#FFF0FB', textShadowColor: '#FF8BEA', textShadowRadius: 4, textShadowOffset: { width: 0, height: 0 } },
+  off: { color: 'rgba(255,120,220,0.16)' },
+  halo: { borderRadius: 18, padding: 3, borderWidth: 3, borderColor: 'transparent' },
+  haloLit: { borderColor: 'rgba(77,107,255,0.35)', shadowColor: BLUE, shadowOpacity: 0.9, shadowRadius: 22, shadowOffset: { width: 0, height: 0 } },
   mirror: { transform: [{ scaleY: -1 }] },
   reflection: { marginTop: 6, opacity: 0.18, height: 46, overflow: 'hidden', justifyContent: 'flex-start' },
   tagline: { fontFamily: F.pixel, color: '#E8E8F0', fontSize: 12, letterSpacing: 5, marginTop: 26 },
