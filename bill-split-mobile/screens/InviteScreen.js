@@ -1,16 +1,100 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import { useEffect, useRef, useState } from 'react';
+import { captureRef } from 'react-native-view-shot';
+import { ActivityIndicator, Alert, Animated, Easing, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import KeyboardDone from './KeyboardDone';
 import { INVITE_XP, inviteLink, myInvite, redeemInvite } from '../services/invite';
-import { C, F } from '../services/theme';
+import { BRAND, C, F } from '../services/theme';
 
 // 🎁 Invite friends → become friends automatically + XP (no cash value)
+// 🎟️ Ticket printer (Gautham's ref): tap → your invite ticket prints out of the slot → share it as an image
+
+const TICKET_H = 230;
+
+function Ticket({ code }) {
+  return (
+    <View style={tk.ticket}>
+      <View style={[tk.notch, { left: -11 }]} />
+      <View style={[tk.notch, { right: -11 }]} />
+      <View style={tk.topRow}>
+        <Text style={tk.brand}>{BRAND.upper}</Text>
+        <Text style={tk.admit}>ADMIT YOUR SQUAD 🎟️</Text>
+      </View>
+      <Text style={tk.kicker}>INVITE CODE</Text>
+      <Text style={tk.code}>{code}</Text>
+      <View style={tk.dash} />
+      <Text style={tk.line}>Plan nights · book tables · split bills</Text>
+      <Text style={tk.link}>{inviteLink(code).replace('https://', '')}</Text>
+    </View>
+  );
+}
+
+function Printer({ code, onShare, onLink, sharing }) {
+  const out = useRef(new Animated.Value(0)).current; // 0 = inside the printer, 1 = printed
+  const [state, setState] = useState('idle'); // idle → printing → done
+  const ticketRef = useRef(null);
+
+  const print = () => {
+    if (state !== 'idle') return;
+    setState('printing');
+    // print in small jerky steps, like a real ticket machine
+    const steps = [0.18, 0.34, 0.5, 0.66, 0.82, 1];
+    Animated.sequence(
+      steps.map((v) => Animated.timing(out, { toValue: v, duration: 230, easing: Easing.out(Easing.quad), useNativeDriver: true }))
+    ).start(() => {
+      setState('done');
+      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (e) {}
+    });
+    steps.forEach((_, i) => setTimeout(() => { try { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); } catch (e) {} }, i * 230));
+  };
+
+  const y = out.interpolate({ inputRange: [0, 1], outputRange: [-TICKET_H, 0] });
+
+  return (
+    <View style={{ marginTop: 20 }}>
+      <View style={tk.printer}>
+        <Text style={tk.pTitle}>Earn +{INVITE_XP} XP</Text>
+        <Text style={tk.pSub}>for every friend who makes their first plan</Text>
+        <View style={tk.lights}>
+          <View style={[tk.light, { backgroundColor: state === 'printing' ? C.lime : '#3A3A44' }]} />
+          <View style={[tk.light, { backgroundColor: state === 'done' ? C.pink : '#3A3A44' }]} />
+        </View>
+        <TouchableOpacity style={[tk.printBtn, state !== 'idle' && { opacity: 0.5 }]} onPress={print} disabled={state !== 'idle'} activeOpacity={0.85}>
+          <Text style={tk.printText}>{state === 'idle' ? 'TAP TO PRINT YOUR TICKET' : state === 'printing' ? 'PRINTING…' : 'PRINTED ✓'}</Text>
+        </TouchableOpacity>
+        <View style={tk.slot} />
+      </View>
+
+      {/* the ticket slides out from under the slot */}
+      <View style={{ height: state === 'idle' ? 0 : TICKET_H + 6, overflow: 'hidden', alignItems: 'center' }}>
+        <Animated.View style={{ transform: [{ translateY: y }] }}>
+          <View ref={ticketRef} collapsable={false} style={{ backgroundColor: C.bg, paddingHorizontal: 12 }}>
+            <Ticket code={code} />
+          </View>
+        </Animated.View>
+      </View>
+
+      {state === 'done' ? (
+        <>
+          <TouchableOpacity style={tk.shareBtn} onPress={() => onShare(ticketRef)} disabled={sharing} activeOpacity={0.85}>
+            <Text style={tk.shareText}>{sharing ? 'Getting it ready…' : '📤 Share ticket'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={onLink} style={{ alignSelf: 'center', marginTop: 10 }}>
+            <Text style={tk.linkBtn}>or send the link as text</Text>
+          </TouchableOpacity>
+        </>
+      ) : null}
+    </View>
+  );
+}
 
 export default function InviteScreen({ onBack }) {
   const [inv, setInv] = useState(null);
   const [failed, setFailed] = useState(false);
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const load = () => myInvite().then(setInv).catch(() => setFailed(true));
   useEffect(() => { load(); }, []);
@@ -18,8 +102,21 @@ export default function InviteScreen({ onBack }) {
   const share = () => {
     const link = inviteLink(inv.code);
     Share.share({
-      message: `🌙 Join me on VibeOut — plan nights out, book tables and split bills without the drama.\n\nUse my invite code *${inv.code}* when you sign up 👇\n${link}`,
+      message: `🌙 Join me on ${BRAND.name} — plan nights out, book tables and split bills without the drama.\n\nUse my invite code *${inv.code}* when you sign up 👇\n${link}`,
     }).catch(() => {});
+  };
+
+  const shareTicket = async (ref) => {
+    setSharing(true);
+    try {
+      const uri = await captureRef(ref, { format: 'png', quality: 1 });
+      if (!(await Sharing.isAvailableAsync())) return share();
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: 'Share your invite ticket' });
+    } catch (e) {
+      share(); // image didn't work → fall back to the text invite
+    } finally {
+      setSharing(false);
+    }
   };
 
   const redeem = async () => {
@@ -29,7 +126,7 @@ export default function InviteScreen({ onBack }) {
     try {
       const name = await redeemInvite(c);
       setCode('');
-      Alert.alert('You’re in 🎉', `You and ${name} are now friends on VibeOut.`);
+      Alert.alert('You’re in 🎉', `You and ${name} are now friends on ${BRAND.name}.`);
       load();
     } catch (e) {
       Alert.alert("Couldn't use that code", e.message);
@@ -49,13 +146,7 @@ export default function InviteScreen({ onBack }) {
 
         {inv ? (
           <>
-            <View style={styles.codeCard}>
-              <Text style={styles.kicker}>YOUR INVITE CODE</Text>
-              <Text style={styles.code} selectable>{inv.code}</Text>
-              <TouchableOpacity style={styles.shareBtn} onPress={share} activeOpacity={0.85} accessibilityRole="button">
-                <Text style={styles.shareText}>📤 Share invite</Text>
-              </TouchableOpacity>
-            </View>
+            <Printer code={inv.code} onShare={shareTicket} onLink={share} sharing={sharing} />
 
             <View style={styles.stats}>
               <View style={styles.stat}>
@@ -128,4 +219,28 @@ const styles = StyleSheet.create({
   useBtn: { backgroundColor: C.lime, borderRadius: 14, paddingHorizontal: 18, justifyContent: 'center', marginLeft: 8 },
   useText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   off: { backgroundColor: C.disabled },
+});
+
+const tk = StyleSheet.create({
+  printer: { backgroundColor: '#1F1D26', borderRadius: 26, borderWidth: 2, borderColor: '#2E2B38', paddingTop: 22, paddingHorizontal: 18, paddingBottom: 0, alignItems: 'center' },
+  pTitle: { fontFamily: F.display, color: C.text, fontSize: 26 },
+  pSub: { color: C.sub, fontSize: 14, marginTop: 4, textAlign: 'center' },
+  lights: { flexDirection: 'row', marginTop: 14 },
+  light: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 5 },
+  printBtn: { backgroundColor: C.pink, borderRadius: 16, paddingVertical: 14, alignSelf: 'stretch', alignItems: 'center', marginTop: 14 },
+  printText: { fontFamily: F.pixel, color: '#FFFFFF', fontSize: 13, letterSpacing: 1 },
+  slot: { height: 12, alignSelf: 'stretch', marginHorizontal: 24, marginTop: 18, marginBottom: 10, borderRadius: 6, backgroundColor: '#050507', borderTopWidth: 2, borderTopColor: '#000' },
+  ticket: { width: 290, height: TICKET_H, backgroundColor: C.lime, borderRadius: 18, padding: 18, overflow: 'hidden' },
+  notch: { position: 'absolute', top: 108, width: 22, height: 22, borderRadius: 11, backgroundColor: C.bg },
+  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  brand: { fontFamily: F.display, color: C.onLime, fontSize: 16 },
+  admit: { fontFamily: F.pixel, color: C.onLime, fontSize: 9 },
+  kicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10, marginTop: 18, opacity: 0.7 },
+  code: { fontFamily: F.display, color: C.onLime, fontSize: 40, letterSpacing: 6, marginTop: 2 },
+  dash: { borderTopWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(14,14,18,0.35)', marginVertical: 12 },
+  line: { color: C.onLime, fontSize: 13, fontWeight: '700' },
+  link: { color: C.onLime, fontSize: 12, marginTop: 4, opacity: 0.75 },
+  shareBtn: { backgroundColor: C.lime, borderRadius: 16, paddingVertical: 14, alignItems: 'center', marginTop: 14 },
+  shareText: { color: C.onLime, fontSize: 16, fontWeight: '900' },
+  linkBtn: { color: C.sub, fontSize: 14, textDecorationLine: 'underline' },
 });
