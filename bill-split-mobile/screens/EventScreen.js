@@ -1,5 +1,6 @@
 import { Alert, Dimensions, Image, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Going } from './EventPopup';
+import AffordChip from '../components/AffordChip';
 import { EVENT_CATS, eventKm, eventPrice } from '../services/events';
 import { C, F } from '../services/theme';
 
@@ -91,6 +92,7 @@ export default function EventScreen({ event: e, onBack, onPlan }) {
                   {tiers.length ? tiers.map((t, i) => (
                     <Text key={i} style={styles.sub}>{t.name}{t.price != null ? ` · ₹${Math.round(t.price).toLocaleString('en-IN')}` : ''}</Text>
                   )) : null}
+                  {!soldOut ? <AffordChip price={e.price_from} /> : null}
                 </View>
               </View>
             ) : null}

@@ -18,6 +18,9 @@ import { C, F } from '../services/theme';
 import BillSteps from './BillSteps';
 import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
 import { checkBudgetWarning } from '../services/budgetWarn';
+import PocketPicker from '../components/PocketPicker';
+import { getPockets, suggestBillPocket, tagBill } from '../services/pockets';
+import { kindOf } from '../services/kinds';
 
 const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
 const inr = (n) => '₹' + Math.round(n).toLocaleString('en-IN');
@@ -38,6 +41,7 @@ export default function SplitScreen({
   const [itemsOpen, setItemsOpen] = useState(false); // 🧾 who had what, item by item
   const [feedbackFor, setFeedbackFor] = useState(undefined); // 💬 bill id to ask about (undefined = closed)
   const [tip, setTip] = useState(Number(bill && bill.tip) || 0); // 💁 optional tip on top
+  const [pocketAsk, setPocketAsk] = useState(null); // 💰 { billId, pockets, suggested, next } after saving
 
   // Pairs: who is this person paired with?
   const partnerOf = (name) => {
@@ -155,8 +159,18 @@ export default function SplitScreen({
         createdSpace.current = spaceId;
         const saved = await saveBill({ ...payload, partyId: spaceId });
         setTimeout(checkBudgetWarning, 1500); // ⚠️ 80% / 100% of the Night Budget
-        if (await shouldAskFeedback()) setFeedbackFor((saved && saved.id) || null);
-        else Alert.alert('Saved! 🎉', 'It\'s in the Space with the chat and the squad.', [{ text: 'OK', onPress: () => onDone(createdSpace.current) }]);
+        const ask = await shouldAskFeedback();
+        const next = () => {
+          if (ask) setFeedbackFor((saved && saved.id) || null);
+          else Alert.alert('Saved! 🎉', 'It\'s in the Space with the chat and the squad.', [{ text: 'OK', onPress: () => onDone(createdSpace.current) }]);
+        };
+        // 💰 your real share comes out of a pocket (only if you use Pockets and you had something)
+        let st = null;
+        try { st = await getPockets(); } catch (e) {}
+        if (saved && saved.id && st && st.setup && st.pockets.length && (finalOf.Me || 0) > 0) {
+          const suggested = suggestBillPocket({ title: bill.restaurant || '', items: items.map((it) => ({ price: it.price, kind: kindOf(it) })) }, st.pockets);
+          setPocketAsk({ billId: saved.id, pockets: st.pockets, suggested, next });
+        } else next();
       }
     } catch (e) {
       Alert.alert("Couldn't save", e.message);
@@ -509,6 +523,13 @@ export default function SplitScreen({
         </View>
       </Modal>
     <WhySheet row={why} tipTotal={tip} onClose={() => setWhy(null)} />
+    {pocketAsk ? (
+      <PocketPicker
+        visible amount={finalOf.Me || 0} pockets={pocketAsk.pockets} suggested={pocketAsk.suggested}
+        onPick={async (id) => { try { await tagBill(pocketAsk.billId, id); } catch (e) {} const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
+        onSkip={() => { const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
+      />
+    ) : null}
     <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(createdSpace.current); }} />
       </View>
   );

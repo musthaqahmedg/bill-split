@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, FlatList, Image, Linking, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { eventKm, eventWhen, goingInfo, goingText, setGoing } from '../services/events';
 import { C, F } from '../services/theme';
+import AffordChip from '../components/AffordChip';
 
 // 🎉 Big event pop-up: poster card, venue + distance + "From ₹X", Book now, swipe for more, Remind me later
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -117,6 +118,7 @@ export default function EventPopup({ visible, events, start = 0, onClose, onRemi
                           ) : null}
                         </View>
                         <Text style={styles.title} numberOfLines={2}>{e.title}</Text>
+                        {e.status !== 'sold_out' ? <AffordChip price={e.price_from} /> : null}
                         <Going id={e.id} />
                         <TouchableOpacity style={[styles.book, sold && styles.sold]} onPress={() => book(e)} disabled={sold} activeOpacity={0.85}>
                           <Text style={[styles.bookText, sold && { color: C.faint }]}>{sold ? 'SOLD OUT' : 'Book now'}</Text>

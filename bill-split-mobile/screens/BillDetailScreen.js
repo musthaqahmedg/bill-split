@@ -10,6 +10,9 @@ import LoadError from '../components/LoadError';
 import { C, F } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
+import PocketPicker from '../components/PocketPicker';
+import { billPocketOf, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
+import { kindOf } from '../services/kinds';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const money = (n) => '₹' + Number((Number(n) || 0).toFixed(2)).toLocaleString('en-IN');
@@ -28,6 +31,15 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   useEffect(() => {
     getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {});
   }, []);
+
+  // 💰 which pocket your share comes out of
+  const [pk, setPk] = useState(null); // { pockets, current }
+  const [pkOpen, setPkOpen] = useState(false);
+  useEffect(() => {
+    Promise.all([getPockets(), billPocketOf(billId)])
+      .then(([st, current]) => st.setup && st.pockets.length && setPk({ pockets: st.pockets, current }))
+      .catch(() => {});
+  }, [billId]);
 
   // 🙋 friends who tagged their own items on the share link
   const [picks, setPicks] = useState([]);
@@ -58,6 +70,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   const participants = bill.bill_participants || [];
   const people = [...participants].sort((a, b) => b.amount_due - a.amount_due);
   const nameOf = Object.fromEntries(participants.map((p) => [p.id, p.name]));
+  const myPart = Number((participants.find((p) => p.name === 'Me') || {}).amount_due) || 0;
   const itemsTotal = items.reduce((s, it) => s + Number(it.price), 0);
   const extras = Number(bill.total) - itemsTotal;
   const ratio = itemsTotal > 0 ? Number(bill.total) / itemsTotal : 0; // share incl. tax & service
@@ -312,6 +325,16 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           )}
         </View>
 
+        {pk && myPart > 0 ? (() => {
+          const cur = pk.pockets.find((p) => p.id === pk.current);
+          return (
+            <TouchableOpacity style={styles.pocketRow} onPress={() => setPkOpen(true)} activeOpacity={0.8}>
+              <Text style={styles.pocketText}>💰 {cur ? `Your ₹${Math.round(myPart).toLocaleString('en-IN')} came out of ${cur.emoji} ${cur.name}` : `Put your ₹${Math.round(myPart).toLocaleString('en-IN')} in a pocket`}</Text>
+              <Text style={styles.pocketGo}>{cur ? 'Change ›' : 'Pick ›'}</Text>
+            </TouchableOpacity>
+          );
+        })() : null}
+
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.recapBtn, styles.half]} onPress={shareLink}>
             <Text style={styles.recapText}>🔗 Share link</Text>
@@ -463,6 +486,14 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       />
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
+      {pk ? (
+        <PocketPicker
+          visible={pkOpen} amount={myPart} pockets={pk.pockets} current={pk.current}
+          suggested={suggestBillPocket({ title: bill.title || '', items: items.map((it) => ({ price: it.price, kind: kindOf(it) })) }, pk.pockets)}
+          onPick={async (id) => { try { await tagBill(billId, id); setPk({ ...pk, current: id }); } catch (e) { Alert.alert("Couldn't save", e.message); } setPkOpen(false); }}
+          onSkip={async () => { if (pk.current) { try { await tagBill(billId, null); setPk({ ...pk, current: null }); } catch (e) {} } setPkOpen(false); }}
+        />
+      ) : null}
       <ItemInfo item={infoItem} onClose={() => setInfoItem(null)} />
       <KeyboardDone />
     </KeyboardAvoidingView>
@@ -470,6 +501,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 }
 
 const styles = StyleSheet.create({
+  pocketRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginTop: 12 },
+  pocketText: { color: C.text, fontSize: 14, fontWeight: '700', flex: 1, marginRight: 10 },
+  pocketGo: { color: C.lime, fontSize: 14, fontWeight: '800' },
   saysPaid: { color: C.lime, fontSize: 13, fontWeight: '800', marginRight: 8, marginBottom: 6 },
   receivedBtn: { backgroundColor: C.lime, borderColor: C.lime },
   upiBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 14, marginRight: 8, marginBottom: 6, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },

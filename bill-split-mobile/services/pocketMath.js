@@ -110,3 +110,34 @@ export function pocketFor(cat, pockets) {
   const any = pockets.find((p) => p.name.toLowerCase() === 'unexpected') || pockets.find((p) => !p.is_savings);
   return any ? any.id : null;
 }
+
+// 🧾 After a bill scan: suggest the pocket from the place and what was on the bill
+// (bar/pub/club or mostly drinks → Going Out, cafés/restaurants → Eating Out, cabs → Transport)
+const GOING_OUT_WORDS = /\b(bar|pub|club|lounge|brew|brewery|tap ?room|toddy|night|disco|beer|wine)\b/i;
+const TRANSPORT_WORDS = /\b(uber|ola|rapido|cab|taxi|auto|metro|fuel|petrol|parking)\b/i;
+export function suggestBillPocket({ title = '', items = [] }, pockets) {
+  const byName = (n) => pockets.find((p) => p.name.toLowerCase() === n);
+  const total = items.reduce((s, i) => s + (Number(i.price) || 0), 0);
+  const drinks = items.filter((i) => i.kind === 'alcohol').reduce((s, i) => s + (Number(i.price) || 0), 0);
+  let want = 'eating out';
+  if (TRANSPORT_WORDS.test(title)) want = 'transport';
+  else if (GOING_OUT_WORDS.test(title) || (total > 0 && drinks / total >= 0.4)) want = 'going out';
+  const hit = byName(want) || byName('going out') || byName('eating out') || pockets.find((p) => !p.is_savings);
+  return hit ? hit.id : null;
+}
+
+// 🌙 Tonight Pocket: a slice of Going Out for one night. Only today's Going Out spends count.
+export function tonightPocket(amount, goingOutSpends, now = new Date()) {
+  const today = dayStr(now);
+  const spent = (goingOutSpends || []).filter((e) => dayStr(new Date(e.spent_at)) === today).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const amt = Math.round(Number(amount) || 0);
+  return { amount: amt, spent: Math.round(spent), left: amt - Math.round(spent), pct: amt ? Math.min(1, spent / amt) : 0 };
+}
+
+// 🎟️ Can I afford this event from Going Out (and tonight's slice, if one is set)?
+export function canAfford(price, goingOutLeft, tonightLeft = null) {
+  const p = Math.round(Number(price) || 0);
+  const room = tonightLeft === null ? goingOutLeft : Math.min(goingOutLeft, tonightLeft);
+  if (!(p > 0)) return { ok: true, free: true, short: 0, room };
+  return { ok: room >= p, free: false, short: Math.max(0, p - room), room };
+}

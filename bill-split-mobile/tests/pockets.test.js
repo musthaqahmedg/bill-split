@@ -77,3 +77,27 @@ test('leftovers roll over from fixed and variable pockets only', () => {
   const ex = [{ pocket_id: 'a', amount: 1400, spent_at: '2026-10-05T10:00:00Z' }, { pocket_id: 'b', amount: 200, spent_at: '2026-10-06T10:00:00Z' }];
   assert.equal(leftoverFor(pockets, ex, cycle), 300); // a overspent → 0, b leaves 300
 });
+
+test('bill pocket suggestion: bars and drinks → Going Out, food → Eating Out, cabs → Transport', async () => {
+  const { suggestBillPocket } = await import('../services/pocketMath.js');
+  const P = [{ id: 'e', name: 'Eating Out' }, { id: 'g', name: 'Going Out' }, { id: 't', name: 'Transport' }, { id: 's', name: 'Savings', is_savings: true }];
+  assert.equal(suggestBillPocket({ title: 'Quarter Restobar & Pub', items: [] }, P), 'g');
+  assert.equal(suggestBillPocket({ title: 'Rio Kitchen', items: [{ price: 600, kind: 'alcohol' }, { price: 400, kind: 'food' }] }, P), 'g');
+  assert.equal(suggestBillPocket({ title: 'Rio Kitchen', items: [{ price: 100, kind: 'alcohol' }, { price: 900, kind: 'food' }] }, P), 'e');
+  assert.equal(suggestBillPocket({ title: 'Uber trip', items: [] }, P), 't');
+  assert.equal(suggestBillPocket({ title: 'Cafe', items: [] }, [{ id: 'x', name: 'Fun' }, { id: 's', name: 'Savings', is_savings: true }]), 'x');
+});
+
+test('tonight pocket only counts today; event affordability uses the tighter limit', async () => {
+  const { tonightPocket, canAfford } = await import('../services/pocketMath.js');
+  const now = new Date(2026, 10, 25, 22, 0);
+  const t = tonightPocket(1500, [
+    { amount: 880, spent_at: new Date(2026, 10, 25, 21, 0).toISOString() },
+    { amount: 999, spent_at: new Date(2026, 10, 24, 21, 0).toISOString() },
+  ], now);
+  assert.equal(t.left, 620);
+  assert.deepEqual(canAfford(500, 3000, 620), { ok: true, free: false, short: 0, room: 620 });
+  assert.equal(canAfford(800, 3000, 620).short, 180);
+  assert.equal(canAfford(800, 3000).ok, true);
+  assert.equal(canAfford(0, 0).free, true);
+});

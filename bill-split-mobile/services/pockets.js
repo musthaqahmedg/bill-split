@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { billDate, myShare } from './money';
 import { cycleFor, leftoverFor, previousCycle } from './pocketMath';
 
 export * from './pocketMath';
@@ -67,10 +68,51 @@ export async function rollOverIfNeeded(state, now = new Date()) {
   // nothing to roll before the user set up pockets
   const { data: s } = await supabase.from('pocket_setup').select('created_at').maybeSingle();
   if (!s || new Date(s.created_at) >= cyc.start) return null;
-  const exps = await pocketExpenses(prev.startStr);
-  const amount = leftoverFor(pockets, exps, prev);
+  const { spends } = await cycleSpends(prev.startStr);
+  const amount = leftoverFor(pockets, spends, prev);
   const { data: { user } } = await supabase.auth.getUser();
   const { error } = await supabase.from('pocket_rollovers').insert({ user_id: user.id, cycle_start: cyc.startStr, amount });
   if (error && error.code !== '23505') throw error;
   return amount;
+}
+
+// ---------- Build 2: scanned-bill shares come out of a pocket ----------
+
+// Tag (or untag) your share of a bill to a pocket
+export async function tagBill(billId, pocketId) {
+  if (!pocketId) {
+    const { error } = await supabase.from('bill_pockets').delete().eq('bill_id', billId);
+    if (error) throw error;
+    return;
+  }
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('bill_pockets').upsert({ user_id: user.id, bill_id: billId, pocket_id: pocketId });
+  if (error) throw error;
+}
+
+export async function billPocketOf(billId) {
+  const { data } = await supabase.from('bill_pockets').select('pocket_id').eq('bill_id', billId).maybeSingle();
+  return data ? data.pocket_id : null;
+}
+
+// Your real share of each scanned bill since a date (what you had, never an even split),
+// returned like expenses so the pocket maths treats them the same. Untagged bills come back too.
+export async function billShares(sinceStr) {
+  const since = new Date(sinceStr + 'T00:00:00');
+  const [{ data: bills, error: e1 }, { data: tags, error: e2 }] = await Promise.all([
+    supabase.from('bills').select('id, title, bill_date, created_at, bill_participants(name, amount_due)').eq('kind', 'scan')
+      .gte('created_at', new Date(since.getTime() - 40 * 86400000).toISOString()).order('created_at', { ascending: false }),
+    supabase.from('bill_pockets').select('bill_id, pocket_id'),
+  ]);
+  if (e1 || e2) throw e1 || e2;
+  const tagOf = Object.fromEntries((tags || []).map((t) => [t.bill_id, t.pocket_id]));
+  return (bills || [])
+    .map((b) => ({ id: `bill:${b.id}`, bill_id: b.id, bill: true, note: b.title || 'Bill', amount: myShare(b), spent_at: billDate(b).toISOString(), pocket_id: tagOf[b.id] || null }))
+    .filter((r) => r.amount > 0 && new Date(r.spent_at) >= since);
+}
+
+// Everything that comes out of pockets this cycle: pocket spends + tagged bill shares
+export async function cycleSpends(sinceStr) {
+  const [exps, shares] = await Promise.all([pocketExpenses(sinceStr), billShares(sinceStr).catch(() => [])]);
+  return { spends: [...exps, ...shares.filter((s) => s.pocket_id)], untagged: shares.filter((s) => !s.pocket_id) };
 }

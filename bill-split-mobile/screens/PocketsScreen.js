@@ -4,8 +4,11 @@ import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressa
 import KeyboardDone from './KeyboardDone';
 import LoadError from '../components/LoadError';
 import {
-  POCKET_KINDS, cycleFor, dayStr, getPockets, leftToAssign, pocketBalances, pocketExpenses, removeSpend, rollOverIfNeeded, saveSetup, spendFromPocket, suggestAmounts,
+  POCKET_KINDS, cycleFor, cycleSpends, dayStr, getPockets, leftToAssign, pocketBalances, removeSpend, rollOverIfNeeded, saveSetup, spendFromPocket,
+  suggestAmounts, suggestBillPocket, tagBill, tonightPocket,
 } from '../services/pockets';
+import { getBudgets, saveBudget } from '../services/budget';
+import PocketPicker from '../components/PocketPicker';
 import { C, F } from '../services/theme';
 
 // 💰 Pockets (Gautham's brief, Build 1): every rupee of income gets a pocket, spends come out live,
@@ -217,10 +220,15 @@ function PocketSheet({ pocket, spends, onClose, onChanged }) {
     }
     setBusy(false);
   };
-  const del = (s) => Alert.alert('Remove this spend?', `${inr(s.amount)}${s.note ? ` · ${s.note}` : ''}`, [
-    { text: 'Keep', style: 'cancel' },
-    { text: 'Remove', style: 'destructive', onPress: () => removeSpend(s.id).then(onChanged).catch((e) => Alert.alert("Couldn't remove", e.message)) },
-  ]);
+  const del = (s) => s.bill
+    ? Alert.alert('Take this bill out of the pocket?', `Your share ${inr(s.amount)} of ${s.note}. The bill itself stays.`, [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Take it out', style: 'destructive', onPress: () => tagBill(s.bill_id, null).then(onChanged).catch((e) => Alert.alert("Couldn't change", e.message)) },
+    ])
+    : Alert.alert('Remove this spend?', `${inr(s.amount)}${s.note ? ` · ${s.note}` : ''}`, [
+      { text: 'Keep', style: 'cancel' },
+      { text: 'Remove', style: 'destructive', onPress: () => removeSpend(s.id).then(onChanged).catch((e) => Alert.alert("Couldn't remove", e.message)) },
+    ]);
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
@@ -249,11 +257,11 @@ function PocketSheet({ pocket, spends, onClose, onChanged }) {
             <ScrollView style={{ maxHeight: 220 }}>
               {spends.length ? spends.map((s) => (
                 <TouchableOpacity key={s.id} style={styles.spendItem} onLongPress={() => del(s)} activeOpacity={0.7}>
-                  <Text style={styles.spendNote} numberOfLines={1}>{s.note || 'Spend'}</Text>
+                  <Text style={styles.spendNote} numberOfLines={1}>{s.bill ? '🧾 ' : ''}{s.note || 'Spend'}{s.bill ? ' · your share' : ''}</Text>
                   <Text style={styles.spendAmt}>−{inr(s.amount)}</Text>
                 </TouchableOpacity>
               )) : <Text style={styles.hint}>Nothing spent from this pocket yet.</Text>}
-              {spends.length ? <Text style={styles.hint}>Long-press a spend to remove it.</Text> : null}
+              {spends.length ? <Text style={styles.hint}>Long-press a spend to remove it. Bill shares follow what you actually had.</Text> : null}
             </ScrollView>
           </Pressable>
         </Pressable>
@@ -270,6 +278,10 @@ export default function PocketsScreen({ onBack }) {
   const [mode, setMode] = useState('view'); // view | setup | edit
   const [filter, setFilter] = useState('all');
   const [open, setOpen] = useState(null);
+  const [untagged, setUntagged] = useState([]); // 🧾 bill shares this cycle not in a pocket yet
+  const [tagging, setTagging] = useState(null);
+  const [tonight, setTonight] = useState(0); // 🌙 Tonight Pocket (a slice of Going Out, resets tomorrow)
+  const [tonightEdit, setTonightEdit] = useState(null);
 
   const load = async () => {
     setFailed(false);
@@ -279,7 +291,10 @@ export default function PocketsScreen({ onBack }) {
         const rolled = await rollOverIfNeeded(s).catch(() => null);
         if (rolled !== null) s = await getPockets();
         const cyc = cycleFor(s.setup);
-        setSpends(await pocketExpenses(cyc.startStr));
+        const cs = await cycleSpends(cyc.startStr);
+        setSpends(cs.spends);
+        setUntagged(cs.untagged);
+        getBudgets().then((b) => setTonight(b.tonight || 0)).catch(() => {});
       }
       setState(s);
       if (!s.setup) setMode('setup');
@@ -309,6 +324,17 @@ export default function PocketsScreen({ onBack }) {
 
   const rows = view.rows.filter((r) => filter === 'all' || r.kind === filter);
   const openRow = open && view.rows.find((r) => r.id === open);
+  const goingOut = view.rows.find((r) => r.name.toLowerCase() === 'going out');
+  const tn = goingOut && tonight ? tonightPocket(tonight, spends.filter((x) => x.pocket_id === goingOut.id)) : null;
+  const saveTonight = async (amt) => {
+    try {
+      await saveBudget('tonight', amt);
+      setTonight(Math.round(Number(amt) || 0));
+      setTonightEdit(null);
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -327,6 +353,55 @@ export default function PocketsScreen({ onBack }) {
             <View style={[styles.heroFill, { width: `${view.total ? Math.round((view.left / view.total) * 100) : 0}%` }]} />
           </View>
         </View>
+
+        {/* 🧾 bills from this cycle that aren't in a pocket yet */}
+        {untagged.length ? (
+          <View style={styles.untagged}>
+            <Text style={styles.untagTitle}>🧾 {untagged.length} bill share{untagged.length === 1 ? '' : 's'} not in a pocket yet</Text>
+            {untagged.slice(0, 4).map((u) => (
+              <TouchableOpacity key={u.id} style={styles.untagRow} onPress={() => setTagging(u)} activeOpacity={0.8}>
+                <Text style={styles.untagName} numberOfLines={1}>{u.note}</Text>
+                <Text style={styles.untagAmt}>{inr(u.amount)} · Pick ›</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : null}
+
+        {/* 🌙 Tonight Pocket */}
+        {goingOut ? (
+          <View style={[styles.tonight, STICKER]}>
+            <View style={styles.topRow}>
+              <Text style={styles.tonightKicker}>🌙 TONIGHT POCKET</Text>
+              <TouchableOpacity onPress={() => setTonightEdit(tonight ? String(tonight) : '')} hitSlop={8}>
+                <Text style={styles.tonightEdit}>{tonight ? 'Change' : 'Set'}</Text>
+              </TouchableOpacity>
+            </View>
+            {tn ? (
+              <>
+                <Text style={styles.tonightBig}>{tn.left >= 0 ? `${inr(tn.left)} left tonight` : `${inr(-tn.left)} over tonight`}</Text>
+                <View style={styles.tonightTrack}><View style={[styles.tonightFill, { width: `${Math.round((1 - tn.pct) * 100)}%`, backgroundColor: tn.left <= 0 ? C.red : C.onLime }]} /></View>
+                <Text style={styles.tonightSub}>{inr(tn.spent)} spent of {inr(tn.amount)} from {goingOut.emoji} Going Out · resets tomorrow</Text>
+              </>
+            ) : (
+              <Text style={styles.tonightSub}>Going out tonight? Set aside a slice of Going Out ({inr(Math.max(0, goingOut.left))} left) and watch it count down.</Text>
+            )}
+            {tonightEdit !== null ? (
+              <View style={styles.tonightForm}>
+                <View style={[styles.spendRow, { marginTop: 0, flex: 1 }]}>
+                  <Text style={styles.amtRupee}>₹</Text>
+                  <TextInput style={[styles.amtInput, { textAlign: 'left' }]} value={tonightEdit} autoFocus keyboardType="number-pad" keyboardAppearance="dark"
+                    onChangeText={(t) => setTonightEdit(t.replace(/[^0-9]/g, '').slice(0, 7))} placeholder="1500" placeholderTextColor={C.faint} />
+                </View>
+                <TouchableOpacity style={styles.tonightSave} onPress={() => saveTonight(tonightEdit)}>
+                  <Text style={[styles.ctaText, { color: C.lime }]}>{Number(tonightEdit) > 0 ? 'Save' : tonight ? 'Remove' : 'Close'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
+            {tonightEdit !== null && Number(tonightEdit) > Math.max(0, goingOut.left) ? (
+              <Text style={[styles.tonightSub, { fontWeight: '800' }]}>⚠️ That's more than Going Out has left ({inr(Math.max(0, goingOut.left))}).</Text>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={[styles.row, { marginTop: 16 }]}>
           {[['all', 'All'], ...Object.entries(POCKET_KINDS).map(([k, v]) => [k, `${v.emoji} ${v.label}`])].map(([k, l]) => (
@@ -356,6 +431,14 @@ export default function PocketsScreen({ onBack }) {
         <Text style={styles.hint}>Tap a pocket to take money out of it. Quick Add spends also come out of a pocket.</Text>
       </ScrollView>
 
+      {tagging ? (
+        <PocketPicker
+          visible amount={tagging.amount} pockets={state.pockets} title={tagging.note}
+          suggested={suggestBillPocket({ title: tagging.note }, state.pockets)}
+          onPick={async (id) => { try { await tagBill(tagging.bill_id, id); } catch (e) { Alert.alert("Couldn't save", e.message); } setTagging(null); load(); }}
+          onSkip={() => setTagging(null)}
+        />
+      ) : null}
       {openRow ? (
         <PocketSheet pocket={openRow} spends={spends.filter((s) => s.pocket_id === openRow.id)} onClose={() => setOpen(null)} onChanged={load} />
       ) : null}
@@ -364,6 +447,20 @@ export default function PocketsScreen({ onBack }) {
 }
 
 const styles = StyleSheet.create({
+  untagged: { backgroundColor: C.card, borderWidth: 1, borderColor: C.pink, borderRadius: 18, padding: 14, marginTop: 14 },
+  untagTitle: { color: C.text, fontSize: 14, fontWeight: '800', marginBottom: 4 },
+  untagRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.border },
+  untagName: { color: C.sub, fontSize: 14, flex: 1, marginRight: 8 },
+  untagAmt: { color: C.lime, fontSize: 14, fontWeight: '800' },
+  tonight: { backgroundColor: C.lime, borderRadius: 22, padding: 16, marginTop: 14 },
+  tonightKicker: { fontFamily: F.pixel, color: C.onLime, fontSize: 10 },
+  tonightEdit: { color: C.onLime, fontSize: 14, fontWeight: '900', textDecorationLine: 'underline' },
+  tonightBig: { fontFamily: F.display, color: C.onLime, fontSize: 24, marginTop: 4 },
+  tonightTrack: { height: 8, borderRadius: 4, backgroundColor: 'rgba(14,14,18,0.2)', marginTop: 8, overflow: 'hidden' },
+  tonightFill: { height: 8 },
+  tonightSub: { color: C.onLime, fontSize: 13, fontWeight: '600', marginTop: 6 },
+  tonightForm: { flexDirection: 'row', alignItems: 'center', marginTop: 10 },
+  tonightSave: { backgroundColor: C.onLime, borderRadius: 14, paddingVertical: 12, paddingHorizontal: 16, marginLeft: 8 },
   container: { flex: 1, backgroundColor: C.bg },
   body: { paddingTop: 60, paddingHorizontal: 20, paddingBottom: 60 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between' },
