@@ -52,6 +52,7 @@ import PlanNightScreen from './screens/PlanNightScreen';
 import EventScreen from './screens/EventScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import IntroStory from './screens/IntroStory';
+import PocketsScreen from './screens/PocketsScreen';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
 import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
@@ -660,6 +661,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         }}
         onNotifications={fromMeTo('notifications')}
         onInvite={fromMeTo('invite')}
+        onPockets={fromMeTo('pockets')}
         onOpenGroup={(id: any) => {
           setGroupsMode('split');
           setOpenGroupId(id);
@@ -768,6 +770,17 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
         onOpenGroup={(id: any) => {
           setOpenGroupId(id);
           setScreen('group');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'pockets') {
+    return (
+      <PocketsScreen
+        onBack={() => {
+          setScreen(fromMe ? 'money' : 'home');
+          setFromMe(false);
         }}
       />
     );

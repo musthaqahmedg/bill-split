@@ -5,6 +5,7 @@ import { addExpense } from '../services/expenses';
 import { EXPENSE_CATS } from '../services/money';
 import { C, F } from '../services/theme';
 import { checkBudgetWarning } from '../services/budgetWarn';
+import { getPockets, pocketFor } from '../services/pockets';
 
 // 💸 Log a spend in 2 taps: pick what, tap an amount (or type), done. Goes into the Vault.
 const QUICK = [50, 100, 200, 500];
@@ -14,19 +15,28 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved, in
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [pockets, setPockets] = useState([]); // 💰 which pocket this comes out of
+  const [pocket, setPocket] = useState(null);
+  const [pocketTouched, setPocketTouched] = useState(false);
   useEffect(() => {
     if (visible) {
       setAmount('');
       setNote('');
+      setPocketTouched(false);
       if (initialCat) setCat(initialCat);
+      getPockets().then((s) => setPockets(s.setup ? s.pockets : [])).catch(() => setPockets([]));
     }
   }, [visible]);
+  // suggest a pocket from the category until the user picks one themselves
+  useEffect(() => {
+    if (!pocketTouched) setPocket(pocketFor(cat, pockets));
+  }, [cat, pockets]);
 
   const save = async () => {
     if (!(Number(amount) > 0)) return Alert.alert('Amount?', 'Type how much you spent.');
     setSaving(true);
     try {
-      await addExpense({ category: cat, amount, note, partyId });
+      await addExpense({ category: cat, amount, note, partyId, pocketId: pocket });
       try {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } catch (e) {}
@@ -56,6 +66,18 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved, in
               </TouchableOpacity>
             ))}
           </View>
+          {pockets.length ? (
+            <>
+              <Text style={styles.pLabel}>FROM POCKET</Text>
+              <View style={styles.pRow}>
+                {pockets.map((p) => (
+                  <TouchableOpacity key={p.id} style={[styles.pChip, pocket === p.id && styles.pChipOn]} onPress={() => { setPocket(p.id); setPocketTouched(true); }}>
+                    <Text style={[styles.pText, pocket === p.id && { color: C.onLime }]}>{p.emoji} {p.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </>
+          ) : null}
           <View style={styles.amountRow}>
             <Text style={styles.rupee}>₹</Text>
             <TextInput
@@ -97,6 +119,11 @@ const styles = StyleSheet.create({
   catEmoji: { fontSize: 22 },
   catText: { color: C.sub, fontSize: 12, fontWeight: '700', marginTop: 3 },
   catTextOn: { color: C.text },
+  pLabel: { fontFamily: F.pixel, color: C.sub, fontSize: 10, marginTop: 4, marginBottom: 6 },
+  pRow: { flexDirection: 'row', flexWrap: 'wrap' },
+  pChip: { backgroundColor: C.cardHi, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 10, marginRight: 6, marginBottom: 6, borderWidth: 1, borderColor: C.border },
+  pChipOn: { backgroundColor: C.lime, borderColor: C.lime },
+  pText: { color: C.text, fontSize: 12, fontWeight: '700' },
   amountRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8 },
   rupee: { color: C.sub, fontSize: 34, fontWeight: '700', marginRight: 4 },
   amount: { color: C.text, fontSize: 44, fontWeight: '900', width: '70%', textAlign: 'center' }, // fixed width: iOS doesn't grow the box when a quick amount is tapped

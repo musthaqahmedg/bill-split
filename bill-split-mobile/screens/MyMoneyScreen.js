@@ -13,13 +13,14 @@ import { homeBalance } from '../services/settle';
 import { supabase } from '../services/supabaseClient';
 import { C, F } from '../services/theme';
 import NightSky from '../components/NightSky';
+import { cycleFor, getPockets, pocketBalances, pocketExpenses } from '../services/pockets';
 
 // 💰 My Money: your going-out spend (your share only), a monthly Night Budget, and simple insights.
 // Private: built only from bills in the app. No bank, no SMS.
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const PICKS = [2000, 5000, 10000, 20000];
 
-export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour, onOpenGroup, onInvite }) {
+export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourData, onFriends, onGroups, onNotifications, onHelp, onTour, onOpenGroup, onInvite, onPockets }) {
   const [myName, setMyName] = useState('');
   useEffect(() => {
     getProfile().then((p) => setMyName((p && p.name) || '')).catch(() => {});
@@ -153,6 +154,9 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
             </TouchableOpacity>
           ))}
         </View>
+        {/* 💰 Pockets: every rupee has a job */}
+        {onPockets ? <PocketsCard onOpen={onPockets} /> : null}
+
         {/* ⚡ Tonight: today's allowance + quick add */}
         {isNow ? (
           (() => {
@@ -473,6 +477,46 @@ export default function MyMoneyScreen({ onBack, onProfile, onMemories, onYourDat
       {/* 🎯 Set a budget: tonight · this week · this month */}
       <SetBudgetSheet visible={editing} onClose={() => setEditing(false)} onSaved={load} budgets={budgets} initialTab={editTab} />
     </View>
+  );
+}
+
+// 💰 Pockets card: what's still yours this cycle (or an invite to set Pockets up)
+function PocketsCard({ onOpen }) {
+  const [info, setInfo] = useState(undefined);
+  useEffect(() => {
+    getPockets()
+      .then(async (st) => {
+        if (!st.setup) return setInfo(null);
+        const cyc = cycleFor(st.setup);
+        const roll = st.rollovers.reduce((a, r) => a + Number(r.amount || 0), 0);
+        const b = pocketBalances(st.pockets, await pocketExpenses(cyc.startStr), cyc, roll);
+        setInfo({ ...b, low: b.rows.filter((r) => r.low || r.empty).length, days: cyc.daysLeft });
+      })
+      .catch(() => setInfo(null));
+  }, []);
+  if (info === undefined) return null;
+  const sticker = { borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' };
+  return (
+    <TouchableOpacity onPress={onOpen} activeOpacity={0.85} style={[{ backgroundColor: C.pink, borderRadius: 24, padding: 18, marginTop: 14 }, sticker]}>
+      <Text style={{ fontFamily: F.pixel, color: '#FFFFFF', fontSize: 10, opacity: 0.85 }}>💰 POCKETS</Text>
+      {info ? (
+        <>
+          <Text style={{ fontFamily: F.display, color: '#FFFFFF', fontSize: 28, marginTop: 6 }}>₹{Math.round(info.left).toLocaleString('en-IN')}</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>
+            of ₹{Math.round(info.total).toLocaleString('en-IN')} is still yours · {info.days} day{info.days === 1 ? '' : 's'} left
+          </Text>
+          <View style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(0,0,0,0.25)', marginTop: 10, overflow: 'hidden' }}>
+            <View style={{ height: 8, width: `${info.total ? Math.round((info.left / info.total) * 100) : 0}%`, backgroundColor: C.lime }} />
+          </View>
+          {info.low ? <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '800', marginTop: 8 }}>⚠️ {info.low} pocket{info.low === 1 ? '' : 's'} running low</Text> : null}
+        </>
+      ) : (
+        <>
+          <Text style={{ fontFamily: F.display, color: '#FFFFFF', fontSize: 22, marginTop: 6 }}>Give every rupee a job</Text>
+          <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700', marginTop: 2 }}>Split your income into pockets and always know what's left. Set up →</Text>
+        </>
+      )}
+    </TouchableOpacity>
   );
 }
 

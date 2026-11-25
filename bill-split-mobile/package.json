@@ -64,7 +64,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-default-type=module --test tests/split.test.js tests/manualSplit.test.js"
+    "test": "node --experimental-default-type=module --test tests/split.test.js tests/manualSplit.test.js tests/pockets.test.js"
   },
   "private": true
 }
