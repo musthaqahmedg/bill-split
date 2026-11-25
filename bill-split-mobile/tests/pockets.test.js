@@ -101,3 +101,20 @@ test('tonight pocket only counts today; event affordability uses the tighter lim
   assert.equal(canAfford(800, 3000).ok, true);
   assert.equal(canAfford(0, 0).free, true);
 });
+
+test('forecast, weekly check-in, cycle summary and low/empty alerts', async () => {
+  const { forecast, weeklyCheck, cycleSummary, crossedAlert } = await import('../services/pocketMath.js');
+  const cycle = cycleFor({ cycle: 'monthly', payday: '2026-11-01' }, new Date(2026, 10, 10));
+  const go = { id: 'g', name: 'Going Out', kind: 'variable', budget: 3000, spent: 2000, left: 1000, fill: 1 / 3 };
+  const f = forecast(go, cycle, new Date(2026, 10, 10)); // ₹200/day → 5 more days
+  assert.equal(f.runOut.getDate(), 15);
+  assert.equal(forecast({ ...go, spent: 100, left: 2900 }, cycle, new Date(2026, 10, 10)), null);
+  const w = weeklyCheck([go, { id: 'r', name: 'Groceries', kind: 'variable', budget: 4000, spent: 200, left: 3800 }], cycle, new Date(2026, 10, 10));
+  assert.equal(w.over[0].id, 'g');
+  assert.equal(w.room[0].id, 'r');
+  const s = cycleSummary([{ name: 'Going Out', kind: 'variable', budget: 3000, spent: 3600, left: -600 }, { name: 'Groceries', kind: 'variable', budget: 4000, spent: 1000, left: 3000 }]);
+  assert.equal(s.tip, 'Move ₹600 from Groceries to Going Out next cycle.');
+  assert.equal(crossedAlert({ left: 700, fill: 0.23 }, { name: 'Going Out', emoji: '🪩', budget: 3000, left: 500, fill: 0.17 }).kind, 'low');
+  assert.equal(crossedAlert({ left: 100, fill: 0.03 }, { name: 'Going Out', emoji: '🪩', budget: 3000, left: -50, fill: 0 }).kind, 'empty');
+  assert.equal(crossedAlert({ left: 2000, fill: 0.6 }, { name: 'X', emoji: '', budget: 3000, left: 1800, fill: 0.6 }), null);
+});

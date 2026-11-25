@@ -5,7 +5,7 @@ import KeyboardDone from './KeyboardDone';
 import LoadError from '../components/LoadError';
 import {
   POCKET_KINDS, cycleFor, cycleSpends, dayStr, getPockets, leftToAssign, pocketBalances, removeSpend, rollOverIfNeeded, saveSetup, spendFromPocket,
-  suggestAmounts, suggestBillPocket, tagBill, tonightPocket,
+  suggestAmounts, suggestBillPocket, tagBill, tonightPocket, alertAfterSpend, forecast, weeklyCheck, cycleSummary, previousCycle, setPocketLock,
 } from '../services/pockets';
 import { getBudgets, saveBudget } from '../services/budget';
 import PocketPicker from '../components/PocketPicker';
@@ -211,6 +211,7 @@ function PocketSheet({ pocket, spends, onClose, onChanged }) {
     setBusy(true);
     try {
       await spendFromPocket({ pocketId: pocket.id, amount, note });
+      alertAfterSpend(pocket.id, amount);
       try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (e) {}
       setAmount('');
       setNote('');
@@ -282,6 +283,8 @@ export default function PocketsScreen({ onBack }) {
   const [tagging, setTagging] = useState(null);
   const [tonight, setTonight] = useState(0); // 🌙 Tonight Pocket (a slice of Going Out, resets tomorrow)
   const [tonightEdit, setTonightEdit] = useState(null);
+  const [last, setLast] = useState(null); // 🧾 last cycle's summary (first week of a new cycle)
+  const [lock, setLock] = useState(false);
 
   const load = async () => {
     setFailed(false);
@@ -295,6 +298,14 @@ export default function PocketsScreen({ onBack }) {
         setSpends(cs.spends);
         setUntagged(cs.untagged);
         getBudgets().then((b) => setTonight(b.tonight || 0)).catch(() => {});
+        setLock(!!s.setup.lock);
+        // first week of a new cycle: look back at the last one
+        const prev = previousCycle(s.setup, cyc);
+        if (cyc.daysLeft > 0 && new Date() - cyc.start < 7 * 86400000 && s.setup.created_at && new Date(s.setup.created_at) < cyc.start) {
+          cycleSpends(prev.startStr)
+            .then(({ spends: ps }) => setLast({ label: prev.label, ...cycleSummary(pocketBalances(s.pockets, ps, prev).rows) }))
+            .catch(() => {});
+        } else setLast(null);
       }
       setState(s);
       if (!s.setup) setMode('setup');
@@ -326,6 +337,13 @@ export default function PocketsScreen({ onBack }) {
   const openRow = open && view.rows.find((r) => r.id === open);
   const goingOut = view.rows.find((r) => r.name.toLowerCase() === 'going out');
   const tn = goingOut && tonight ? tonightPocket(tonight, spends.filter((x) => x.pocket_id === goingOut.id)) : null;
+  const check = weeklyCheck(view.rows, view.cyc);
+  const forecasts = view.rows.map((x) => forecast(x, view.cyc)).filter(Boolean);
+  const toggleLock = async () => {
+    const on = !lock;
+    setLock(on);
+    try { await setPocketLock(on); } catch (e) { setLock(!on); Alert.alert("Couldn't save", e.message); }
+  };
   const saveTonight = async (amt) => {
     try {
       await saveBudget('tonight', amt);
@@ -403,6 +421,31 @@ export default function PocketsScreen({ onBack }) {
           </View>
         ) : null}
 
+        {/* 🧾 last cycle in review */}
+        {last ? (
+          <View style={[styles.coach, { borderColor: C.violet }]}>
+            <Text style={styles.coachKicker}>🧾 LAST CYCLE · {last.label.toUpperCase()}</Text>
+            <Text style={styles.coachLine}>Spent {inr(last.spent)} · {inr(last.saved)} left over{last.over.length ? ` · ${last.over.length} pocket${last.over.length === 1 ? '' : 's'} went over` : ''}</Text>
+            {last.tip ? <Text style={styles.coachTip}>💡 {last.tip}</Text> : null}
+          </View>
+        ) : null}
+
+        {/* 📅 weekly check-in + forecast */}
+        {check.over.length || check.room.length || forecasts.length ? (
+          <View style={styles.coach}>
+            <Text style={styles.coachKicker}>📅 CHECK-IN · {Math.round(check.passed * 100)}% OF THE CYCLE GONE</Text>
+            {forecasts.slice(0, 2).map((f) => (
+              <Text key={f.text} style={[styles.coachLine, { color: C.pink }]}>📉 {f.text}</Text>
+            ))}
+            {check.over.filter((o) => !forecasts.some((f) => f.text.includes(o.name))).slice(0, 2).map((o) => (
+              <Text key={o.id} style={styles.coachLine}>⚠️ {o.emoji} {o.name} is spending fast: {Math.round((o.spent / o.budget) * 100)}% used</Text>
+            ))}
+            {check.room.slice(0, 2).map((o) => (
+              <Text key={o.id} style={styles.coachLine}>✅ {o.emoji} {o.name} has room: {inr(o.left)} left</Text>
+            ))}
+          </View>
+        ) : null}
+
         <View style={[styles.row, { marginTop: 16 }]}>
           {[['all', 'All'], ...Object.entries(POCKET_KINDS).map(([k, v]) => [k, `${v.emoji} ${v.label}`])].map(([k, l]) => (
             <TouchableOpacity key={k} style={[styles.chip, filter === k && styles.chipOn]} onPress={() => setFilter(k)}>
@@ -423,19 +466,28 @@ export default function PocketsScreen({ onBack }) {
                 <Text style={styles.tileName} numberOfLines={1}>{r.name}</Text>
                 <Text style={styles.tileLeft}>{r.left >= 0 ? inr(r.left) : `−${inr(-r.left)}`}</Text>
                 <Text style={styles.tileOf}>{r.empty ? 'empty 😅' : `left of ${inr(r.budget)}`}</Text>
+                {(() => { const f = forecast(r, view.cyc); return f ? <Text style={styles.tileWarn}>📉 runs out {f.date}</Text> : null; })()}
               </TouchableOpacity>
             );
           })}
         </View>
         {!rows.length ? <Text style={styles.hint}>No pockets of this type yet.</Text> : null}
         <Text style={styles.hint}>Tap a pocket to take money out of it. Quick Add spends also come out of a pocket.</Text>
+
+        <TouchableOpacity style={styles.toggleRow} onPress={toggleLock} activeOpacity={0.8}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <Text style={styles.toggleText}>🔒 Pocket lock</Text>
+            <Text style={styles.hint}>When Going Out is empty, check with me before a ticket, a table booking or a new bill.</Text>
+          </View>
+          <View style={[styles.switch, lock && styles.switchOn]}><View style={[styles.knob, lock && styles.knobOn]} /></View>
+        </TouchableOpacity>
       </ScrollView>
 
       {tagging ? (
         <PocketPicker
           visible amount={tagging.amount} pockets={state.pockets} title={tagging.note}
           suggested={suggestBillPocket({ title: tagging.note }, state.pockets)}
-          onPick={async (id) => { try { await tagBill(tagging.bill_id, id); } catch (e) { Alert.alert("Couldn't save", e.message); } setTagging(null); load(); }}
+          onPick={async (id) => { try { await tagBill(tagging.bill_id, id); alertAfterSpend(id, tagging.amount); } catch (e) { Alert.alert("Couldn't save", e.message); } setTagging(null); load(); }}
           onSkip={() => setTagging(null)}
         />
       ) : null}
@@ -447,6 +499,11 @@ export default function PocketsScreen({ onBack }) {
 }
 
 const styles = StyleSheet.create({
+  coach: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginTop: 14 },
+  coachKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 10, marginBottom: 6 },
+  coachLine: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 4, lineHeight: 20 },
+  coachTip: { color: C.lime, fontSize: 14, fontWeight: '800', marginTop: 8 },
+  tileWarn: { color: C.pink, fontSize: 11, fontWeight: '800', marginTop: 3 },
   untagged: { backgroundColor: C.card, borderWidth: 1, borderColor: C.pink, borderRadius: 18, padding: 14, marginTop: 14 },
   untagTitle: { color: C.text, fontSize: 14, fontWeight: '800', marginBottom: 4 },
   untagRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderTopWidth: 1, borderTopColor: C.border },

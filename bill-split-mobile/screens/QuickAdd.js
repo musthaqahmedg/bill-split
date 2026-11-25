@@ -5,7 +5,7 @@ import { addExpense } from '../services/expenses';
 import { EXPENSE_CATS } from '../services/money';
 import { C, F } from '../services/theme';
 import { checkBudgetWarning } from '../services/budgetWarn';
-import { getPockets, pocketFor } from '../services/pockets';
+import { alertAfterSpend, getPockets, pocketFor } from '../services/pockets';
 
 // 💸 Log a spend in 2 taps: pick what, tap an amount (or type), done. Goes into the Vault.
 const QUICK = [50, 100, 200, 500];
@@ -43,6 +43,7 @@ export default function QuickAdd({ visible, onClose, partyId = null, onSaved, in
       Keyboard.dismiss();
       onSaved && onSaved();
       setTimeout(checkBudgetWarning, 600); // ⚠️ 80% / 100% of the Night Budget
+      if (pocket) alertAfterSpend(pocket, amount); // 💰 under 20% / empty
       onClose();
     } catch (e) {
       Alert.alert("Couldn't save", e.message);

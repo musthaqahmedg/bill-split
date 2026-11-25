@@ -19,7 +19,7 @@ import BillSteps from './BillSteps';
 import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
 import { checkBudgetWarning } from '../services/budgetWarn';
 import PocketPicker from '../components/PocketPicker';
-import { getPockets, suggestBillPocket, tagBill } from '../services/pockets';
+import { alertAfterSpend, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
 import { kindOf } from '../services/kinds';
 
 const HUES = ['#8B5CF6', '#FF4FA0', '#55E0F0', '#FBBF24', '#34D399', '#FF8A3D'];
@@ -526,7 +526,7 @@ export default function SplitScreen({
     {pocketAsk ? (
       <PocketPicker
         visible amount={finalOf.Me || 0} pockets={pocketAsk.pockets} suggested={pocketAsk.suggested}
-        onPick={async (id) => { try { await tagBill(pocketAsk.billId, id); } catch (e) {} const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
+        onPick={async (id) => { try { await tagBill(pocketAsk.billId, id); alertAfterSpend(id, finalOf.Me || 0); } catch (e) {} const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
         onSkip={() => { const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
       />
     ) : null}

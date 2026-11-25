@@ -53,6 +53,7 @@ import EventScreen from './screens/EventScreen';
 import Tour, { resetTour, tourDone } from './components/Tour';
 import IntroStory from './screens/IntroStory';
 import PocketsScreen from './screens/PocketsScreen';
+import { goingOutGuard } from './services/pockets';
 import Celebrate from './screens/Celebrate';
 import Splash from './screens/Splash';
 import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
@@ -245,7 +246,8 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
   const [editPlan, setEditPlan] = useState<any>(null); // a plan being edited
   const [nearby, setNearby] = useState<any>({ from: 'parties', category: 'restobars', title: null }); // 📍 Nearby screen
 
-  const startNewBill = () => {
+  const startNewBill = async () => {
+    if (!(await goingOutGuard('a new bill'))) return; // 🔒 pocket lock (only if turned on)
     setBillStart(screen); // ↩️ Back from the scan goes to where you started (Split Bills page, a Space, Home)
     setItems([]);
     setBill(null);

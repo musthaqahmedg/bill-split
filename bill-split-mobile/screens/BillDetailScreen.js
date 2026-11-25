@@ -11,7 +11,7 @@ import { C, F } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 import PocketPicker from '../components/PocketPicker';
-import { billPocketOf, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
+import { alertAfterSpend, billPocketOf, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
 import { kindOf } from '../services/kinds';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -490,7 +490,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
         <PocketPicker
           visible={pkOpen} amount={myPart} pockets={pk.pockets} current={pk.current}
           suggested={suggestBillPocket({ title: bill.title || '', items: items.map((it) => ({ price: it.price, kind: kindOf(it) })) }, pk.pockets)}
-          onPick={async (id) => { try { await tagBill(billId, id); setPk({ ...pk, current: id }); } catch (e) { Alert.alert("Couldn't save", e.message); } setPkOpen(false); }}
+          onPick={async (id) => { try { await tagBill(billId, id); setPk({ ...pk, current: id }); if (id !== pk.current) alertAfterSpend(id, myPart); } catch (e) { Alert.alert("Couldn't save", e.message); } setPkOpen(false); }}
           onSkip={async () => { if (pk.current) { try { await tagBill(billId, null); setPk({ ...pk, current: null }); } catch (e) {} } setPkOpen(false); }}
         />
       ) : null}

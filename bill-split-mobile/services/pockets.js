@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { billDate, myShare } from './money';
-import { cycleFor, leftoverFor, previousCycle } from './pocketMath';
+import { Alert } from 'react-native';
+import { crossedAlert, cycleFor, leftoverFor, pocketBalances as balances, previousCycle } from './pocketMath';
 
 export * from './pocketMath';
 
@@ -8,7 +9,7 @@ export * from './pocketMath';
 
 export async function getPockets() {
   const [{ data: setup, error: e1 }, { data: pockets, error: e2 }, { data: rolls, error: e3 }] = await Promise.all([
-    supabase.from('pocket_setup').select('income, cycle, payday, rollover').maybeSingle(),
+    supabase.from('pocket_setup').select('income, cycle, payday, rollover, lock, created_at').maybeSingle(),
     supabase.from('pockets').select('id, name, emoji, kind, amount, is_savings, sort').order('sort'),
     supabase.from('pocket_rollovers').select('cycle_start, amount'),
   ]);
@@ -115,4 +116,56 @@ export async function billShares(sinceStr) {
 export async function cycleSpends(sinceStr) {
   const [exps, shares] = await Promise.all([pocketExpenses(sinceStr), billShares(sinceStr).catch(() => [])]);
   return { spends: [...exps, ...shares.filter((s) => s.pocket_id)], untagged: shares.filter((s) => !s.pocket_id) };
+}
+
+// ---------- Build 3: alerts and the optional pocket lock ----------
+
+// Everything about your pockets right now, in one call
+export async function pocketSnapshot() {
+  const st = await getPockets();
+  if (!st.setup) return { ...st, rows: [] };
+  const cyc = cycleFor(st.setup);
+  const { spends, untagged } = await cycleSpends(cyc.startStr);
+  const roll = st.rollovers.reduce((a, r) => a + Number(r.amount || 0), 0);
+  return { ...st, cyc, spends, untagged, ...balances(st.pockets, spends, cyc, roll) };
+}
+
+// ⚠️ After money comes out of a pocket: warn once when it drops below 20% or hits zero
+export async function alertAfterSpend(pocketId, amount) {
+  try {
+    if (!pocketId) return;
+    const snap = await pocketSnapshot();
+    const after = snap.rows.find((r) => r.id === pocketId);
+    if (!after) return;
+    const left = after.left + Math.round(Number(amount) || 0);
+    const before = { left, fill: after.budget ? Math.max(0, Math.min(1, left / after.budget)) : 0 };
+    const a = crossedAlert(before, after);
+    if (a) setTimeout(() => Alert.alert(a.kind === 'empty' ? 'Pocket empty' : 'Pocket running low ⚠️', a.text), 500);
+  } catch (e) {}
+}
+
+export async function setPocketLock(on) {
+  const { data: { user } } = await supabase.auth.getUser();
+  const { error } = await supabase.from('pocket_setup').update({ lock: !!on }).eq('user_id', user.id);
+  if (error) throw error;
+}
+
+// 🔒 Pocket lock: before a ticket, a table booking or a new bill, warn if Going Out is empty.
+// Resolves true to go ahead, false to stop. Never blocks people who haven't turned the lock on.
+export async function goingOutGuard(what = 'this') {
+  try {
+    const { data: s } = await supabase.from('pocket_setup').select('lock').maybeSingle();
+    if (!s || !s.lock) return true;
+    const snap = await pocketSnapshot();
+    const go = snap.rows.find((r) => r.name.toLowerCase() === 'going out');
+    if (!go || go.left > 0) return true;
+    return await new Promise((resolve) =>
+      Alert.alert('🔒 Going Out is empty', `You've spent this cycle's Going Out pocket${go.left < 0 ? ` (₹${Math.round(-go.left).toLocaleString('en-IN')} over)` : ''}. Still go ahead with ${what}?`, [
+        { text: 'Not now', style: 'cancel', onPress: () => resolve(false) },
+        { text: 'Go anyway', onPress: () => resolve(true) },
+      ], { cancelable: true, onDismiss: () => resolve(false) })
+    );
+  } catch (e) {
+    return true;
+  }
 }

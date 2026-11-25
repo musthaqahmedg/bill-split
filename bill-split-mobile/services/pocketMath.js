@@ -141,3 +141,54 @@ export function canAfford(price, goingOutLeft, tonightLeft = null) {
   if (!(p > 0)) return { ok: true, free: true, short: 0, room };
   return { ok: room >= p, free: false, short: Math.max(0, p - room), room };
 }
+
+// ---------- Build 3: coaching ----------
+const DAY = 86400000;
+const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+// 📈 Forecast: at this pace, when does the pocket run out? (null = it lasts the cycle)
+export function forecast(row, cycle, now = new Date()) {
+  if (!row || row.kind === 'goal' || row.is_savings || !(row.spent > 0) || !(row.left > 0)) return null;
+  const daysIn = Math.max(1, Math.round((startOfDay(now) - cycle.start) / DAY) + 1);
+  const perDay = row.spent / daysIn;
+  const daysToEmpty = Math.floor(row.left / perDay);
+  const runOut = new Date(startOfDay(now).getTime() + daysToEmpty * DAY);
+  if (runOut >= cycle.end) return null;
+  const date = runOut.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  return { runOut, date, perDay: Math.round(perDay), text: `At this pace, ${row.name} runs out on ${date}` };
+}
+
+// 📅 Weekly check-in: pockets spending faster than the cycle is passing, and pockets with room
+export function weeklyCheck(rows, cycle, now = new Date()) {
+  const total = Math.max(1, Math.round((cycle.end - cycle.start) / DAY));
+  const passed = Math.min(1, (Math.round((startOfDay(now) - cycle.start) / DAY) + 1) / total);
+  const live = rows.filter((r) => r.kind !== 'goal' && !r.is_savings && r.budget > 0);
+  const used = (r) => r.spent / r.budget;
+  const over = live.filter((r) => used(r) > passed + 0.15).sort((a, b) => used(b) - used(a));
+  const room = live.filter((r) => used(r) < passed - 0.2).sort((a, b) => used(a) - used(b));
+  return { passed, over, room };
+}
+
+// 🧾 End of cycle: what happened and a tip for next cycle
+export function cycleSummary(rows) {
+  const live = rows.filter((r) => r.kind !== 'goal' && !r.is_savings && r.budget > 0);
+  const spent = rows.reduce((s, r) => s + r.spent, 0);
+  const saved = live.reduce((s, r) => s + Math.max(0, r.left), 0);
+  const over = live.filter((r) => r.left < 0).sort((a, b) => a.left - b.left);
+  const under = live.filter((r) => r.left > 0 && r.spent < r.budget * 0.6).sort((a, b) => b.left - a.left);
+  let tip = null;
+  if (over.length && under.length) {
+    const move = Math.min(-over[0].left, Math.round(under[0].left / 2));
+    tip = `Move ₹${move.toLocaleString('en-IN')} from ${under[0].name} to ${over[0].name} next cycle.`;
+  } else if (over.length) tip = `${over[0].name} went over by ₹${(-over[0].left).toLocaleString('en-IN')}. Give it a bit more next cycle.`;
+  else if (saved > 0) tip = `Every pocket held up. ₹${saved.toLocaleString('en-IN')} goes to Savings. 🔥`;
+  return { spent, saved, over, under, tip };
+}
+
+// ⚠️ After a spend: did this pocket just drop below 20% or hit zero?
+export function crossedAlert(before, after) {
+  if (!before || !after || !(after.budget > 0)) return null;
+  if (after.left <= 0 && before.left > 0) return { kind: 'empty', text: `${after.emoji} ${after.name} is empty, no party tonight 😅` };
+  if (after.fill < 0.2 && before.fill >= 0.2) return { kind: 'low', text: `${after.emoji} ${after.name} is under 20%: ₹${Math.round(after.left).toLocaleString('en-IN')} left` };
+  return null;
+}

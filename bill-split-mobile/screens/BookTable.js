@@ -7,6 +7,7 @@ import { NOTE_CHIPS, bookingMessage, createBooking, isBar } from '../services/bo
 import { waNumber } from '../services/parties';
 import { findOrCreateSpace } from '../services/spaces';
 import { C, F } from '../services/theme';
+import { goingOutGuard } from '../services/pockets';
 
 const AGE_KEY = 'vibeout.ageOk';
 const TIMES = ['12:30 PM', '1:30 PM', '7:00 PM', '7:30 PM', '8:00 PM', '8:30 PM', '9:00 PM', '9:30 PM', '10:00 PM'];
@@ -59,6 +60,7 @@ export default function BookTable({ visible, onClose, place, party, guestsDefaul
   const notes = [...chips.map((c) => c.replace(/\s\S+$/, '')), extra.trim()].filter(Boolean).join(', ');
 
   const send = async () => {
+    if (!(await goingOutGuard('this table'))) return; // 🔒 pocket lock
     setSaving(true);
     let b;
     try {

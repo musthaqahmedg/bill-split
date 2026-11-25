@@ -1,6 +1,7 @@
 import { Alert, Dimensions, Image, Linking, ScrollView, Share, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Going } from './EventPopup';
 import AffordChip from '../components/AffordChip';
+import { goingOutGuard } from '../services/pockets';
 import { EVENT_CATS, eventKm, eventPrice } from '../services/events';
 import { C, F } from '../services/theme';
 
@@ -27,8 +28,9 @@ export default function EventScreen({ event: e, onBack, onPlan }) {
   const soldOut = e.status === 'sold_out';
   const tiers = Array.isArray(e.ticket_tiers) ? e.ticket_tiers.filter((t) => t && t.name) : [];
 
-  const book = () => {
+  const book = async () => {
     if (!e.booking_url) return;
+    if (!(await goingOutGuard('this ticket'))) return; // 🔒 pocket lock
     Linking.openURL(e.booking_url).catch(() => Alert.alert("Couldn't open the link", e.booking_url));
   };
   const directions = () => {
