@@ -46,8 +46,17 @@ export async function saveSetup({ income, cycle, payday, rollover = true, roundu
       target: p.kind === 'goal' && Number(p.target) > 0 ? Math.round(Number(p.target)) : null,
       target_date: p.kind === 'goal' && p.target_date ? p.target_date : null,
     }));
-    const { error: e2 } = await supabase.from('pockets').upsert(rows);
-    if (e2) throw e2;
+    // existing pockets are updated, new ones inserted (mixing both in one call would send id: null)
+    const old2 = rows.filter((r) => r.id);
+    const fresh = rows.filter((r) => !r.id);
+    if (old2.length) {
+      const { error: e2 } = await supabase.from('pockets').upsert(old2);
+      if (e2) throw e2;
+    }
+    if (fresh.length) {
+      const { error: e3 } = await supabase.from('pockets').insert(fresh);
+      if (e3) throw e3;
+    }
   }
 }
 
