@@ -1,12 +1,17 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
-import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Dimensions, Easing, KeyboardAvoidingView, PanResponder, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import KeyboardDone from './KeyboardDone';
 import LoadError from '../components/LoadError';
 import {
   POCKET_KINDS, cycleFor, cycleSpends, dayStr, getPockets, leftToAssign, pocketBalances, removeSpend, rollOverIfNeeded, saveSetup, spendFromPocket,
   suggestAmounts, suggestBillPocket, tagBill, tonightPocket, alertAfterSpend, forecast, weeklyCheck, cycleSummary, previousCycle, setPocketLock,
+  movePocket, setGoal, goalSpends, goalProgress, moodFor, cleanStreak, badgesFor, setPocketFlag,
 } from '../services/pockets';
+import { listBills } from '../services/bills';
+import { homeBalance } from '../services/settle';
+import { myGroupMoney } from '../services/groupExpenses';
 import { getBudgets, saveBudget } from '../services/budget';
 import PocketPicker from '../components/PocketPicker';
 import { C, F } from '../services/theme';
@@ -200,7 +205,7 @@ function Setup({ initial, onSaved, onCancel }) {
 }
 
 // ---------- one pocket: what's left, spends this cycle, add a spend ----------
-function PocketSheet({ pocket, spends, onClose, onChanged }) {
+function PocketSheet({ pocket, spends, onClose, onChanged, onMove, onGoal }) {
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -243,6 +248,12 @@ function PocketSheet({ pocket, spends, onClose, onChanged }) {
             </Text>
             <Text style={styles.sub}>{inr(pocket.spent)} spent of {inr(pocket.budget)} this cycle{pocket.is_savings && pocket.budget > pocket.amount ? ` (incl. ${inr(pocket.budget - pocket.amount)} rolled over)` : ''}</Text>
             {pocket.empty ? <Text style={styles.warn}>Pocket empty, no party tonight 😅</Text> : pocket.low ? <Text style={styles.warn}>Running low: under 20% left ⚠️</Text> : null}
+            <View style={[styles.row, { marginTop: 10 }]}>
+              <TouchableOpacity style={styles.chip} onPress={onMove}><Text style={styles.chipText}>↔️ Move money</Text></TouchableOpacity>
+              {pocket.kind === 'goal' ? (
+                <TouchableOpacity style={styles.chip} onPress={onGoal}><Text style={styles.chipText}>🎯 {pocket.target ? 'Change goal' : 'Set a goal'}</Text></TouchableOpacity>
+              ) : null}
+            </View>
 
             <View style={styles.spendRow}>
               <Text style={styles.amtRupee}>₹</Text>
@@ -271,6 +282,157 @@ function PocketSheet({ pocket, spends, onClose, onChanged }) {
   );
 }
 
+// ---------- ↔️ move money between pockets ----------
+function MoveSheet({ from, pockets, rows, onClose, onDone }) {
+  const [a, setA] = useState(from);
+  const [b, setB] = useState((pockets.find((p) => p.is_savings && p.id !== from) || pockets.find((p) => p.id !== from) || {}).id);
+  const [amount, setAmount] = useState('');
+  const [busy, setBusy] = useState(false);
+  const leftOf = (id) => (rows.find((r) => r.id === id) || {}).left || 0;
+  const go = async () => {
+    setBusy(true);
+    try {
+      await movePocket(a, b, amount);
+      try { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success); } catch (e) {}
+      onDone();
+    } catch (e) {
+      Alert.alert("Couldn't move", e.message);
+    }
+    setBusy(false);
+  };
+  const Row = ({ label, val, set }) => (
+    <>
+      <Text style={styles.label}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        {pockets.map((p) => (
+          <TouchableOpacity key={p.id} style={[styles.chip, val === p.id && styles.chipOn]} onPress={() => set(p.id)}>
+            <Text style={[styles.chipText, val === p.id && styles.chipTextOn]}>{p.emoji} {p.name} · {inr(leftOf(p.id))}</Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+    </>
+  );
+  const ok = Number(amount) > 0 && a && b && a !== b;
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.overlay} onPress={onClose}>
+          <Pressable style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>↔️ Move money</Text>
+            <Text style={styles.sub}>Shift money between pockets. Your total stays the same.</Text>
+            <Row label="FROM" val={a} set={setA} />
+            <Row label="TO" val={b} set={setB} />
+            <View style={styles.spendRow}>
+              <Text style={styles.amtRupee}>₹</Text>
+              <TextInput style={[styles.amtInput, { flex: 1, textAlign: 'left' }]} value={amount} onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, '').slice(0, 7))}
+                placeholder="How much?" placeholderTextColor={C.faint} keyboardType="number-pad" keyboardAppearance="dark" />
+            </View>
+            {ok && Number(amount) > leftOf(a) ? <Text style={styles.warn}>That's more than {(pockets.find((p) => p.id === a) || {}).name} has left.</Text> : null}
+            <TouchableOpacity style={[styles.cta, { marginTop: 12 }, (!ok || busy) && styles.off]} onPress={go} disabled={!ok || busy}>
+              <Text style={styles.ctaText}>{busy ? 'Moving…' : `Move ${amount ? inr(amount) : ''}`}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ---------- 🎯 goal: target amount + by when ----------
+function GoalSheet({ pocket, onClose, onDone }) {
+  const [target, setTarget] = useState(pocket.target ? String(Math.round(pocket.target)) : '');
+  const [months, setMonths] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const dateFor = (m) => {
+    const d = new Date();
+    const end = new Date(d.getFullYear(), d.getMonth() + m + 1, 0);
+    return dayStr(end);
+  };
+  const save = async () => {
+    setBusy(true);
+    try {
+      await setGoal(pocket.id, target, months ? dateFor(months) : pocket.target_date || null);
+      onDone();
+    } catch (e) {
+      Alert.alert("Couldn't save", e.message);
+    }
+    setBusy(false);
+  };
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <Pressable style={styles.overlay} onPress={onClose}>
+          <Pressable style={styles.sheet}>
+            <View style={styles.handle} />
+            <Text style={styles.sheetTitle}>🎯 {pocket.name} goal</Text>
+            <Text style={styles.sub}>Saving up for something? Set a target and a date.</Text>
+            <View style={styles.spendRow}>
+              <Text style={styles.amtRupee}>₹</Text>
+              <TextInput style={[styles.amtInput, { flex: 1, textAlign: 'left' }]} value={target} onChangeText={(t) => setTarget(t.replace(/[^0-9]/g, '').slice(0, 9))}
+                placeholder="Target, e.g. 60000" placeholderTextColor={C.faint} keyboardType="number-pad" keyboardAppearance="dark" />
+            </View>
+            <Text style={styles.label}>BY WHEN?</Text>
+            <View style={styles.row}>
+              {[3, 6, 12, 18, 24].map((m) => (
+                <TouchableOpacity key={m} style={[styles.chip, months === m && styles.chipOn]} onPress={() => setMonths(m)}>
+                  <Text style={[styles.chipText, months === m && styles.chipTextOn]}>{m < 12 ? `${m} months` : m === 12 ? '1 year' : `${m / 12} years`}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {pocket.target_date && !months ? <Text style={styles.hint}>Now: by {new Date(pocket.target_date).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}</Text> : null}
+            <TouchableOpacity style={[styles.cta, { marginTop: 12 }, busy && styles.off]} onPress={save} disabled={busy}>
+              <Text style={styles.ctaText}>{Number(target) > 0 ? '🎯 Save goal' : 'Remove goal'}</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ---------- 🎉 payday confetti ----------
+function Confetti({ onEnd }) {
+  const { width, height } = Dimensions.get('window');
+  const bits = useRef(Array.from({ length: 28 }, (_, i) => ({
+    x: Math.random() * width, delay: Math.random() * 500, emoji: ['🎉', '💸', '✨', '🪙', '💰', '🎊'][i % 6], v: new Animated.Value(0),
+  }))).current;
+  useEffect(() => {
+    Animated.parallel(bits.map((b) => Animated.sequence([Animated.delay(b.delay), Animated.timing(b.v, { toValue: 1, duration: 2200, easing: Easing.in(Easing.quad), useNativeDriver: true })]))).start(onEnd);
+  }, []);
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {bits.map((b, i) => (
+        <Animated.Text key={i} style={{ position: 'absolute', left: b.x, top: -40, fontSize: 24, transform: [{ translateY: b.v.interpolate({ inputRange: [0, 1], outputRange: [0, height + 80] }) }, { rotate: b.v.interpolate({ inputRange: [0, 1], outputRange: ['0deg', `${(i % 2 ? 1 : -1) * 360}deg`] }) }] }}>
+          {b.emoji}
+        </Animated.Text>
+      ))}
+    </View>
+  );
+}
+
+// ---------- one bento tile: swipe sideways to move money, tap to open ----------
+function Tile({ r, wide, col, extra, onOpen, onSwipe }) {
+  const pan = useRef(PanResponder.create({
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 24 && Math.abs(g.dy) < 12,
+    onPanResponderRelease: (_, g) => { if (Math.abs(g.dx) > 50) onSwipe(); },
+  })).current;
+  const mood = moodFor(r);
+  return (
+    <View {...pan.panHandlers} style={[wide ? styles.tileWide : styles.tileHalf]}>
+      <TouchableOpacity style={[styles.tile, STICKER]} onPress={onOpen} activeOpacity={0.85}>
+        <View style={[styles.tileFill, { height: `${Math.round(r.fill * 100)}%`, backgroundColor: r.empty ? C.red : r.low ? C.pink : col }]} />
+        <Text style={styles.tileEmoji}>{r.emoji}</Text>
+        <View style={styles.mascot}><Text style={styles.mascotFace}>{mood.face}</Text></View>
+        <Text style={styles.tileName} numberOfLines={1}>{r.name}</Text>
+        <Text style={styles.tileLeft}>{r.left >= 0 ? inr(r.left) : `−${inr(-r.left)}`}</Text>
+        <Text style={styles.tileOf}>{r.empty ? 'empty 😅' : `left of ${inr(r.budget)}`}</Text>
+        {extra}
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 // ---------- main ----------
 export default function PocketsScreen({ onBack }) {
   const [state, setState] = useState(null);
@@ -285,6 +447,11 @@ export default function PocketsScreen({ onBack }) {
   const [tonightEdit, setTonightEdit] = useState(null);
   const [last, setLast] = useState(null); // 🧾 last cycle's summary (first week of a new cycle)
   const [lock, setLock] = useState(false);
+  const [moveFrom, setMoveFrom] = useState(null); // ↔️ pocket id
+  const [goalFor, setGoalFor] = useState(null); // 🎯 pocket
+  const [goalOut, setGoalOut] = useState([]); // all-time spends from goal pockets
+  const [incoming, setIncoming] = useState(null); // 💸 money friends owe you
+  const [confetti, setConfetti] = useState(false);
 
   const load = async () => {
     setFailed(false);
@@ -299,11 +466,23 @@ export default function PocketsScreen({ onBack }) {
         setUntagged(cs.untagged);
         getBudgets().then((b) => setTonight(b.tonight || 0)).catch(() => {});
         setLock(!!s.setup.lock);
+        const goals = s.pockets.filter((p) => p.kind === 'goal').map((p) => p.id);
+        goalSpends(goals).then(setGoalOut).catch(() => {});
+        // 💸 coming back to you: scanned bills + Manual Split groups
+        Promise.all([listBills().catch(() => []), myGroupMoney().catch(() => ({ groups: [] }))]).then(([bills, gm]) => {
+          const g = ((gm && gm.groups) || []).filter((x) => x.net > 0).reduce((a, x) => a + x.net, 0);
+          setIncoming(Math.round(homeBalance(bills).owed + g));
+        });
+        // 🎉 payday: first open of a new cycle
+        AsyncStorage.getItem('pockets_seen_cycle').then((seen) => {
+          if (seen && seen !== cyc.startStr) setConfetti(true);
+          AsyncStorage.setItem('pockets_seen_cycle', cyc.startStr).catch(() => {});
+        }).catch(() => {});
         // first week of a new cycle: look back at the last one
         const prev = previousCycle(s.setup, cyc);
         if (cyc.daysLeft > 0 && new Date() - cyc.start < 7 * 86400000 && s.setup.created_at && new Date(s.setup.created_at) < cyc.start) {
           cycleSpends(prev.startStr)
-            .then(({ spends: ps }) => setLast({ label: prev.label, ...cycleSummary(pocketBalances(s.pockets, ps, prev).rows) }))
+            .then(({ spends: ps }) => setLast({ label: prev.label, ...cycleSummary(pocketBalances(s.pockets, ps, prev, 0, s.moves).rows) }))
             .catch(() => {});
         } else setLast(null);
       }
@@ -319,7 +498,7 @@ export default function PocketsScreen({ onBack }) {
     if (!state || !state.setup) return null;
     const cyc = cycleFor(state.setup);
     const roll = (state.rollovers || []).reduce((s, r) => s + Number(r.amount || 0), 0);
-    return { cyc, ...pocketBalances(state.pockets, spends, cyc, roll) };
+    return { cyc, roll, ...pocketBalances(state.pockets, spends, cyc, roll, state.moves) };
   }, [state, spends]);
 
   if (failed) return <View style={styles.container}><LoadError onRetry={load} onBack={onBack} /></View>;
@@ -339,6 +518,11 @@ export default function PocketsScreen({ onBack }) {
   const tn = goingOut && tonight ? tonightPocket(tonight, spends.filter((x) => x.pocket_id === goingOut.id)) : null;
   const check = weeklyCheck(view.rows, view.cyc);
   const forecasts = view.rows.map((x) => forecast(x, view.cyc)).filter(Boolean);
+  const flip = async (field) => {
+    const on = !state.setup[field];
+    setState({ ...state, setup: { ...state.setup, [field]: on } });
+    try { await setPocketFlag(field, on); } catch (e) { Alert.alert("Couldn't save", e.message); load(); }
+  };
   const toggleLock = async () => {
     const on = !lock;
     setLock(on);
@@ -459,20 +643,64 @@ export default function PocketsScreen({ onBack }) {
           {rows.map((r, i) => {
             const col = TILE_COLS[view.rows.indexOf(r) % TILE_COLS.length];
             const wide = i % 3 === 0;
-            return (
-              <TouchableOpacity key={r.id} style={[styles.tile, wide ? styles.tileWide : styles.tileHalf, STICKER]} onPress={() => setOpen(r.id)} activeOpacity={0.85}>
-                <View style={[styles.tileFill, { height: `${Math.round(r.fill * 100)}%`, backgroundColor: r.empty ? C.red : r.low ? C.pink : col }]} />
-                <Text style={styles.tileEmoji}>{r.emoji}</Text>
-                <Text style={styles.tileName} numberOfLines={1}>{r.name}</Text>
-                <Text style={styles.tileLeft}>{r.left >= 0 ? inr(r.left) : `−${inr(-r.left)}`}</Text>
-                <Text style={styles.tileOf}>{r.empty ? 'empty 😅' : `left of ${inr(r.budget)}`}</Text>
-                {(() => { const f = forecast(r, view.cyc); return f ? <Text style={styles.tileWarn}>📉 runs out {f.date}</Text> : null; })()}
-              </TouchableOpacity>
+            const f = forecast(r, view.cyc);
+            const g = r.kind === 'goal' && r.target ? goalProgress(r, state.setup, { spends: goalOut, moves: state.moves, rolloverTotal: view.roll }) : null;
+            const extra = (
+              <>
+                {f ? <Text style={styles.tileWarn}>📉 runs out {f.date}</Text> : null}
+                {g ? (
+                  <>
+                    <View style={styles.goalTrack}><View style={[styles.goalFill, { width: `${Math.round(g.pct * 100)}%` }]} /></View>
+                    <Text style={styles.goalText}>{g.done ? `🎉 Goal reached: ${inr(g.saved)}` : `🎯 ${inr(g.saved)} of ${inr(g.target)}${g.onTrack === true ? ' · on track ✅' : g.onTrack === false ? ` · needs ${inr(g.perCycleNeeded)}/cycle` : ''}`}</Text>
+                  </>
+                ) : null}
+              </>
             );
+            return <Tile key={r.id} r={r} wide={wide} col={col} extra={extra} onOpen={() => setOpen(r.id)} onSwipe={() => setMoveFrom(r.id)} />;
           })}
         </View>
         {!rows.length ? <Text style={styles.hint}>No pockets of this type yet.</Text> : null}
-        <Text style={styles.hint}>Tap a pocket to take money out of it. Quick Add spends also come out of a pocket.</Text>
+        <Text style={styles.hint}>Tap a pocket to take money out. Swipe a pocket sideways to move money. Quick Add spends also come out of a pocket.</Text>
+
+        {/* 💸 pay-me-back */}
+        {incoming ? (
+          <View style={[styles.coach, { borderColor: C.lime }]}>
+            <Text style={styles.coachKicker}>💸 COMING BACK TO YOU</Text>
+            <Text style={[styles.coachLine, { fontFamily: F.display, fontSize: 22 }]}>{inr(incoming)}</Text>
+            <Text style={styles.hint}>What friends still owe you from bills and group splits. Your pockets only ever lost your own share, so this is extra when it lands.</Text>
+          </View>
+        ) : null}
+
+        {/* 🏅 opt-in badges (no amounts) */}
+        {state.setup.badges ? (() => {
+          const streak = cleanStreak(state.rollovers);
+          const b = badgesFor(streak);
+          return (
+            <View style={styles.coach}>
+              <Text style={styles.coachKicker}>🏅 YOUR BADGES</Text>
+              {b.length ? (
+                <View style={[styles.row, { marginTop: 4 }]}>
+                  {b.map((x) => <View key={x.name} style={styles.badge}><Text style={styles.badgeText}>{x.emoji} {x.name}</Text></View>)}
+                </View>
+              ) : <Text style={styles.coachLine}>Finish a cycle without any pocket going over to start your 🔥 streak.</Text>}
+            </View>
+          );
+        })() : null}
+
+        <TouchableOpacity style={styles.toggleRow} onPress={() => flip('roundup')} activeOpacity={0.8}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <Text style={styles.toggleText}>🪙 Round-up savings</Text>
+            <Text style={styles.hint}>₹347 spent → ₹3 goes to Savings. Small change, adds up.</Text>
+          </View>
+          <View style={[styles.switch, state.setup.roundup && styles.switchOn]}><View style={[styles.knob, state.setup.roundup && styles.knobOn]} /></View>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.toggleRow} onPress={() => flip('badges')} activeOpacity={0.8}>
+          <View style={{ flex: 1, marginRight: 10 }}>
+            <Text style={styles.toggleText}>🏅 Badges</Text>
+            <Text style={styles.hint}>Streaks for staying under budget. Badges only, never amounts.</Text>
+          </View>
+          <View style={[styles.switch, state.setup.badges && styles.switchOn]}><View style={[styles.knob, state.setup.badges && styles.knobOn]} /></View>
+        </TouchableOpacity>
 
         <TouchableOpacity style={styles.toggleRow} onPress={toggleLock} activeOpacity={0.8}>
           <View style={{ flex: 1, marginRight: 10 }}>
@@ -492,13 +720,31 @@ export default function PocketsScreen({ onBack }) {
         />
       ) : null}
       {openRow ? (
-        <PocketSheet pocket={openRow} spends={spends.filter((s) => s.pocket_id === openRow.id)} onClose={() => setOpen(null)} onChanged={load} />
+        <PocketSheet pocket={openRow} spends={spends.filter((s) => s.pocket_id === openRow.id)} onClose={() => setOpen(null)} onChanged={load}
+          onMove={() => { setOpen(null); setMoveFrom(openRow.id); }} onGoal={() => { setOpen(null); setGoalFor(openRow); }} />
+      ) : null}
+      {moveFrom ? <MoveSheet from={moveFrom} pockets={state.pockets} rows={view.rows} onClose={() => setMoveFrom(null)} onDone={() => { setMoveFrom(null); load(); }} /> : null}
+      {goalFor ? <GoalSheet pocket={goalFor} onClose={() => setGoalFor(null)} onDone={() => { setGoalFor(null); load(); }} /> : null}
+      {confetti ? (
+        <>
+          <View pointerEvents="none" style={styles.paydayBanner}><Text style={styles.paydayText}>💸 Payday! Your pockets are full again</Text></View>
+          <Confetti onEnd={() => setConfetti(false)} />
+        </>
       ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  mascot: { position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: 17, backgroundColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '8deg' }], borderRightWidth: 2, borderBottomWidth: 3, borderRightColor: C.bg, borderBottomColor: C.bg },
+  mascotFace: { fontSize: 18 },
+  goalTrack: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.15)', marginTop: 6, overflow: 'hidden' },
+  goalFill: { height: 6, backgroundColor: C.lime },
+  goalText: { color: C.text, fontSize: 11, fontWeight: '800', marginTop: 3 },
+  badge: { backgroundColor: C.violet, borderRadius: 12, paddingVertical: 6, paddingHorizontal: 10, marginRight: 6, marginBottom: 6 },
+  badgeText: { color: C.onLime, fontSize: 12, fontWeight: '900' },
+  paydayBanner: { position: 'absolute', top: 54, left: 20, right: 20, backgroundColor: C.lime, borderRadius: 16, padding: 12, alignItems: 'center' },
+  paydayText: { color: C.onLime, fontSize: 15, fontWeight: '900' },
   coach: { backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 18, padding: 14, marginTop: 14 },
   coachKicker: { fontFamily: F.pixel, color: C.sub, fontSize: 10, marginBottom: 6 },
   coachLine: { color: C.text, fontSize: 14, fontWeight: '600', marginTop: 4, lineHeight: 20 },
@@ -572,7 +818,7 @@ const styles = StyleSheet.create({
   heroTrack: { height: 10, borderRadius: 5, backgroundColor: 'rgba(0,0,0,0.25)', marginTop: 12, overflow: 'hidden' },
   heroFill: { height: 10, backgroundColor: C.lime },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', marginTop: 6 },
-  tile: { backgroundColor: C.card, borderRadius: 22, padding: 14, marginBottom: 10, overflow: 'hidden', minHeight: 130, justifyContent: 'flex-end' },
+  tile: { backgroundColor: C.card, borderRadius: 22, padding: 14, marginBottom: 10, overflow: 'hidden', minHeight: 140, justifyContent: 'flex-end' },
   tileWide: { width: '100%' },
   tileHalf: { width: '48.5%' },
   tileFill: { position: 'absolute', left: 0, right: 0, bottom: 0, opacity: 0.28 },

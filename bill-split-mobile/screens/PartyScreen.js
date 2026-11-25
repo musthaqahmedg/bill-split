@@ -5,6 +5,7 @@ import AboutPlace from './AboutPlace';
 import ActiveTag from './ActiveTag';
 import SpaceTimeline from './SpaceTimeline';
 import SpaceSongs from './SpaceSongs';
+import SpacePot from './SpacePot';
 import BookingCard from './BookingCard';
 import { useFriendsActive } from '../services/active';
 import BringList from './BringList';
@@ -342,6 +343,7 @@ export default function PartyScreen({ partyId, autoNight = false, initialTab = n
                 </View>
               </View>
               <SpaceMoney party={party} />
+              <SpacePot party={party} />
               <SpaceBalances partyId={party.id} />
               {onEdit ? (
                 <TouchableOpacity style={styles.invite} onPress={() => onEdit(party)} activeOpacity={0.85}>

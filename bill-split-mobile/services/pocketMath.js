@@ -75,14 +75,23 @@ const inCycle = (e, cycle) => {
 };
 
 // What's left in each pocket this cycle. `extra` = per-pocket spends from other places (Build 2: bill shares)
-export function pocketBalances(pockets, expenses, cycle, rolloverTotal = 0) {
+export function pocketBalances(pockets, expenses, cycle, rolloverTotal = 0, moves = []) {
+  // ↔️ money moved between pockets this cycle (quick-move, round-ups) shifts their budgets
+  const moved = {};
+  for (const m of moves || []) {
+    const d = new Date(m.created_at);
+    if (d < cycle.start || d >= cycle.end) continue;
+    const a = Number(m.amount) || 0;
+    if (m.from_pocket) moved[m.from_pocket] = (moved[m.from_pocket] || 0) - a;
+    if (m.to_pocket) moved[m.to_pocket] = (moved[m.to_pocket] || 0) + a;
+  }
   const spentBy = {};
   for (const e of expenses || []) {
     if (!e.pocket_id || !inCycle(e, cycle)) continue;
     spentBy[e.pocket_id] = (spentBy[e.pocket_id] || 0) + (Number(e.amount) || 0);
   }
   const rows = pockets.map((p) => {
-    const bonus = p.is_savings ? rolloverTotal : 0;
+    const bonus = (p.is_savings ? rolloverTotal : 0) + Math.round(moved[p.id] || 0);
     const budget = (Number(p.amount) || 0) + bonus;
     const spent = Math.round(spentBy[p.id] || 0);
     const left = budget - spent;
@@ -95,8 +104,8 @@ export function pocketBalances(pockets, expenses, cycle, rolloverTotal = 0) {
 }
 
 // Leftovers at the end of a cycle (fixed + variable pockets, not goals) that move into Savings
-export function leftoverFor(pockets, expenses, cycle) {
-  const { rows } = pocketBalances(pockets.filter((p) => p.kind !== 'goal' && !p.is_savings), expenses, cycle);
+export function leftoverFor(pockets, expenses, cycle, moves = []) {
+  const { rows } = pocketBalances(pockets.filter((p) => p.kind !== 'goal' && !p.is_savings), expenses, cycle, 0, moves);
   return rows.reduce((s, r) => s + Math.max(0, r.left), 0);
 }
 
@@ -191,4 +200,75 @@ export function crossedAlert(before, after) {
   if (after.left <= 0 && before.left > 0) return { kind: 'empty', text: `${after.emoji} ${after.name} is empty, no party tonight 😅` };
   if (after.fill < 0.2 && before.fill >= 0.2) return { kind: 'low', text: `${after.emoji} ${after.name} is under 20%: ₹${Math.round(after.left).toLocaleString('en-IN')} left` };
   return null;
+}
+
+// ---------- Build 4: squad & fun ----------
+
+// 🪙 Round-up: ₹347 → ₹350, the ₹3 goes to Savings
+export const roundUp = (amount) => {
+  const a = Math.round(Number(amount) || 0);
+  return a > 0 ? (10 - (a % 10)) % 10 : 0;
+};
+
+// 🐣 Pocket mascot: its mood follows how full the pocket is
+export function moodFor(row) {
+  if (!row || !(row.budget > 0)) return { face: '😴', word: 'sleepy' };
+  if (row.left <= 0) return { face: '😵', word: 'empty' };
+  if (row.fill < 0.2) return { face: '😰', word: 'worried' };
+  if (row.fill < 0.45) return { face: '😬', word: 'careful' };
+  if (row.fill < 0.75) return { face: '🙂', word: 'chill' };
+  return { face: '🤩', word: 'thriving' };
+}
+
+// How many cycles a pocket has been filled since it was made (the current one included)
+export function cyclesSince(setup, createdAt, now = new Date()) {
+  const first = cycleFor(setup, new Date(createdAt));
+  const cur = cycleFor(setup, now);
+  let n = 1;
+  let c = first;
+  while (c.startStr < cur.startStr && n < 400) {
+    c = cycleFor(setup, c.end);
+    n++;
+  }
+  return n;
+}
+
+// 🎯 Goal pocket: everything put in so far vs the target, and whether it's on track for the date
+export function goalProgress(pocket, setup, { spends = [], moves = [], rolloverTotal = 0 }, now = new Date()) {
+  const fills = cyclesSince(setup, pocket.created_at || now, now) * (Number(pocket.amount) || 0);
+  const inOut = moves.reduce((s, m) => s + (m.to_pocket === pocket.id ? Number(m.amount) : 0) - (m.from_pocket === pocket.id ? Number(m.amount) : 0), 0);
+  const out = spends.filter((e) => e.pocket_id === pocket.id).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+  const saved = Math.round(fills + inOut - out + (pocket.is_savings ? rolloverTotal : 0));
+  const target = Number(pocket.target) || 0;
+  if (!target) return { saved, target: 0, pct: 0 };
+  const pct = Math.max(0, Math.min(1, saved / target));
+  let onTrack = null;
+  let perCycleNeeded = null;
+  if (pocket.target_date) {
+    const end = new Date(String(pocket.target_date).slice(0, 10) + 'T23:59:59');
+    const cur = cycleFor(setup, now);
+    let cyclesLeft = 0;
+    let c = cur;
+    while (c.end <= end && cyclesLeft < 400) { cyclesLeft++; c = cycleFor(setup, c.end); }
+    const need = Math.max(0, target - saved);
+    perCycleNeeded = cyclesLeft ? Math.ceil(need / cyclesLeft) : need;
+    onTrack = need === 0 || (Number(pocket.amount) || 0) >= perCycleNeeded;
+  }
+  return { saved, target, pct, onTrack, perCycleNeeded, done: saved >= target };
+}
+
+// 🔥 Under-budget streak: finished cycles in a row where no pocket went over
+export function cleanStreak(rollovers) {
+  const done = (rollovers || []).filter((r) => r.clean !== null && r.clean !== undefined).sort((a, b) => (a.cycle_start < b.cycle_start ? 1 : -1));
+  let n = 0;
+  for (const r of done) { if (r.clean) n++; else break; }
+  return n;
+}
+
+export function badgesFor(streak) {
+  const out = [];
+  if (streak >= 1) out.push({ emoji: '🔥', name: `Under budget streak · ${streak}` });
+  if (streak >= 3) out.push({ emoji: '🧠', name: 'Money brain' });
+  if (streak >= 6) out.push({ emoji: '👑', name: 'Pocket royalty' });
+  return out;
 }

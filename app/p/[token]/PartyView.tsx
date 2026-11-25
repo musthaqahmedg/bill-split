@@ -77,6 +77,9 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   // 🎵 song requests
   const [songs, setSongs] = useState<{ id: string; title: string; artist: string | null; added_by: string | null; added_by_name: string | null; votes: number; voters: string[] }[]>([]);
   const [songTitle, setSongTitle] = useState('');
+  // 🫙 group pocket: the squad's shared pot
+  const [pot, setPot] = useState<{ target: number | null; note: string | null; paid: number; people: { member_id: string; name: string; is_host: boolean; paid: number }[] } | null>(null);
+  const [potAmt, setPotAmt] = useState('');
   const [songArtist, setSongArtist] = useState('');
   const [pollQ, setPollQ] = useState('');
   const [pollOpts, setPollOpts] = useState(['', '']);
@@ -110,6 +113,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
         if (bk.ok && alive) setBooking((await bk.json())[0] || null);
         const sg = await rpc('get_party_songs', { p_token: token });
         if (sg.ok && alive) setSongs(await sg.json());
+        const pt = await rpc('get_party_pot', { p_token: token });
+        if (pt.ok && alive) setPot(await pt.json());
         const sf = await rpc('get_party_safety', { p_token: token });
         if (sf.ok && alive) setSafety(await sf.json());
         if (li.ok && alive) setItems(await li.json());
@@ -132,6 +137,20 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   useEffect(() => {
     bottom.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }, [messages.length]);
+
+  const payIntoPot = async () => {
+    if (!me) return setSendError('Tap your name above first');
+    const amt = Math.round(Number(potAmt) || 0);
+    if (!(amt > 0)) return;
+    const res = await rpc('pot_pay_in', { p_token: token, p_member: me, p_for: me, p_amount: amt });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      return setSendError((j && j.message) || "Couldn't add your pay-in");
+    }
+    setPotAmt('');
+    const pt = await rpc('get_party_pot', { p_token: token });
+    if (pt.ok) setPot(await pt.json());
+  };
 
   const refreshSongs = async () => {
     const sg = await rpc('get_party_songs', { p_token: token });
@@ -422,6 +441,30 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
             </form>
           )}
         </div>
+
+        {pot && Number(pot.target) > 0 && (
+          <>
+            <p style={s.label}>🫙 Group pocket{pot.note ? ` · ${pot.note}` : ''}</p>
+            <div style={s.listBox}>
+              <p style={{ margin: 0, fontSize: 22, fontWeight: 900 }}>₹{Math.round(pot.paid).toLocaleString('en-IN')} <span style={{ fontSize: 14, opacity: 0.6 }}>of ₹{Math.round(Number(pot.target)).toLocaleString('en-IN')}</span></p>
+              <div style={{ height: 10, borderRadius: 5, background: 'rgba(255,255,255,0.1)', marginTop: 8, overflow: 'hidden' }}>
+                <div style={{ height: 10, width: `${Math.min(100, Math.round((pot.paid / Number(pot.target)) * 100))}%`, background: '#E2FF3B' }} />
+              </div>
+              {pot.people.map((p) => (
+                <div key={p.member_id} style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderTop: '1px solid rgba(255,255,255,0.08)', marginTop: 6 }}>
+                  <span>{p.paid > 0 ? '✅' : '⏳'} {p.name}{p.member_id === me ? ' (you)' : ''}</span>
+                  <span style={{ fontWeight: 800 }}>{p.paid > 0 ? `₹${Math.round(p.paid).toLocaleString('en-IN')}` : '—'}</span>
+                </div>
+              ))}
+              {me ? (
+                <form style={{ display: 'flex', gap: 8, marginTop: 10 }} onSubmit={(e) => { e.preventDefault(); payIntoPot(); }}>
+                  <input style={{ ...s.chatInput, flex: 1 }} inputMode="numeric" value={potAmt} onChange={(e) => setPotAmt(e.target.value.replace(/[^0-9]/g, '').slice(0, 7))} placeholder="I paid in ₹…" />
+                  <button style={s.smallBtn} type="submit">Add</button>
+                </form>
+              ) : <p style={s.chatEmpty}>Tap your name above to add your pay-in.</p>}
+            </div>
+          </>
+        )}
 
         <p style={s.label}>🎵 Song requests</p>
         <div style={s.listBox}>

@@ -19,7 +19,7 @@ export default function AffordChip({ price, style }) {
       const cyc = cycleFor(st.setup);
       const { spends } = await cycleSpends(cyc.startStr);
       const roll = st.rollovers.reduce((a, r) => a + Number(r.amount || 0), 0);
-      const go = pocketBalances(st.pockets, spends, cyc, roll).rows.find((r) => r.name.toLowerCase() === 'going out');
+      const go = pocketBalances(st.pockets, spends, cyc, roll, st.moves).rows.find((r) => r.name.toLowerCase() === 'going out');
       if (!go) return;
       const b = await getBudgets().catch(() => ({ tonight: 0 }));
       const tn = b.tonight ? tonightPocket(b.tonight, spends.filter((x) => x.pocket_id === go.id)).left : null;

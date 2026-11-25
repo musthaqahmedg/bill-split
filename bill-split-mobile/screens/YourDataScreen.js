@@ -67,12 +67,12 @@ export default function YourDataScreen({ onBack, onDelete }) {
           return null;
         }
       };
-      const [profile, bills, plans, spends, going, places, groups, feedback, notifications, group_expenses, invites, pocket_setup, pockets, bill_pockets] = await Promise.all([
+      const [profile, bills, plans, spends, going, places, groups, feedback, notifications, group_expenses, invites, pocket_setup, pockets, bill_pockets, pocket_moves] = await Promise.all([
         getProfile(), listBills(), listParties(),
         mine('expenses'), mine('event_going'), mine('saved_places'), mine('friend_groups'), mine('feedback', 'user_id'), mine('notifications'),
-        groupExpenses(), invite(), mine('pocket_setup'), mine('pockets'), mine('bill_pockets'),
+        groupExpenses(), invite(), mine('pocket_setup'), mine('pockets'), mine('bill_pockets'), mine('pocket_moves'),
       ]);
-      const data = { exported_at: new Date().toISOString(), profile, bills, group_expenses, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications, invites, pocket_setup, pockets, bill_pockets };
+      const data = { exported_at: new Date().toISOString(), profile, bills, group_expenses, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications, invites, pocket_setup, pockets, bill_pockets, pocket_moves };
       await Share.share({ title: 'My Vibe Out data', message: JSON.stringify(data, null, 2) });
     } catch (e) {
       Alert.alert("Couldn't export", e.message);

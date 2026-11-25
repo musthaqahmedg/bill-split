@@ -118,3 +118,29 @@ test('forecast, weekly check-in, cycle summary and low/empty alerts', async () =
   assert.equal(crossedAlert({ left: 100, fill: 0.03 }, { name: 'Going Out', emoji: '🪩', budget: 3000, left: -50, fill: 0 }).kind, 'empty');
   assert.equal(crossedAlert({ left: 2000, fill: 0.6 }, { name: 'X', emoji: '', budget: 3000, left: 1800, fill: 0.6 }), null);
 });
+
+test('Build 4: moves, round-ups, mood, goals and the streak', async () => {
+  const m = await import('../services/pocketMath.js');
+  const setup = { cycle: 'monthly', payday: '2026-09-01' };
+  const cycle = m.cycleFor(setup, new Date(2026, 10, 25));
+  const P = [{ id: 'a', name: 'Going Out', kind: 'variable', amount: 3000 }, { id: 's', name: 'Savings', kind: 'goal', amount: 2000, is_savings: true }];
+  const moves = [
+    { from_pocket: 's', to_pocket: 'a', amount: 500, created_at: '2026-11-10T10:00:00Z' },
+    { from_pocket: 'a', to_pocket: 's', amount: 7, kind: 'roundup', created_at: '2026-11-11T10:00:00Z' },
+    { from_pocket: 's', to_pocket: 'a', amount: 999, created_at: '2026-10-10T10:00:00Z' }, // last cycle: ignored
+  ];
+  const b = m.pocketBalances(P, [], cycle, 0, moves);
+  assert.equal(b.rows[0].budget, 3493);
+  assert.equal(b.rows[1].budget, 1507);
+  assert.equal(b.total, 5000); // moving money never changes the total
+  assert.equal(m.roundUp(347), 3);
+  assert.equal(m.roundUp(350), 0);
+  assert.equal(m.moodFor({ budget: 100, left: 90, fill: 0.9 }).face, '🤩');
+  assert.equal(m.moodFor({ budget: 100, left: 0, fill: 0 }).face, '😵');
+  assert.equal(m.cyclesSince(setup, '2026-09-15T10:00:00Z', new Date(2026, 10, 25)), 3);
+  const g = m.goalProgress({ id: 'g', amount: 5000, target: 60000, target_date: '2027-03-31', created_at: '2026-09-15T10:00:00Z' }, setup, {}, new Date(2026, 10, 25));
+  assert.equal(g.saved, 15000);
+  assert.equal(g.perCycleNeeded, 11250); // ₹45,000 still needed over Dec, Jan, Feb, Mar
+  assert.equal(g.onTrack, false);
+  assert.equal(m.cleanStreak([{ cycle_start: '2026-11-01', clean: true }, { cycle_start: '2026-10-01', clean: true }, { cycle_start: '2026-09-01', clean: false }]), 2);
+});

@@ -489,7 +489,7 @@ function PocketsCard({ onOpen }) {
         if (!st.setup) return setInfo(null);
         const cyc = cycleFor(st.setup);
         const roll = st.rollovers.reduce((a, r) => a + Number(r.amount || 0), 0);
-        const b = pocketBalances(st.pockets, (await cycleSpends(cyc.startStr)).spends, cyc, roll);
+        const b = pocketBalances(st.pockets, (await cycleSpends(cyc.startStr)).spends, cyc, roll, st.moves);
         setInfo({ ...b, low: b.rows.filter((r) => r.low || r.empty).length, days: cyc.daysLeft });
       })
       .catch(() => setInfo(null));
