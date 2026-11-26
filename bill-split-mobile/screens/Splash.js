@@ -10,13 +10,20 @@ const PINK = '#FF2BD6';
 const BLUE = '#4D6BFF';
 const LETTER_AT = [350, 550, 750, 1220, 1450, 1600, 1750]; // ms, the sound file uses the same timings
 const FRAME_AT = 2000;
-const DONE_AT = 2900;
-const SOUND_WAIT = 500;
+const DONE_AT = 4300; // the lit name stays on screen ~2 s before moving on
+const SOUND_WAIT = 1200;
 
 // expo-audio is optional: an older build without it still opens fine, just silently
 let Audio = null;
 try {
   Audio = require('expo-audio');
+} catch (e) {}
+
+// 🔊 Load the sound as soon as the app's code starts (not when this screen appears),
+// so it's ready the moment the sign lights up
+let preloaded = null;
+try {
+  if (Audio) preloaded = Audio.createAudioPlayer(require('../assets/sounds/neon-on.m4a'));
 } catch (e) {}
 
 const step = (v, to, ms) => Animated.timing(v, { toValue: to, duration: ms, useNativeDriver: true });
@@ -39,13 +46,15 @@ export default function Splash({ onDone }) {
   useEffect(() => {
     let doneTimer = null;
     let started = false;
-    let player = null;
+    let player = preloaded;
+    preloaded = null; // played once per app start
     let sub = null;
 
-    const show = () => {
+    const show = (withSound) => {
       if (started) return;
       started = true;
-      try { player && player.play(); } catch (e) {}
+      // only play if it can start right now with the lights: a late sound is worse than none
+      try { if (withSound && player) { player.seekTo(0); player.play(); } } catch (e) {}
       const lights = letters.map((v, i) => {
         const at = LETTER_AT[Math.min(i, LETTER_AT.length - 1)] + Math.max(0, i - LETTER_AT.length + 1) * 150;
         if (i === 3) {
@@ -66,13 +75,12 @@ export default function Splash({ onDone }) {
     };
 
     try {
-      if (Audio) {
-        player = Audio.createAudioPlayer(require('../assets/sounds/neon-on.m4a'));
-        if (player.isLoaded) show();
-        sub = player.addListener('playbackStatusUpdate', (st) => st && st.isLoaded && show());
+      if (player) {
+        if (player.isLoaded) show(true);
+        else sub = player.addListener('playbackStatusUpdate', (st) => st && st.isLoaded && show(true));
       }
     } catch (e) {}
-    const fallback = setTimeout(show, Audio ? SOUND_WAIT : 0); // no sound ready → start anyway
+    const fallback = setTimeout(() => show(false), player ? SOUND_WAIT : 0); // sound not ready in time → lights only
 
     Animated.loop(Animated.timing(smoke, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true })).start();
 
