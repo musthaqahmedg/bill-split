@@ -307,9 +307,11 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
       <Marquee />
       <View style={styles.header}>
         <Text style={[styles.clock, { flex: 1, fontSize: 11, lineHeight: 15, marginRight: 8 }]} numberOfLines={2}>{topLine}</Text>
-        <View style={styles.streak}>
-          <Text style={styles.streakText}>🔥 {streak}</Text>
-        </View>
+        {streak > 0 ? (
+          <View style={styles.streak}>
+            <Text style={styles.streakText}>🔥 {streak}</Text>
+          </View>
+        ) : null}
         {onNotifications ? (
           <TouchableOpacity style={styles.bell} onPress={onNotifications} accessibilityLabel="Notifications">
             <Text style={styles.bellIcon}>🔔</Text>
@@ -358,7 +360,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         </View>
       ) : null}
 
-      {/* 🟨 The four things you do here */}
+      {/* 🟨 The four things you do here (new people get one clear "start here") */}
+      {!spaces.length ? <Text style={[styles.kicker, { marginTop: 18 }]}>👇 START HERE · PICK ONE</Text> : null}
       <View style={styles.tiles}>
         {TILES.map((x) => (
           <TouchableOpacity key={x.key} style={[styles.tile, { backgroundColor: x.bg }]} onPress={x.go} activeOpacity={0.85}>
@@ -378,7 +381,8 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
         ))}
       </View>
 
-      {/* 👛 Tonight's budget → money tracker */}
+      {/* 👛 Tonight's budget → money tracker (hidden for brand-new people: nothing to show yet) */}
+      {hasBudget || t.today > 0 || spaces.length ? (
       <TouchableOpacity style={styles.budget} onPress={onMoney} activeOpacity={0.85} disabled={!onMoney}>
         <View style={styles.budgetTop}>
           <Text style={styles.budgetKicker}>💳 TONIGHT'S BUDGET</Text>
@@ -401,6 +405,7 @@ export default function HomeScreen({ onNewBill, onOpenBill, onFriends, onNotific
           </View>
         )}
       </TouchableOpacity>
+      ) : null}
 
       {guest ? <GuestGate small onSave={onSaveAccount} /> : null}
       {draft ? (

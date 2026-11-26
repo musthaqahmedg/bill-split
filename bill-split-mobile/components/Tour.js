@@ -18,14 +18,11 @@ const finish = () => AsyncStorage.setItem(KEY, 'yes').catch(() => {});
 
 // tab: which bottom tab to spotlight (0–4), or null for a centred card
 const STEPS = [
-  { tab: null, emoji: '👋', title: 'Welcome to VibeOut', body: 'A 20-second tour of where everything lives.' },
-  { tab: null, emoji: '🧾', title: 'Quick buttons', body: 'On Tonight: split a bill, get a ride home, invite friends or check your budget in one tap.' },
-  { tab: 1, emoji: '🧭', title: 'Discover', body: 'Cafés, clubs, rooftops and big events near you.' },
-  { tab: 2, emoji: '👥', title: 'Squad', body: 'Your rooms: plan a night with friends, vote on the place, chat and split.' },
-  { tab: 3, emoji: '🪩', title: 'Night', body: 'On the night: squad radar, bill so far, and get home safe.' },
-  { tab: 4, emoji: '👤', title: 'Me', body: 'Your budget, spends and memories. Only you see your money.' },
-  { tab: null, emoji: '🗂️', title: 'Everything else', body: 'Invites, friends, groups, memories, help and this tour all live in the Me tab.' },
-];
+  { tab: null, emoji: '👋', title: 'Start with one tile', body: 'On Tonight, pick one of the 4 big tiles: 🏠 House Party, 🌙 Plan a Night, 🧾 Split Bills or 🍽️ Book a Table.' },
+  { tab: 2, emoji: '🗂️', title: 'Everything lands in a Space', body: 'Each plan gets a Space: chat, plan, bills and photos together. Find them on Tonight and in Squad.' },
+  { tab: 3, emoji: '🪩', title: 'Night Mode', body: 'On the night: squad radar, the bill so far and get home safe.' },
+  { tab: 4, emoji: '👤', title: 'Me', body: 'Your money and 💰 Pockets, invites, friends and help. Only you see your money.' },
+]
 
 export default function Tour({ visible, onDone }) {
   const [i, setI] = useState(0);
