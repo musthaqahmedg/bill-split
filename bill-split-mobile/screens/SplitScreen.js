@@ -19,6 +19,7 @@ import BillSteps from './BillSteps';
 import FeedbackSheet, { shouldAskFeedback } from './FeedbackSheet';
 import { checkBudgetWarning } from '../services/budgetWarn';
 import PocketPicker from '../components/PocketPicker';
+import BillQR from '../components/BillQR';
 import { alertAfterSpend, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
 import { kindOf } from '../services/kinds';
 
@@ -41,7 +42,8 @@ export default function SplitScreen({
   const [itemsOpen, setItemsOpen] = useState(false); // 🧾 who had what, item by item
   const [feedbackFor, setFeedbackFor] = useState(undefined); // 💬 bill id to ask about (undefined = closed)
   const [tip, setTip] = useState(Number(bill && bill.tip) || 0); // 💁 optional tip on top
-  const [pocketAsk, setPocketAsk] = useState(null); // 💰 { billId, pockets, suggested, next } after saving
+  const [pocketAsk, setPocketAsk] = useState(null);
+  const [qrAfter, setQrAfter] = useState(null); // 📲 { token, then } QR right after saving // 💰 { billId, pockets, suggested, next } after saving
 
   // Pairs: who is this person paired with?
   const partnerOf = (name) => {
@@ -162,7 +164,13 @@ export default function SplitScreen({
         const ask = await shouldAskFeedback();
         const next = () => {
           if (ask) setFeedbackFor((saved && saved.id) || null);
-          else Alert.alert('Saved! 🎉', 'It\'s in the Space with the chat and the squad.', [{ text: 'OK', onPress: () => onDone(createdSpace.current) }]);
+          else if (saved && saved.share_token && people.some((n) => n !== 'Me')) {
+            // 📲 the table pays without the app: show the QR straight away
+            Alert.alert('Saved! 🎉', 'Show the QR so everyone at the table can see their share and pay. No app needed.', [
+              { text: 'Later', style: 'cancel', onPress: () => onDone(createdSpace.current) },
+              { text: '📲 Show QR', onPress: () => setQrAfter({ token: saved.share_token }) },
+            ]);
+          } else Alert.alert('Saved! 🎉', 'It\'s in the Space with the chat and the squad.', [{ text: 'OK', onPress: () => onDone(createdSpace.current) }]);
         };
         // 💰 your real share comes out of a pocket (only if you use Pockets and you had something)
         let st = null;
@@ -529,6 +537,9 @@ export default function SplitScreen({
         onPick={async (id) => { try { await tagBill(pocketAsk.billId, id); alertAfterSpend(id, finalOf.Me || 0); } catch (e) {} const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
         onSkip={() => { const n = pocketAsk.next; setPocketAsk(null); setTimeout(n, 400); }}
       />
+    ) : null}
+    {qrAfter ? (
+      <BillQR visible token={qrAfter.token} title={bill.restaurant} byItems onClose={() => { setQrAfter(null); onDone(createdSpace.current); }} />
     ) : null}
     <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(createdSpace.current); }} />
       </View>

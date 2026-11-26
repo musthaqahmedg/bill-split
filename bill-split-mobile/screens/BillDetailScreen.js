@@ -11,6 +11,7 @@ import { C, F } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 import PocketPicker from '../components/PocketPicker';
+import BillQR from '../components/BillQR';
 import { alertAfterSpend, billPocketOf, getPockets, suggestBillPocket, tagBill } from '../services/pockets';
 import { kindOf } from '../services/kinds';
 
@@ -35,6 +36,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   // 💰 which pocket your share comes out of
   const [pk, setPk] = useState(null); // { pockets, current }
   const [pkOpen, setPkOpen] = useState(false);
+  const [qrOpen, setQrOpen] = useState(false); // 📲 show QR to the table
   useEffect(() => {
     Promise.all([getPockets(), billPocketOf(billId)])
       .then(([st, current]) => st.setup && st.pockets.length && setPk({ pockets: st.pockets, current }))
@@ -335,6 +337,13 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           );
         })() : null}
 
+        {bill.share_token && participants.some((p) => p.name !== 'Me') ? (
+          <TouchableOpacity style={styles.qrBtn} onPress={() => setQrOpen(true)} activeOpacity={0.85}>
+            <Text style={styles.qrBtnText}>📲 SHOW QR TO THE TABLE</Text>
+            <Text style={styles.qrBtnSub}>Friends scan, see their share and pay. No app needed.</Text>
+          </TouchableOpacity>
+        ) : null}
+
         <View style={styles.actionRow}>
           <TouchableOpacity style={[styles.recapBtn, styles.half]} onPress={shareLink}>
             <Text style={styles.recapText}>🔗 Share link</Text>
@@ -486,6 +495,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       />
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
+      <BillQR visible={qrOpen} token={bill.share_token} title={bill.title || bill.restaurant} byItems={items.length > 0} onClose={() => setQrOpen(false)} />
       {pk ? (
         <PocketPicker
           visible={pkOpen} amount={myPart} pockets={pk.pockets} current={pk.current}
@@ -501,6 +511,9 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 }
 
 const styles = StyleSheet.create({
+  qrBtn: { backgroundColor: C.lime, borderRadius: 20, padding: 16, alignItems: 'center', marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
+  qrBtnText: { color: C.onLime, fontSize: 16, fontWeight: '900' },
+  qrBtnSub: { color: C.onLime, fontSize: 12, fontWeight: '600', marginTop: 3, opacity: 0.8 },
   pocketRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: C.card, borderWidth: 1, borderColor: C.border, borderRadius: 16, padding: 14, marginTop: 12 },
   pocketText: { color: C.text, fontSize: 14, fontWeight: '700', flex: 1, marginRight: 10 },
   pocketGo: { color: C.lime, fontSize: 14, fontWeight: '800' },
