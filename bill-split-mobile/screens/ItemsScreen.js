@@ -112,8 +112,9 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
   const isMe = person === 'Me';
   const pickedBy = (p) => claims.filter((list) => list.includes(p)).length;
   const hasNext = cur < people.length - 1;
+  // everyone gets their turn: next person until the last one, then the split
   const goNext = () => {
-    if (allDone) return onNext(claims, nonDrinkers);
+    if (!hasNext && allDone) return onNext(claims, nonDrinkers);
     if (hasNext) {
       setCur(cur + 1);
       if (listRef.current) listRef.current.scrollTo({ y: 0, animated: false });
@@ -222,9 +223,14 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       </Text>
       <TouchableOpacity style={styles.button} onPress={goNext} activeOpacity={0.85}>
         <Text style={styles.buttonText}>
-          {allDone ? 'SEE THE SPLIT →' : hasNext ? 'Done · next person →' : `Who had the ${left} left? ↑`}
+          {hasNext ? 'Done · next person →' : allDone ? 'SEE THE SPLIT →' : `Who had the ${left} left? ↑`}
         </Text>
       </TouchableOpacity>
+      {hasNext && allDone ? (
+        <TouchableOpacity onPress={() => onNext(claims, nonDrinkers)} style={{ alignSelf: 'center', marginTop: 10 }}>
+          <Text style={styles.skipLink}>Everyone's picked? See the split →</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* What's this? — a private pop-up about one item */}
       <Modal visible={info >= 0} transparent animationType="fade" onRequestClose={() => setInfo(-1)}>
@@ -293,6 +299,7 @@ const styles = StyleSheet.create({
   howMany: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
   howManyText: { color: C.sub, fontSize: 13, fontWeight: '700', marginRight: 8 },
   equalLink: { alignSelf: 'center', paddingVertical: 10 },
+  skipLink: { color: C.sub, fontSize: 14, fontWeight: '700', textDecorationLine: 'underline' },
   hintLong: { color: C.faint, fontSize: 12, textAlign: 'center', marginBottom: 8 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.lime, fontSize: 16, marginBottom: 10 },
