@@ -106,6 +106,23 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
     if (listRef.current && cardY.current[first] != null) listRef.current.scrollTo({ y: Math.max(0, cardY.current[first] - 8), animated: true });
   };
 
+  // 👤 Gautham's redesign: one person at a time ("What did Alina have?"), tick your items, next person
+  const [cur, setCur] = useState(0);
+  const person = people[cur] || people[0];
+  const isMe = person === 'Me';
+  const pickedBy = (p) => claims.filter((list) => list.includes(p)).length;
+  const hasNext = cur < people.length - 1;
+  const goNext = () => {
+    if (allDone) return onNext(claims, nonDrinkers);
+    if (hasNext) {
+      setCur(cur + 1);
+      if (listRef.current) listRef.current.scrollTo({ y: 0, animated: false });
+      return;
+    }
+    next(); // last person and items still unclaimed → jump to the first one
+  };
+  const late1 = rounds > 1;
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={onBack}>
@@ -113,142 +130,99 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
       </TouchableOpacity>
 
       <BillSteps at={3} />
-      <Text style={styles.title}>Who had what?</Text>
-      <Text style={styles.sub}>Tap the faces on each item. Shared items split between them.</Text>
+      <Text style={styles.title}>
+        What did <Text style={{ color: colorOf(person) === FACES[0] ? C.pink : colorOf(person) }}>{isMe ? 'you' : show(person)}</Text> have?
+      </Text>
+      <Text style={styles.sub}>Pick your face, then tick your items.</Text>
 
-      {/* 💰 Each person's cut so far */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.cuts} contentContainerStyle={{ paddingRight: 6 }}>
-        {people.map((p) => (
-          <View key={p} style={styles.cut}>
-            <View style={[styles.cutFace, { backgroundColor: colorOf(p) }]}>
-              <Text style={styles.cutInit}>{initials(p)}</Text>
-            </View>
-            <Text style={styles.cutName} numberOfLines={1}>{show(p)}</Text>
-            <Text style={styles.cutAmt}>₹{Math.round(cutOf(p)).toLocaleString('en-IN')}</Text>
-          </View>
-        ))}
-      </ScrollView>
-      <TouchableOpacity style={styles.equalBtn} onPress={splitEqually}>
-        <Text style={styles.equalText}>🤷 Can’t remember? Split everything equally</Text>
-      </TouchableOpacity>
-
-      <View style={styles.dryBox}>
-        <Text style={styles.dryLabel}>Not drinking?</Text>
-        <View style={styles.chips}>
-          {people.map((p) => {
-            const dry = nonDrinkers.includes(p);
-            return (
-              <TouchableOpacity key={p} style={[styles.dryChip, dry && styles.dryChipOn]} onPress={() => toggleDrinking(p)}>
-                <Text style={[styles.dryText, dry && styles.dryTextOn]}>{dry ? `🥤 ${show(p)}` : show(p)}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
-
-      {rounds > 1 ? (
-        <View style={styles.dryBox}>
-          <Text style={styles.dryLabel}>Came late? Tap to set the round they joined</Text>
-          <View style={styles.chips}>
-            {people.map((p) => {
-              const r = joinedAt[p] || 1;
-              return (
-                <TouchableOpacity key={p} style={[styles.dryChip, r > 1 && styles.lateChipOn]} onPress={() => cycleJoin(p)}>
-                  <Text style={[styles.dryText, r > 1 && styles.dryTextOn]}>{show(p)}{r > 1 ? ` · joined R${r}` : ''}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      ) : null}
-
-      <ScrollView style={styles.list} ref={listRef}>
-        {items.map((item, i) => {
-          const mystery = claims[i].length === 0;
-          const who = [...new Set(claims[i])];
-          const counted = who.length !== claims[i].length;
-          const canCount = item.qty > 1 && who.length > 1; // only matters when 2+ people share it
-          const k = KINDS[kindOf(item)];
+      {/* big faces: tap to switch person; ✓ once they've picked something */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.faces} contentContainerStyle={{ paddingRight: 6 }}>
+        {people.map((p, i) => {
+          const on = i === cur;
+          const n = pickedBy(p);
           return (
-            <View key={i}>
-            {rounds > 1 && (i === 0 || roundOf(i) !== roundOf(i - 1)) ? (
-              <Text style={styles.roundHead}>
-                ROUND {roundOf(i)}{people.filter((p) => (joinedAt[p] || 1) === roundOf(i) && roundOf(i) > 1).length ? ` · ${people.filter((p) => (joinedAt[p] || 1) === roundOf(i) && roundOf(i) > 1).map(show).join(', ')} joined` : ''}
-              </Text>
-            ) : null}
-            <View style={[styles.card, mystery && styles.mysteryCard]} onLayout={(e) => (cardY.current[i] = e.nativeEvent.layout.y)}>
-              <View style={styles.cardTop}>
-                <TouchableOpacity style={styles.nameTap} onPress={() => setInfo(i)}>
-                  <Text style={styles.itemName}>
-                    {mystery ? '🕵️ ' : ''}{k.emoji} {item.qty > 1 ? `${item.qty} × ` : ''}{item.name}
-                    <Text style={styles.infoIcon}>  🔍</Text>
-                  </Text>
-                </TouchableOpacity>
-                <Text style={styles.itemPrice}>₹{item.price}</Text>
-              </View>
-
-              <View style={styles.chips}>
-                {people.map((p) => {
-                  const on = claims[i].includes(p);
-                  const n = unitsOf(i, p);
-                  const blocked = !canHave(i, p);
-                  return (
-                    <TouchableOpacity key={p} style={[styles.av, blocked && styles.avBlocked]} onPress={() => toggle(i, p)} disabled={blocked} activeOpacity={0.75}>
-                      <View style={[styles.avFace, on ? { backgroundColor: colorOf(p), borderColor: '#fff' } : styles.avOff]}>
-                        <Text style={[styles.avInit, !on && { color: C.faint }]}>{blocked ? '🥤' : initials(p)}</Text>
-                        {n > 1 ? (
-                          <View style={styles.avBadge}>
-                            <Text style={styles.avBadgeText}>×{n}</Text>
-                          </View>
-                        ) : null}
-                      </View>
-                      <Text style={[styles.avName, on && { color: C.text }]} numberOfLines={1}>{late(i, p) && !on ? 'not there' : show(p)}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
-                <TouchableOpacity style={styles.av} onPress={() => toggleAll(i)} activeOpacity={0.75}>
-                  <View style={[styles.avFace, styles.avAll]}>
-                    <Text style={styles.avAllText}>ALL</Text>
-                  </View>
-                  <Text style={styles.avName}>Everyone</Text>
-                </TouchableOpacity>
-              </View>
-
-              {canCount ? (
-                <View style={styles.countBox}>
-                  <Text style={styles.countTitle}>
-                    🔢 How many each? <Text style={[styles.countSum, claims[i].length !== item.qty && styles.countOff]}>
-                      {claims[i].length} of {item.qty} counted
-                    </Text>
-                  </Text>
-                  {who.map((p) => (
-                    <View key={p} style={styles.countRow}>
-                      <Text style={styles.countName} numberOfLines={1}>{show(p)}</Text>
-                      <NumberWheel value={unitsOf(i, p)} min={1} max={item.qty} onChange={(n) => setUnits(i, p, n)} />
-                      <Text style={styles.countAmt}>₹{((item.price * unitsOf(i, p)) / claims[i].length).toFixed(0)}</Text>
-                    </View>
-                  ))}
+            <TouchableOpacity key={p} style={styles.face} onPress={() => setCur(i)} activeOpacity={0.8}>
+              <View style={[styles.faceRing, on && { borderColor: colorOf(p) }]}>
+                <View style={[styles.faceDot, { backgroundColor: colorOf(p) }]}>
+                  <Text style={styles.faceInit}>{p === 'Me' ? 'YO' : initials(p)}</Text>
                 </View>
-              ) : null}
-              {who.length > 1 && !counted && !canCount && (
-                <Text style={styles.shared}>
-                  Split {who.length} ways · ₹{(item.price / who.length).toFixed(2)} each
-                </Text>
-              )}
-              {mystery ? <Text style={styles.nobody}>Nobody yet · tap a face to claim</Text> : null}
-            </View>
-            </View>
+              </View>
+              {n > 0 && !on ? <View style={styles.faceTick}><Text style={styles.faceTickText}>✓</Text></View> : null}
+              <Text style={[styles.faceName, on && { color: C.text }]} numberOfLines={1}>{p === 'Me' ? 'You' : show(p)}</Text>
+              <Text style={styles.faceAmt}>₹{Math.round(cutOf(p)).toLocaleString('en-IN')}</Text>
+            </TouchableOpacity>
           );
         })}
       </ScrollView>
 
-      <Text style={styles.count}>
-        {claimed} of {items.length} items claimed{!allDone ? `  ·  ${left} unclaimed` : ''}
-      </Text>
+      {/* small options for this person only (instead of scattered boxes) */}
+      <View style={styles.optRow}>
+        <TouchableOpacity style={[styles.opt, nonDrinkers.includes(person) && styles.optOn]} onPress={() => toggleDrinking(person)}>
+          <Text style={[styles.optText, nonDrinkers.includes(person) && styles.optTextOn]}>
+            🥤 {nonDrinkers.includes(person) ? `${isMe ? "You're" : `${show(person)} is`} not drinking` : 'Not drinking?'}
+          </Text>
+        </TouchableOpacity>
+        {late1 ? (
+          <TouchableOpacity style={[styles.opt, (joinedAt[person] || 1) > 1 && styles.optLate]} onPress={() => cycleJoin(person)}>
+            <Text style={[styles.optText, (joinedAt[person] || 1) > 1 && styles.optTextOn]}>⏰ {(joinedAt[person] || 1) > 1 ? `Joined round ${joinedAt[person]}` : 'Came late?'}</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
 
-      <TouchableOpacity style={[styles.button, !allDone && styles.disabled]} onPress={next}>
-        <Text style={[styles.buttonText, !allDone && { color: C.sub }]}>
-          {allDone ? 'SEE THE SPLIT →' : `Tag ${left} more item${left === 1 ? '' : 's'} to continue ↑`}
+      <ScrollView style={styles.list} ref={listRef}>
+        {items.map((item, i) => {
+          const mine = claims[i].includes(person);
+          const blocked = !canHave(i, person);
+          const notThere = late(i, person) && !mine;
+          const others = [...new Set(claims[i])].filter((p) => p !== person);
+          const ways = new Set(claims[i]).size;
+          const k = KINDS[kindOf(item)];
+          const nobody = claims[i].length === 0;
+          return (
+            <View key={i} onLayout={(e) => (cardY.current[i] = e.nativeEvent.layout.y)}>
+              {rounds > 1 && (i === 0 || roundOf(i) !== roundOf(i - 1)) ? <Text style={styles.roundHead}>ROUND {roundOf(i)}</Text> : null}
+              <TouchableOpacity
+                style={[styles.tick, mine && styles.tickOn, (blocked || notThere) && styles.tickOff]}
+                onPress={() => toggle(i, person)} onLongPress={() => setInfo(i)} disabled={blocked} activeOpacity={0.85}
+              >
+                <View style={[styles.box, mine && styles.boxOn]}>{mine ? <Text style={styles.boxTick}>✓</Text> : null}</View>
+                <View style={{ flex: 1, marginRight: 8 }}>
+                  <Text style={styles.tickName}>{item.qty > 1 ? `${item.qty} × ` : ''}{item.name} <Text style={styles.tickKind}>{k.emoji}</Text></Text>
+                  {blocked ? <Text style={styles.tickNote}>🥤 Not drinking, so this one's skipped</Text> : notThere ? <Text style={styles.tickNote}>Not there yet for this round</Text> : null}
+                  {others.length ? (
+                    <View style={styles.alsoRow}>
+                      {others.slice(0, 4).map((o, j) => (
+                        <View key={o} style={[styles.alsoDot, { backgroundColor: colorOf(o), marginLeft: j ? -6 : 0 }]}>
+                          <Text style={styles.alsoInit}>{o === 'Me' ? 'YO' : initials(o)}</Text>
+                        </View>
+                      ))}
+                      <Text style={styles.alsoText}>{others.length > 4 ? `+${others.length - 4} ` : ''}also had this{mine && ways > 1 ? ` · ₹${Math.round(item.price / ways)} each` : ''}</Text>
+                    </View>
+                  ) : nobody && !blocked ? <Text style={styles.nobodyNote}>🕵️ Nobody yet</Text> : null}
+                  {mine && item.qty > 1 && ways > 1 ? (
+                    <View style={styles.howMany}>
+                      <Text style={styles.howManyText}>How many?</Text>
+                      <NumberWheel value={unitsOf(i, person)} min={1} max={item.qty} onChange={(n) => setUnits(i, person, n)} />
+                    </View>
+                  ) : null}
+                </View>
+                <Text style={styles.tickPrice}>₹{Math.round(item.price).toLocaleString('en-IN')}</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })}
+        <TouchableOpacity style={styles.equalLink} onPress={splitEqually}>
+          <Text style={styles.equalText}>🤷 Can’t remember? Split everything equally</Text>
+        </TouchableOpacity>
+        <Text style={styles.hintLong}>Long-press an item to see what it is 🔍</Text>
+      </ScrollView>
+
+      <Text style={styles.count}>
+        {isMe ? 'You' : show(person)} · {pickedBy(person)} item{pickedBy(person) === 1 ? '' : 's'} picked{!allDone ? `  ·  ${left} nobody had yet` : ''}
+      </Text>
+      <TouchableOpacity style={styles.button} onPress={goNext} activeOpacity={0.85}>
+        <Text style={styles.buttonText}>
+          {allDone ? 'SEE THE SPLIT →' : hasNext ? 'Done · next person →' : `Who had the ${left} left? ↑`}
         </Text>
       </TouchableOpacity>
 
@@ -286,6 +260,40 @@ export default function ItemsScreen({ items, people, initialClaims, initialNonDr
 }
 
 const styles = StyleSheet.create({
+  faces: { flexGrow: 0, marginTop: 4, marginBottom: 10 },
+  face: { alignItems: 'center', width: 74, marginRight: 4 },
+  faceRing: { width: 66, height: 66, borderRadius: 33, borderWidth: 3, borderColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
+  faceDot: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  faceInit: { color: C.onLime, fontSize: 18, fontWeight: '900' },
+  faceTick: { position: 'absolute', top: 0, right: 6, width: 20, height: 20, borderRadius: 10, backgroundColor: C.lime, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: C.bg },
+  faceTickText: { color: C.onLime, fontSize: 11, fontWeight: '900' },
+  faceName: { color: C.sub, fontSize: 13, fontWeight: '800', marginTop: 4, maxWidth: 72 },
+  faceAmt: { color: C.faint, fontSize: 11, fontWeight: '700' },
+  optRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 8 },
+  opt: { borderWidth: 1, borderColor: C.border, borderRadius: 14, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8, marginBottom: 6 },
+  optOn: { backgroundColor: C.cyan, borderColor: C.cyan },
+  optLate: { backgroundColor: C.violet, borderColor: C.violet },
+  optText: { color: C.sub, fontSize: 13, fontWeight: '700' },
+  optTextOn: { color: C.onLime },
+  tick: { flexDirection: 'row', alignItems: 'center', backgroundColor: C.card, borderWidth: 2, borderColor: C.border, borderRadius: 22, padding: 16, marginBottom: 10 },
+  tickOn: { borderColor: C.lime, backgroundColor: 'rgba(226,255,59,0.12)' },
+  tickOff: { opacity: 0.45 },
+  box: { width: 34, height: 34, borderRadius: 10, borderWidth: 2, borderColor: C.border, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+  boxOn: { backgroundColor: C.lime, borderColor: C.lime },
+  boxTick: { color: C.onLime, fontSize: 18, fontWeight: '900' },
+  tickName: { color: C.text, fontSize: 17, fontWeight: '800' },
+  tickKind: { fontSize: 13 },
+  tickNote: { color: C.faint, fontSize: 12, marginTop: 3 },
+  tickPrice: { fontFamily: F.bold, color: C.text, fontSize: 18 },
+  alsoRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
+  alsoDot: { width: 22, height: 22, borderRadius: 11, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: C.card },
+  alsoInit: { color: C.onLime, fontSize: 9, fontWeight: '900' },
+  alsoText: { color: C.sub, fontSize: 12, marginLeft: 6 },
+  nobodyNote: { color: C.red, fontSize: 12, fontWeight: '800', marginTop: 4 },
+  howMany: { flexDirection: 'row', alignItems: 'center', marginTop: 8 },
+  howManyText: { color: C.sub, fontSize: 13, fontWeight: '700', marginRight: 8 },
+  equalLink: { alignSelf: 'center', paddingVertical: 10 },
+  hintLong: { color: C.faint, fontSize: 12, textAlign: 'center', marginBottom: 8 },
   container: { flex: 1, backgroundColor: C.bg, paddingTop: 60, paddingHorizontal: 20, paddingBottom: 30 },
   back: { color: C.lime, fontSize: 16, marginBottom: 10 },
   title: { fontFamily: F.display, fontSize: 26, color: C.text },
