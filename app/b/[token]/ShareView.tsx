@@ -49,12 +49,15 @@ function transfers(bill: SharedBill) {
 }
 
 const EMOJI: Record<string, string> = { alcohol: '🍺', soft: '🥤', food: '🍽️' };
-const inr = (n: number) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
-const money = (n: number) => 'Rs ' + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN');
+const inr = (n: number) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const money = (n: number) => '₹' + (Math.round((Number(n) || 0) * 100) / 100).toLocaleString('en-IN');
 
 // Opens GPay / PhonePe / Paytm with the amount filled in
 const upiLink = (upi: string, name: string, amount: number, note: string) =>
   `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(name)}&am=${Math.round(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF', '#7CFFB2'];
+const ini = (n: string) => n.trim().slice(0, 2).toUpperCase();
 
 export default function ShareView({ bill, token }: { bill: SharedBill; token: string }) {
   const [me, setMe] = useState<string | null>(null);
@@ -97,6 +100,18 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
     setSent(`✅ Sent to ${payee}! They'll update the split.`);
   };
   const nameOf = Object.fromEntries(bill.people.map((p) => [p.id, p.name]));
+  const colorOf = (id: string) => FACES[Math.max(0, bill.people.findIndex((p) => p.id === id)) % FACES.length];
+  const pick = (id: string) => {
+    setMe(id);
+    setSent('');
+    const hasItems = bill.items.some((it) => it.claims.some((c) => c.participant_id === id));
+    if (!hasItems && bill.items.length) {
+      // split by items and nothing is yours yet → straight to "What did you have?"
+      const pre: Record<string, number> = {};
+      setPicks(pre);
+      setTagging(true);
+    } else setTagging(false);
+  };
   const payee = bill.payee_name || 'your friend';
 
   const lines = (pid: string) =>
@@ -165,20 +180,19 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
         </p>
 
         <section style={s.box}>
-          <p style={s.boxTitle}>Which one are you?</p>
-          <div style={s.chips}>
+          <p style={s.boxTitle}>Tap your face 👇</p>
+          <div style={s.faces}>
             {bill.people.filter((p) => p.name !== 'Me').map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setMe(p.id)}
-                style={{ ...s.chip, ...(me === p.id ? s.chipOn : {}) }}
-              >
-                {p.name}
+              <button key={p.id} onClick={() => pick(p.id)} style={s.faceBtn}>
+                <span style={{ ...s.faceRing, borderColor: me === p.id ? colorOf(p.id) : 'transparent' }}>
+                  <span style={{ ...s.faceDot, background: colorOf(p.id) }}>{ini(p.name)}</span>
+                </span>
+                <span style={{ ...s.faceName, color: me === p.id ? '#F7F7F9' : '#9A98A6' }}>{p.name}</span>
               </button>
             ))}
           </div>
 
-          {mine && (
+          {mine && !(tagging && lines(mine.id).length === 0) && (
             <div style={s.you}>
               {bill.paid_mode === 'unpaid' ? (
                 <>
@@ -232,7 +246,7 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
               )}
 
               {!tagging ? (
-                <button onClick={startTagging} style={s.tagBtn}>🙋 Not right? Tag what you had</button>
+                <button onClick={startTagging} style={s.tagBtn}>🙋 Not right? Tick what you had</button>
               ) : null}
               {sent ? <p style={{ ...s.youNote, color: sent.startsWith('✅') ? '#34D399' : '#F87171', fontSize: 14 }}>{sent}</p> : null}
             </div>
@@ -240,20 +254,31 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
 
           {mine && tagging ? (
             <div style={s.tagBox}>
-              <p style={s.boxTitle}>🙋 Tap everything you had</p>
-              <p style={{ ...s.youNote, margin: '0 0 10px' }}>Shared something? Tick it too, and it gets split. {payee} checks it before anything changes.</p>
+              <p style={s.what}>What did <span style={{ color: colorOf(me!) === FACES[0] ? '#FF4FA0' : colorOf(me!) }}>{mine ? mine.name : 'you'}</span> have?</p>
+              <p style={{ ...s.youNote, margin: '0 0 12px' }}>Tick your items. Shared something? Tick it too, and it gets split. {payee} checks it before anything changes.</p>
               {bill.items.map((it) => {
                 const on = !!picks[it.id];
+                const others = it.claims.filter((c) => c.participant_id !== me).map((c) => c.participant_id);
                 return (
                   <div key={it.id} style={{ ...s.tagRow, ...(on ? s.tagRowOn : {}) }}>
                     <button onClick={() => togglePick(it.id)} style={s.tagName}>
                       <span style={{ ...s.box2, ...(on ? s.box2On : {}) }}>{on ? '✓' : ''}</span>
-                      {it.kind ? EMOJI[it.kind] + ' ' : ''}{it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name}
+                      <span style={{ flex: 1 }}>
+                        <span style={{ display: 'block', fontWeight: 800, fontSize: 16 }}>{it.quantity > 1 ? `${it.quantity} × ` : ''}{it.name} {it.kind ? EMOJI[it.kind] : ''}</span>
+                        {others.length ? (
+                          <span style={s.also}>
+                            {others.slice(0, 4).map((o, j) => (
+                              <span key={o} style={{ ...s.alsoDot, background: colorOf(o), marginLeft: j ? -6 : 0 }}>{ini(nameOf[o] === 'Me' ? payee : nameOf[o])}</span>
+                            ))}
+                            <span style={{ marginLeft: 6 }}>also had this</span>
+                          </span>
+                        ) : null}
+                      </span>
                       <span style={s.tagPrice}>{money(Number(it.price))}</span>
                     </button>
                     {on && it.quantity > 1 ? (
                       <div style={s.counter}>
-                        <span style={{ color: '#B8A6D9', fontSize: 13 }}>How many did you have?</span>
+                        <span style={{ color: '#9A98A6', fontSize: 13 }}>How many did you have?</span>
                         <button style={s.step} onClick={() => setCount(it.id, picks[it.id] - 1, it.quantity)}>−</button>
                         <b style={{ minWidth: 22, textAlign: 'center' }}>{picks[it.id]}</b>
                         <button style={s.step} onClick={() => setCount(it.id, picks[it.id] + 1, it.quantity)}>＋</button>
@@ -262,10 +287,10 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
                   </div>
                 );
               })}
-              <button onClick={sendPicks} disabled={sending} style={{ ...s.payBtn, width: '100%', border: 'none', cursor: 'pointer' }}>
-                {sending ? 'Sending…' : `Send to ${payee} (${Object.keys(picks).length} item${Object.keys(picks).length === 1 ? '' : 's'})`}
+              <button onClick={sendPicks} disabled={sending || !Object.keys(picks).length} style={{ ...s.payBtn, width: '100%', border: 'none', cursor: 'pointer', opacity: Object.keys(picks).length ? 1 : 0.45 }}>
+                {sending ? 'Sending…' : Object.keys(picks).length ? `Done · send ${Object.keys(picks).length} item${Object.keys(picks).length === 1 ? '' : 's'} to ${payee} →` : 'Tick what you had'}
               </button>
-              <button onClick={() => setTagging(false)} style={s.copyBtn}>Cancel</button>
+              {mine && lines(mine.id).length ? <button onClick={() => setTagging(false)} style={s.copyBtn}>Cancel</button> : null}
             </div>
           ) : null}
         </section>
@@ -307,41 +332,49 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
 }
 
 const s: Record<string, React.CSSProperties> = {
-  page: { minHeight: '100vh', background: '#160A2B', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#fff' },
+  page: { minHeight: '100vh', background: '#0E0E12', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', color: '#F7F7F9' },
   wrap: { maxWidth: 520, margin: '0 auto', padding: '28px 18px 48px' },
-  kicker: { color: '#C9A8FF', fontWeight: 700, fontSize: 12, letterSpacing: 1.5, margin: 0 },
-  title: { fontSize: 28, fontWeight: 800, margin: '8px 0 4px' },
-  sub: { color: '#B8A6D9', fontSize: 14, margin: '0 0 20px' },
-  box: { background: '#24103F', border: '1px solid #3E2470', borderRadius: 18, padding: 18, marginBottom: 24 },
-  boxTitle: { fontWeight: 700, fontSize: 16, margin: '0 0 12px' },
+  kicker: { color: '#E2FF3B', fontWeight: 800, fontSize: 12, letterSpacing: 2, margin: 0 },
+  title: { fontSize: 30, fontWeight: 900, margin: '8px 0 4px' },
+  sub: { color: '#9A98A6', fontSize: 14, margin: '0 0 20px' },
+  box: { background: '#17161D', border: '1px solid #2A2833', borderRadius: 24, padding: 18, marginBottom: 24 },
+  boxTitle: { fontWeight: 800, fontSize: 17, margin: '0 0 12px' },
+  what: { fontWeight: 900, fontSize: 26, margin: '0 0 4px', lineHeight: 1.15 },
+  faces: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 4 },
+  faceBtn: { display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', width: 76, flexShrink: 0, padding: 0 },
+  faceRing: { width: 66, height: 66, borderRadius: 33, border: '3px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  faceDot: { width: 56, height: 56, borderRadius: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0E0E12', fontWeight: 900, fontSize: 18 },
+  faceName: { fontSize: 13, fontWeight: 800, marginTop: 4, maxWidth: 74, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
-  chip: { border: '1px solid #8B5CF6', color: '#C9A8FF', background: 'transparent', borderRadius: 20, padding: '8px 14px', fontSize: 15, cursor: 'pointer' },
-  chipOn: { background: '#8B5CF6', color: '#fff' },
-  you: { marginTop: 18, borderTop: '1px solid #3E2470', paddingTop: 16, textAlign: 'center' },
-  youLabel: { color: '#B8A6D9', margin: 0, fontSize: 14 },
-  claimPaidBtn: { display: 'block', width: '100%', marginTop: 10, marginBottom: 6, padding: '12px 14px', borderRadius: 14, border: '2px solid #34D399', background: 'transparent', color: '#34D399', fontSize: 15, fontWeight: 800, cursor: 'pointer' },
-  youBig: { fontSize: 38, fontWeight: 800, margin: '4px 0', color: '#C9A8FF' },
-  youNote: { color: '#8C7AAE', fontSize: 12, margin: '8px 0 0' },
-  payBtn: { display: 'block', marginTop: 16, background: '#34D399', color: '#0B2A1F', fontWeight: 800, fontSize: 17, padding: '14px 16px', borderRadius: 14, textDecoration: 'none' },
-  copyBtn: { display: 'block', width: '100%', marginTop: 10, background: 'transparent', color: '#C9A8FF', border: '1px solid #3E2470', fontSize: 14, padding: '11px 14px', borderRadius: 14, cursor: 'pointer' },
-  h2: { fontSize: 18, fontWeight: 700, margin: '0 0 12px' },
-  card: { background: '#24103F', borderRadius: 16, padding: 16, marginBottom: 10, border: '1px solid #3E2470' },
-  cardMe: { border: '2px solid #8B5CF6' },
+  chip: { border: '1px solid #2A2833', color: '#9A98A6', background: 'transparent', borderRadius: 20, padding: '8px 14px', fontSize: 15, cursor: 'pointer' },
+  chipOn: { background: '#E2FF3B', color: '#0E0E12' },
+  you: { marginTop: 18, borderTop: '1px solid #2A2833', paddingTop: 16, textAlign: 'center' },
+  youLabel: { color: '#9A98A6', margin: 0, fontSize: 14 },
+  claimPaidBtn: { display: 'block', width: '100%', marginTop: 10, marginBottom: 6, padding: '12px 14px', borderRadius: 16, border: '2px solid #E2FF3B', background: 'transparent', color: '#E2FF3B', fontSize: 15, fontWeight: 800, cursor: 'pointer' },
+  youBig: { fontSize: 42, fontWeight: 900, margin: '4px 0', color: '#E2FF3B' },
+  youNote: { color: '#6E6C7A', fontSize: 12, margin: '8px 0 0' },
+  payBtn: { display: 'block', marginTop: 16, background: '#E2FF3B', color: '#0E0E12', fontWeight: 900, fontSize: 17, padding: '16px', borderRadius: 18, textDecoration: 'none', textAlign: 'center', borderRight: '3px solid #F7F7F9', borderBottom: '4px solid #F7F7F9' },
+  copyBtn: { display: 'block', width: '100%', marginTop: 10, background: 'transparent', color: '#9A98A6', border: '1px solid #2A2833', fontSize: 14, padding: '11px 14px', borderRadius: 14, cursor: 'pointer' },
+  h2: { fontSize: 18, fontWeight: 800, margin: '0 0 12px' },
+  card: { background: '#17161D', borderRadius: 18, padding: 16, marginBottom: 10, border: '1px solid #2A2833' },
+  cardMe: { border: '2px solid #E2FF3B' },
   cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  name: { fontWeight: 700, fontSize: 17 },
-  amount: { fontWeight: 800, fontSize: 18, color: '#C9A8FF' },
-  line: { color: '#B8A6D9', fontSize: 14, margin: '3px 0' },
-  pink: { color: '#F472B6', fontWeight: 600 },
-  covering: { color: '#F472B6', fontWeight: 600, fontSize: 14, margin: '8px 0 0' },
-  tagBtn: { display: 'block', width: '100%', marginTop: 14, background: 'transparent', color: '#F4EEFF', border: '1px dashed #8B5CF6', fontSize: 15, fontWeight: 700, padding: '12px 14px', borderRadius: 14, cursor: 'pointer' },
-  tagBox: { marginTop: 16, borderTop: '1px solid #3E2470', paddingTop: 16 },
-  tagRow: { border: '1px solid #3E2470', borderRadius: 12, marginBottom: 8, overflow: 'hidden' },
-  tagRowOn: { borderColor: '#8B5CF6', background: 'rgba(139,92,246,0.12)' },
-  tagName: { display: 'flex', alignItems: 'center', gap: 10, width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: 15, padding: '12px', textAlign: 'left', cursor: 'pointer' },
-  tagPrice: { marginLeft: 'auto', color: '#B8A6D9', fontSize: 14 },
-  box2: { width: 22, height: 22, borderRadius: 6, border: '2px solid #8B5CF6', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 800, flexShrink: 0 },
-  box2On: { background: '#8B5CF6' },
-  counter: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px 12px 44px' },
-  step: { width: 32, height: 32, borderRadius: 16, border: '1px solid #8B5CF6', background: 'transparent', color: '#fff', fontSize: 18, cursor: 'pointer' },
-  footer: { color: '#8C7AAE', fontSize: 12, textAlign: 'center', marginTop: 24 },
+  name: { fontWeight: 800, fontSize: 17 },
+  amount: { fontWeight: 900, fontSize: 18, color: '#E2FF3B' },
+  line: { color: '#9A98A6', fontSize: 14, margin: '3px 0' },
+  pink: { color: '#FF4FA0', fontWeight: 600 },
+  covering: { color: '#FF4FA0', fontWeight: 600, fontSize: 14, margin: '8px 0 0' },
+  tagBtn: { display: 'block', width: '100%', marginTop: 14, background: 'transparent', color: '#F7F7F9', border: '1px dashed #2A2833', fontSize: 15, fontWeight: 700, padding: '12px 14px', borderRadius: 14, cursor: 'pointer' },
+  tagBox: { marginTop: 16, borderTop: '1px solid #2A2833', paddingTop: 16 },
+  tagRow: { border: '2px solid #2A2833', borderRadius: 22, marginBottom: 10, overflow: 'hidden', background: '#17161D' },
+  tagRowOn: { borderColor: '#E2FF3B', background: 'rgba(226,255,59,0.12)' },
+  tagName: { display: 'flex', alignItems: 'center', gap: 12, width: '100%', background: 'transparent', border: 'none', color: '#F7F7F9', fontSize: 15, padding: '16px', textAlign: 'left', cursor: 'pointer' },
+  tagPrice: { marginLeft: 'auto', color: '#F7F7F9', fontSize: 17, fontWeight: 900 },
+  box2: { width: 32, height: 32, borderRadius: 10, border: '2px solid #2A2833', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 900, flexShrink: 0, color: '#0E0E12' },
+  box2On: { background: '#E2FF3B', borderColor: '#E2FF3B' },
+  also: { display: 'flex', alignItems: 'center', marginTop: 6, color: '#9A98A6', fontSize: 12 },
+  alsoDot: { width: 22, height: 22, borderRadius: 11, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#0E0E12', fontSize: 9, fontWeight: 900, border: '1.5px solid #17161D' },
+  counter: { display: 'flex', alignItems: 'center', gap: 10, padding: '0 16px 14px 60px' },
+  step: { width: 32, height: 32, borderRadius: 16, border: '1px solid #E2FF3B', background: 'transparent', color: '#F7F7F9', fontSize: 18, cursor: 'pointer' },
+  footer: { color: '#6E6C7A', fontSize: 12, textAlign: 'center', marginTop: 24 },
 };
