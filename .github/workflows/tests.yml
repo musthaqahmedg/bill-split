@@ -1,0 +1,24 @@
+# 🧪 Runs on every push (free on GitHub): money maths tests + screen tests in a real browser
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bill-split-mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: bill-split-mobile/package-lock.json
+      - run: npm ci
+      - name: Money maths (splits, settle-ups, Pockets)
+        run: npm test
+      - name: Screens (Who had what? + bill page friends open)
+        run: npm run test:screens

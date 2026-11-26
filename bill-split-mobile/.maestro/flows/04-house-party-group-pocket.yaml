@@ -1,0 +1,19 @@
+# Briefs: every plan lives in a Space (4 Nov); group pocket in a Space (Pockets Build 4)
+appId: host.exp.exponent
+name: House party Space with a group pocket
+---
+- runFlow: ../common/open-app.yaml
+- tapOn:
+    text: "Skip"        # close the first-time tour
+    optional: true
+- tapOn: "House\nParty"
+- assertWithAI:
+    assertion: The screen asks what to call the party, with one clear next step
+    optional: true
+- inputText: "Maestro test party"
+- tapOn:
+    text: "Next"
+    optional: true
+- takeScreenshot: 04-house-party-start
+# The rest of the plan steps change often: finish them by hand the first time,
+# then record them with `maestro studio` and paste them here.

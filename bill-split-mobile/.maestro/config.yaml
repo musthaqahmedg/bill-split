@@ -1,0 +1,5 @@
+# 🧪 Maestro test flows for VibeOut, written from Musthaq's and Gautham's briefs.
+# Run all:   maestro test .maestro/ -e APP_URL=exp://<your-laptop-ip>:8081
+# (APP_URL is the exp:// link Expo prints when you run `npx expo start`)
+flows:
+  - "flows/*"

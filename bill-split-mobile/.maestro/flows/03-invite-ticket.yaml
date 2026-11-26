@@ -1,0 +1,19 @@
+# Brief (Gautham, 21 Nov ref): Refer & earn ticket printer → print → share as a picture
+appId: host.exp.exponent
+name: Invite ticket prints and can be shared
+---
+- runFlow: ../common/open-app.yaml
+- tapOn:
+    text: "Skip"        # close the first-time tour
+    optional: true
+- tapOn: "Me"
+- tapOn: "Invite"
+- assertVisible: "TAP TO PRINT YOUR TICKET"
+- tapOn: "TAP TO PRINT YOUR TICKET"
+- extendedWaitUntil:
+    visible: "PRINTED ✓"
+    timeout: 5000
+- assertVisible: "INVITE CODE"
+- assertVisible: "📤 Share ticket"
+- assertVisible: "or send the link as text"
+- takeScreenshot: 03-invite-ticket

@@ -1,0 +1,27 @@
+# Brief (26 Nov, Gautham): "options are scattered" → a new user sees one clear place to start
+appId: host.exp.exponent
+name: New user sees one clear starting point
+---
+- runFlow: ../common/open-app.yaml
+# 4-tip tour on first Home
+- extendedWaitUntil:
+    visible: "Start with one tile"
+    timeout: 20000
+- assertWithAI:
+    assertion: A short tip card explains to start with one of the 4 big tiles, and nothing else competes for attention
+    optional: true
+- tapOn: "START →"
+- assertVisible: "Everything lands in a Space"
+- tapOn: "NEXT →"
+- assertVisible: "Night Mode"
+- tapOn: "NEXT →"
+- tapOn: "LET'S GO 🤟"
+- assertVisible: "👇 START HERE · PICK ONE"
+- assertVisible: "House\nParty"
+- assertVisible: "Plan a\nNight"
+- assertVisible: "Split\nBills"
+- assertVisible: "Book\nTable"
+# no empty "🔥 0" or "₹0 budget" for brand-new people
+- assertNotVisible: "🔥 0"
+- assertNotVisible: "💳 TONIGHT'S BUDGET"
+- takeScreenshot: 01-new-user-home

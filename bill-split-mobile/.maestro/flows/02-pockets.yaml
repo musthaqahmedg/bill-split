@@ -1,0 +1,38 @@
+# Brief (Gautham, Pockets): every rupee gets a pocket; "Left to assign" must reach 0;
+# header "₹X of ₹Y is still yours this cycle"; spending deducts live
+appId: host.exp.exponent
+name: Pockets setup and a live spend
+---
+- runFlow: ../common/open-app.yaml
+- tapOn:
+    text: "Skip"        # close the first-time tour
+    optional: true
+- tapOn: "Me"
+- scrollUntilVisible:
+    element: "Give every rupee a job"
+- tapOn: "Give every rupee a job"
+- tapOn: "40000"
+- inputText: "40000"
+- tapOn: "Next: fill my pockets →"
+- assertVisible: "Fill your pockets"
+- assertVisible: "LEFT TO ASSIGN"
+- assertVisible: "₹0"            # the suggested split already adds up to the income
+- tapOn: "✅ Save my pockets"
+- extendedWaitUntil:
+    visible: "of ₹40,000 is still yours this cycle"
+    timeout: 15000
+- assertVisible: "₹40,000"
+# spend ₹500 from Going Out → the header drops by exactly ₹500
+- tapOn: "Going Out"
+- tapOn: "Spent how much?"
+- inputText: "500"
+- tapOn: "Take ₹500 out of Going Out"
+- tapOn:
+    text: "OK"
+    optional: true
+- swipe:
+    direction: DOWN
+- extendedWaitUntil:
+    visible: "₹39,500"
+    timeout: 10000
+- takeScreenshot: 02-pockets

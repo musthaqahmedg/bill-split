@@ -1,0 +1,27 @@
+# Opens VibeOut fresh inside Expo Go and gets past the intro as a brand-new guest
+appId: host.exp.exponent
+---
+- launchApp:
+    clearState: true
+- openLink: ${APP_URL}
+# 💡 neon intro + 🎬 LET'S GO story: tap to skip both
+- extendedWaitUntil:
+    visible: "tap to skip"
+    timeout: 60000
+- tapOn: "tap to skip"
+- tapOn:
+    text: "tap to skip"
+    optional: true
+# 👋 welcome slides → in as a guest
+- tapOn: "NEXT →"
+- tapOn: "NEXT →"
+- tapOn: "GET IN →"
+# ✍️ privacy + 18+
+- extendedWaitUntil:
+    visible: "Agree and continue"
+    timeout: 20000
+- scrollUntilVisible:
+    element: "I agree to Vibe Out using my data as explained above"
+- tapOn: "18 or older"
+- tapOn: "I agree to Vibe Out using my data as explained above"
+- tapOn: "Agree and continue"

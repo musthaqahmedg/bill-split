@@ -55,6 +55,8 @@
   "devDependencies": {
     "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.2.2",
+    "esbuild": "^0.24.2",
+    "playwright-core": "1.49",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -64,7 +66,8 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "node --experimental-default-type=module --test tests/split.test.js tests/manualSplit.test.js tests/pockets.test.js"
+    "test": "node --experimental-default-type=module --test tests/split.test.js tests/manualSplit.test.js tests/pockets.test.js",
+    "test:screens": "node tests/screens/run.mjs"
   },
   "private": true
 }
