@@ -495,7 +495,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       />
 
       <RecapCard bill={bill} visible={recapOpen} onClose={() => setRecapOpen(false)} />
-      <BillQR visible={qrOpen} token={bill.share_token} title={bill.title || bill.restaurant} byItems={items.length > 0} onClose={() => setQrOpen(false)} />
+      <BillQR visible={qrOpen} token={bill.share_token} title={bill.title || bill.restaurant} byItems={items.length > 0} mePaid={(bill.paid_mode || 'me') === 'me'} onClose={() => { setQrOpen(false); getProfile().then((p) => setMyUpi((p && p.upi_id) || '')).catch(() => {}); }} />
       {pk ? (
         <PocketPicker
           visible={pkOpen} amount={myPart} pockets={pk.pockets} current={pk.current}

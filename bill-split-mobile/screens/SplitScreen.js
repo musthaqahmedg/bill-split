@@ -539,7 +539,7 @@ export default function SplitScreen({
       />
     ) : null}
     {qrAfter ? (
-      <BillQR visible token={qrAfter.token} title={bill.restaurant} byItems onClose={() => { setQrAfter(null); onDone(createdSpace.current); }} />
+      <BillQR visible token={qrAfter.token} title={bill.restaurant} byItems mePaid={(payment.mode || 'me') === 'me'} onClose={() => { setQrAfter(null); onDone(createdSpace.current); }} />
     ) : null}
     <FeedbackSheet visible={feedbackFor !== undefined} billId={feedbackFor} onClose={() => { setFeedbackFor(undefined); onDone(createdSpace.current); }} />
       </View>

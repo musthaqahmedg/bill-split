@@ -80,6 +80,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
   // 🫙 group pocket: the squad's shared pot
   const [pot, setPot] = useState<{ target: number | null; note: string | null; paid: number; people: { member_id: string; name: string; is_host: boolean; paid: number }[] } | null>(null);
   const [potAmt, setPotAmt] = useState('');
+  // 🧾 real bills in this plan: once there's a bill, it decides what everyone pays
+  const [bills, setBills] = useState<{ restaurant: string; total: number; share_token: string; payer: string | null; people: number }[]>([]);
   const [songArtist, setSongArtist] = useState('');
   const [pollQ, setPollQ] = useState('');
   const [pollOpts, setPollOpts] = useState(['', '']);
@@ -115,6 +117,8 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
         if (sg.ok && alive) setSongs(await sg.json());
         const pt = await rpc('get_party_pot', { p_token: token });
         if (pt.ok && alive) setPot(await pt.json());
+        const bl = await rpc('get_party_bills', { p_token: token });
+        if (bl.ok && alive) setBills((await bl.json()) || []);
         const sf = await rpc('get_party_safety', { p_token: token });
         if (sf.ok && alive) setSafety(await sf.json());
         if (li.ok && alive) setItems(await li.json());
@@ -346,7 +350,9 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
               {error && <p style={s.error}>{error}</p>}
               {mine.rsvp === 'in' && (
                 <div style={s.share}>
-                  {party.hide_bill ? (
+                  {bills.length && !party.hide_bill ? (
+                    <p style={s.free}>🧾 The bill is in. Your real share is on it, just below 👇</p>
+                  ) : party.hide_bill ? (
                     <>
                       <p style={s.free}>🎁 {host} has hidden the bill. It&apos;s a treat!</p>
                       {mine.bill_requested ? (
@@ -539,6 +545,24 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           </>
         )}
 
+        {bills.length > 0 && (
+          <>
+            <p style={s.label}>🧾 The bill</p>
+            {bills.map((b) => (
+              <div key={b.share_token} style={{ background: '#17161D', border: '2px solid #E2FF3B', borderRadius: 20, padding: 16, marginBottom: 10 }}>
+                <p style={{ margin: 0, fontWeight: 900, fontSize: 18 }}>{b.restaurant}</p>
+                <p style={{ margin: '4px 0 0', color: '#9A98A6', fontSize: 14 }}>
+                  ₹{Math.round(Number(b.total)).toLocaleString('en-IN')}{b.payer ? ` · ${b.payer} paid it` : ''} · split between {b.people + 1}
+                </p>
+                <p style={{ margin: '10px 0 0', fontSize: 14 }}>Everyone pays for what they had. Tap your face there to see your share and pay with UPI.</p>
+                <a href={`/b/${b.share_token}`} style={{ display: 'block', marginTop: 12, background: '#E2FF3B', color: '#0E0E12', fontWeight: 900, fontSize: 16, padding: 14, borderRadius: 16, textAlign: 'center', textDecoration: 'none' }}>
+                  See my share &amp; pay →
+                </a>
+              </div>
+            ))}
+          </>
+        )}
+
         <p style={s.label}>💬 Party chat</p>
         <div style={s.chat}>
           {messages.length === 0 && <p style={s.chatEmpty}>No messages yet. Say hi 👋</p>}
@@ -548,7 +572,9 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
               return (
                 <div key={m.id} style={{ background: 'rgba(52,211,153,0.1)', border: '1px solid rgba(52,211,153,0.45)', borderRadius: 16, padding: 14, margin: '8px 0' }}>
                   <div style={{ color: '#34D399', fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>💸 SETTLE UP · from {host}</div>
-                  {!meM ? (
+                  {bills.length && !party.hide_bill ? (
+                    <div style={{ marginTop: 6 }}>🧾 Your real share is on the bill: tap <b>See my share &amp; pay</b> above.</div>
+                  ) : !meM ? (
                     <div style={{ marginTop: 6 }}>Tap your name above to see your share.</div>
                   ) : party.hide_bill ? (
                     <div style={{ marginTop: 6 }}>🎁 This one is a treat. Nothing to pay!</div>

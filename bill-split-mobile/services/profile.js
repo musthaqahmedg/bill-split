@@ -52,6 +52,14 @@ export async function pickAvatar(fromCamera = false) {
 }
 
 // A UPI ID looks like name@bank, e.g. musthaq@okaxis
+// 💸 just the UPI ID (asked for when friends need to pay you)
+export async function saveUpi(upi) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not logged in');
+  const { error } = await supabase.from('profiles').update({ upi_id: (upi || '').trim() || null }).eq('id', user.id);
+  if (error) throw error;
+}
+
 export const isValidUpi = (v) => /^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test((v || '').trim());
 
 // Deletes your account and all your bills (required by the App Store)

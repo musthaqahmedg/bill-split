@@ -2,29 +2,13 @@ import { useEffect, useRef } from 'react';
 import { Animated, Easing, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { BRAND, F } from '../services/theme';
 
-// 💡 Opening moment: a neon sign that switches on letter by letter, with a buzz + hum.
-// Plays once at app start (about 3 s), tap anywhere to skip. Sound follows the phone's silent switch.
-// Smooth on a busy start: every blink runs on the phone's UI thread (native driver), and the
-// light show waits for the sound to be ready (max 0.5 s) so they stay in sync.
+// 💡 Opening moment: a neon sign that switches on letter by letter (no sound).
+// Plays once at app start, tap anywhere to skip. Every blink runs on the phone's UI thread (native driver).
 const PINK = '#FF2BD6';
 const BLUE = '#4D6BFF';
-const LETTER_AT = [350, 550, 750, 1220, 1450, 1600, 1750]; // ms, the sound file uses the same timings
+const LETTER_AT = [350, 550, 750, 1220, 1450, 1600, 1750]; // ms
 const FRAME_AT = 2000;
 const DONE_AT = 4300; // the lit name stays on screen ~2 s before moving on
-const SOUND_WAIT = 1200;
-
-// expo-audio is optional: an older build without it still opens fine, just silently
-let Audio = null;
-try {
-  Audio = require('expo-audio');
-} catch (e) {}
-
-// 🔊 Load the sound as soon as the app's code starts (not when this screen appears),
-// so it's ready the moment the sign lights up
-let preloaded = null;
-try {
-  if (Audio) preloaded = Audio.createAudioPlayer(require('../assets/sounds/neon-on.m4a'));
-} catch (e) {}
 
 const step = (v, to, ms) => Animated.timing(v, { toValue: to, duration: ms, useNativeDriver: true });
 
@@ -46,15 +30,9 @@ export default function Splash({ onDone }) {
   useEffect(() => {
     let doneTimer = null;
     let started = false;
-    let player = preloaded;
-    preloaded = null; // played once per app start
-    let sub = null;
-
-    const show = (withSound) => {
+    const show = () => {
       if (started) return;
       started = true;
-      // only play if it can start right now with the lights: a late sound is worse than none
-      try { if (withSound && player) { player.seekTo(0); player.play(); } } catch (e) {}
       const lights = letters.map((v, i) => {
         const at = LETTER_AT[Math.min(i, LETTER_AT.length - 1)] + Math.max(0, i - LETTER_AT.length + 1) * 150;
         if (i === 3) {
@@ -73,23 +51,11 @@ export default function Splash({ onDone }) {
       ]).start();
       doneTimer = setTimeout(finish, DONE_AT);
     };
-
-    try {
-      if (player) {
-        if (player.isLoaded) show(true);
-        else sub = player.addListener('playbackStatusUpdate', (st) => st && st.isLoaded && show(true));
-      }
-    } catch (e) {}
-    const fallback = setTimeout(() => show(false), player ? SOUND_WAIT : 0); // sound not ready in time → lights only
+    show();
 
     Animated.loop(Animated.timing(smoke, { toValue: 1, duration: 6000, easing: Easing.inOut(Easing.sin), useNativeDriver: true })).start();
 
-    return () => {
-      clearTimeout(fallback);
-      clearTimeout(doneTimer);
-      try { sub && sub.remove(); } catch (e) {}
-      try { player && player.remove(); } catch (e) {}
-    };
+    return () => clearTimeout(doneTimer);
   }, []);
 
   const size = Math.min(54, (width - 90) / (word.length * 0.74));
