@@ -34,7 +34,9 @@ export default function FeedbackSheet({ visible, onClose, billId = null }) {
     if (send && (Object.keys(a).length || note.trim())) {
       setSending(true);
       try {
-        await supabase.from('feedback').insert({ bill_id: billId, ...a, note: note.trim().slice(0, 500) || null });
+        // its own table (the 'feedback' table is for bug reports and rejected these answers)
+        const { error } = await supabase.from('bill_feedback').insert({ bill_id: billId || null, ...a, note: note.trim().slice(0, 500) || null });
+        if (error) throw error;
       } catch (e) {}
       setSending(false);
     }

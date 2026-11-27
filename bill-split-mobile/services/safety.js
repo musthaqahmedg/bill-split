@@ -71,10 +71,13 @@ export async function saveNight(party, meMember, answers) {
   const { error } = await supabase.from('safe_nights').upsert(row, { onConflict: 'user_id,party_id' });
   if (error) throw error;
   if (answers.home_safe && meMember && party.share_token) {
-    await supabase.rpc('party_home', { p_token: party.share_token, p_member: meMember.id, p_home: true });
+    // 🏠 friends must see "home safe": don't let this fail silently
+    const { error: e2 } = await supabase.rpc('party_home', { p_token: party.share_token, p_member: meMember.id, p_home: true });
+    if (e2) throw e2;
   }
   if (meMember && party.share_token) {
-    await supabase.rpc('party_driver', { p_token: party.share_token, p_member: meMember.id, p_on: !!answers.driver });
+    const { error: e3 } = await supabase.rpc('party_driver', { p_token: party.share_token, p_member: meMember.id, p_on: !!answers.driver });
+    if (e3) throw e3;
   }
   const all = await getNights();
   const s = stats(all);

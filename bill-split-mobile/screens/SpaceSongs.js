@@ -46,7 +46,8 @@ export default function SpaceSongs({ party }) {
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Remove', style: 'destructive', onPress: async () => {
-          await supabase.rpc('remove_party_song', { p_token: token, p_member: me.id, p_song: s.id });
+          const { error } = await supabase.rpc('remove_party_song', { p_token: token, p_member: me.id, p_song: s.id });
+          if (error) Alert.alert("Couldn't remove it", error.message);
           load();
         },
       },

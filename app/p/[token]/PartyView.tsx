@@ -43,7 +43,7 @@ const ANIM = `
 @keyframes vo-shine { 0% { background-position: 0% 50% } 100% { background-position: 200% 50% } }
 `;
 
-const inr = (n: number) => 'Rs ' + Math.round(Number(n) || 0).toLocaleString('en-IN');
+const inr = (n: number) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 const upiLink = (upi: string, name: string, amount: number, note: string) =>
   `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(name)}&am=${Math.round(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
 
