@@ -27,12 +27,13 @@ const stubs = {
         ? 'export const selectionAsync=()=>{};export const impactAsync=()=>{};export const notificationAsync=()=>{};export const ImpactFeedbackStyle={};export const NotificationFeedbackType={};'
         : a.path.endsWith('supabaseBrowser')
           ? 'export const supabase = () => ({ rpc: async (n, x) => { window.__rpc.push([n, x]); return { error: null }; } });'
-          : 'export const getNoAlcohol = async () => false;',
+          : 'export const getNoAlcohol = async () => false; export const getProfile = async () => window.__profile || {}; export const saveUpi = async (u) => { window.__savedUpi.push(u); }; export const isValidUpi = (v) => /^[\\w.\\-]{2,}@[a-zA-Z]{2,}$/.test((v || "").trim());',
     }));
   },
 };
-for (const name of ['items', 'billpage']) {
-  const entry = join(here, name === 'items' ? 'items.harness.jsx' : 'billpage.harness.tsx');
+const ENTRY = { items: 'items.harness.jsx', billpage: 'billpage.harness.tsx', invite: 'invite.harness.tsx', billqr: 'billqr.harness.jsx' };
+for (const name of Object.keys(ENTRY)) {
+  const entry = join(here, ENTRY[name]);
   await esbuild.build({
     entryPoints: [entry], bundle: true, outfile: join(out, name + '.js'), format: 'iife', jsx: 'automatic',
     loader: { '.js': 'jsx' }, nodePaths: [join(mobile, 'node_modules'), join(mobile, '../node_modules')], plugins: [stubs],
@@ -129,6 +130,38 @@ const rpc = await p.evaluate(() => window.__rpc);
 const last = rpc.filter((x) => x[0] === 'submit_self_claims').pop();
 check('sends the right items for Anuraj', !!last && last[1].p_participant === 'an' && last[1].p_items.map((x) => x.item_id).sort().join() === 'i2,i4');
 check('confirms it was sent', await has('Sent to Musthaq'));
+  await p.close();
+}
+
+console.log('\n💸 Plan invite page once a real bill exists (website)');
+{
+  const p = await newPage();
+  const has = async (t) => (await p.getByText(t, { exact: false }).count()) > 0;
+  await p.goto(page('invite')); await p.waitForTimeout(600);
+  check('shows the bill section', await has('🧾 The bill'));
+  check('says who paid and the total', await has('Gauthamnath paid it'));
+  const href = await p.getByText('See my share & pay →').first().getAttribute('href');
+  check('"See my share & pay" opens that bill', href === '/b/tok-1');
+  await p.getByRole('button', { name: /^Alina/ }).first().click(); await p.waitForTimeout(200);
+  check('a guest sees "The bill is in", not "you pay nothing"', (await has('The bill is in')) && !(await has('You pay nothing')));
+  await p.goto(page('invite') + '#nobill'); await p.reload(); await p.waitForTimeout(600);
+  await p.getByRole('button', { name: /^Alina/ }).first().click(); await p.waitForTimeout(200);
+  check('no bill yet → the treat message still shows', (await has('You pay nothing')) && !(await has('🧾 The bill')));
+  await p.close();
+}
+
+console.log('\n📲 QR sheet asks for the payer\'s UPI ID (app)');
+{
+  const p = await newPage();
+  const has = async (t) => (await p.getByText(t, { exact: false }).count()) > 0;
+  await p.goto(page('billqr')); await p.waitForTimeout(600);
+  check('asks "Where should friends pay you?"', await has('Where should friends pay you?'));
+  await p.getByPlaceholder('name@okicici').fill('gautham@okhdfc');
+  await p.getByText('Save', { exact: true }).click(); await p.waitForTimeout(300);
+  const saved = await p.evaluate(() => window.__savedUpi);
+  check('saves the UPI ID', saved[0] === 'gautham@okhdfc');
+  check('then shows where the money goes', await has('Money goes straight to your UPI (gautham@okhdfc)'));
+  check('the ask disappears once saved', !(await has('Where should friends pay you?')));
   await p.close();
 }
 
