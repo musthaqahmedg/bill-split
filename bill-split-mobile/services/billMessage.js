@@ -36,8 +36,8 @@ export function unclaimed(items) {
   return { count: left.length, amount: Math.round(left.reduce((s, it) => s + (Number(it.price) || 0), 0) * 100) / 100 };
 }
 
-// The friend's own pay page: the bill page, already set to them, showing only their share
-export const payLink = (token, pid) => `${SITE}/b/${token}?p=${pid}`;
+// The friend's own private pay page: only their amount, their items and your UPI ID
+export const payLink = (pid) => `${SITE}/pay/${pid}`;
 
 // The message. `total` is what they pay you; item lines are shown only when they add up to it
 // (if someone covered part of their share, we just show the total, never other people's amounts).

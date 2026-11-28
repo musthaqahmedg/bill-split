@@ -73,6 +73,6 @@ test('WhatsApp link: +91 for 10-digit numbers, and everything URL-encoded', () =
   assert.ok(waUrl('', 'x').startsWith('https://wa.me/?text='));
 });
 
-test('pay link points at the bill page set to that friend', () => {
-  assert.equal(payLink('tok', 'p1'), 'https://bill-split-flax.vercel.app/b/tok?p=p1');
+test("pay link is the friend's own private page", () => {
+  assert.equal(payLink('p1'), 'https://bill-split-flax.vercel.app/pay/p1');
 });

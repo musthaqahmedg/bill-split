@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client';
 import BillDetailScreen from '../../screens/BillDetailScreen';
 window.__sent = [];
+window.__amounts = [];
 window.__opened = [];
 window.__profile = { upi_id: 'musthaq@upi' };
 window.open = (u) => { window.__opened.push(u); return null; };

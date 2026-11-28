@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getBillPhones, getSelfClaims, setBillsSent, setNote, setPaid, setPayer } from '../services/bills';
+import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getBillPhones, getSelfClaims, setBillsSent, setNote, setSentAmount, setPaid, setPayer } from '../services/bills';
 import { buildBillMessage, payLink, personLines, unclaimed, waUrl } from '../services/billMessage';
 import { savedPaidMap, transfers } from '../services/settle';
 import PayUpiSheet from './PayUpiSheet';
@@ -188,7 +188,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       name: show(p.name),
       lines: personLines(items, p.id),
       total: owedToMe(p),
-      link: bill.share_token ? payLink(bill.share_token, p.id) : '',
+      link: payLink(p.id),
       upi: myUpi,
     });
   const markSent = () => {
@@ -196,8 +196,10 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     setBill((b) => ({ ...b, sent_at: new Date().toISOString() }));
     setBillsSent(bill.id, true).catch(() => {});
   };
-  const copyBill = (p) => { Share.share({ message: messageFor(p) }); markSent(); };
+  const saveAmount = (p) => setSentAmount(p.id, owedToMe(p)).catch(() => {});
+  const copyBill = (p) => { saveAmount(p); Share.share({ message: messageFor(p) }); markSent(); };
   const sendBill = (p) => {
+    saveAmount(p);
     const text = messageFor(p);
     Linking.openURL(waUrl(phoneOf(p), text)).catch(() => Share.share({ message: text }));
     markSent();

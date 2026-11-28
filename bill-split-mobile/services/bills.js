@@ -326,3 +326,9 @@ export async function setBillsSent(billId, sent) {
   if (error) throw error;
   return sent_at;
 }
+
+// 📤 Save the amount sent to a friend, so their private pay page shows exactly what the message said
+export async function setSentAmount(participantId, amount) {
+  const { error } = await supabase.from('bill_participants').update({ sent_amount: amount }).eq('id', participantId);
+  if (error) throw error;
+}

@@ -26,7 +26,7 @@ const stubs = {
       contents: a.path === 'expo-haptics'
         ? 'export const selectionAsync=()=>{};export const impactAsync=()=>{};export const notificationAsync=()=>{};export const ImpactFeedbackStyle={};export const NotificationFeedbackType={};'
         : a.path.endsWith('services/bills')
-          ? 'const n=async()=>{};export const getBill=async()=>window.__bill;export const getSelfClaims=async()=>[];export const getBillPhones=async()=>window.__phones||{};export const setBillsSent=async(id,s)=>{window.__sent.push(s);return s?"x":null;};export const applySelfClaims=(f)=>f;export const billToFlow=(b)=>b;export const archiveBill=n,deleteBill=n,dismissSelfClaims=n,setNote=n,setPaid=n,setPayer=n;'
+          ? 'const n=async()=>{};export const getBill=async()=>window.__bill;export const getSelfClaims=async()=>[];export const getBillPhones=async()=>window.__phones||{};export const setBillsSent=async(id,s)=>{window.__sent.push(s);return s?"x":null;};export const setSentAmount=async(id,a)=>{window.__amounts.push([id,a]);};export const applySelfClaims=(f)=>f;export const billToFlow=(b)=>b;export const archiveBill=n,deleteBill=n,dismissSelfClaims=n,setNote=n,setPaid=n,setPayer=n;'
         : a.path.endsWith('services/pockets')
           ? 'export const getPockets=async()=>({setup:false,pockets:[]});export const billPocketOf=async()=>null;export const alertAfterSpend=()=>{};export const suggestBillPocket=()=>null;export const tagBill=async()=>{};'
         : a.path.endsWith('services/upi')
@@ -40,7 +40,7 @@ const stubs = {
     }));
   },
 };
-const ENTRY = { items: 'items.harness.jsx', billpage: 'billpage.harness.tsx', invite: 'invite.harness.tsx', billqr: 'billqr.harness.jsx', sendbills: 'sendbills.harness.jsx' };
+const ENTRY = { items: 'items.harness.jsx', billpage: 'billpage.harness.tsx', invite: 'invite.harness.tsx', billqr: 'billqr.harness.jsx', sendbills: 'sendbills.harness.jsx', paypage: 'paypage.harness.tsx' };
 for (const name of Object.keys(ENTRY)) {
   const entry = join(here, ENTRY[name]);
   await esbuild.build({
@@ -193,6 +193,26 @@ console.log('\n📤 Friend opens their own WhatsApp bill link (website)');
   await p.close();
 }
 
+console.log('\n🔒 Private pay page from the WhatsApp bill (website)');
+{
+  const p = await newPage();
+  const has = async (t) => (await p.getByText(t, { exact: false }).count()) > 0;
+  await p.goto(page('paypage')); await p.waitForTimeout(500);
+  check('greets the friend', await has('Hi Alina!'));
+  check('shows what she owes', (await has('You owe Musthaq')) && (await has('₹355')));
+  check('lists her items with sharing', (await has('French Fries (shared by 6)')) && (await has('Kingfisher (2 of 3)')));
+  check('discount line makes it add up to the total', await has('−₹25.33'));
+  const href = await p.getByText('Pay ₹355 with UPI').getAttribute('href');
+  check('Pay with UPI opens UPI with the exact amount', href === 'upi://pay?pa=musthaq%40upi&pn=Musthaq&am=355.00&cu=INR&tn=Brik%20Oven%20split');
+  check('UPI ID in plain text to copy', await has('Copy UPI ID: musthaq@upi'));
+  check('UPI QR shown', (await p.locator('[data-testid="pay-qr"]').count()) === 1);
+  await p.getByRole('button', { name: "✅ I've paid" }).click(); await p.waitForTimeout(200);
+  const rpc = await p.evaluate(() => window.__rpc);
+  check("I've paid tells the payer", rpc.some((x) => x[0] === 'member_claim_paid' && x[1].p_member === 'al'));
+  check('then shows Sent', await has('💸 Sent'));
+  await p.close();
+}
+
 console.log('\n📤 Send each friend their bill (app)');
 {
   const p = await newPage();
@@ -210,7 +230,8 @@ console.log('\n📤 Send each friend their bill (app)');
   const text = decodeURIComponent(u.split('text=')[1] || '');
   check('opens WhatsApp chat with that friend\'s number', u.startsWith('https://wa.me/919847012345?text='));
   check('message has only her share, total and UPI ID', text.includes('Hi Alina! Your share:') && text.includes('Total: ₹175') && text.includes('UPI ID: musthaq@upi') && !text.includes('Vijay'));
-  check('message links to her own pay page', text.includes('/b/tok-9?p=al'));
+  check('message links to her own private pay page', text.includes('/pay/al'));
+  check('the amount sent is saved for her pay page', JSON.stringify(await p.evaluate(() => window.__amounts)) === JSON.stringify([['al', 175]]));
   check('sending locks the bill', (await p.evaluate(() => window.__sent))[0] === true && (await has('Sent · amounts locked')));
   await p.getByText('SEND ALL ON WHATSAPP').click(); await p.waitForTimeout(200);
   check('Send all steps one by one', await has('Next: Vijay → Send (1/2)'));
