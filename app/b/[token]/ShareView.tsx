@@ -61,8 +61,11 @@ const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF', '#7CFFB2']
 const ini = (n: string) => n.trim().slice(0, 2).toUpperCase();
 
 export default function ShareView({ bill, token, start }: { bill: SharedBill; token: string; start?: string }) {
-  const [me, setMe] = useState<string | null>(null);
-  const [solo, setSolo] = useState(false); // 📤 opened from their own WhatsApp bill: only their share shows
+  // 📤 opened from their own WhatsApp bill (?p=friend): only their share shows, from the very first paint
+  const startOk = !!start && bill.people.some((p) => p.id === start && p.name !== 'Me');
+  const startHasItems = startOk && bill.items.some((it) => it.claims.some((c) => c.participant_id === start));
+  const [me, setMe] = useState<string | null>(startOk ? start! : null);
+  const [solo, setSolo] = useState(startOk);
   const [qr, setQr] = useState('');
   const [claimed, setClaimed] = useState(false); // 💸 said "I've paid" (the host still confirms)
   const claimPaid = async () => {
@@ -72,7 +75,7 @@ export default function ShareView({ bill, token, start }: { bill: SharedBill; to
   };
   const [copied, setCopied] = useState(false);
   // 🙋 Tag what I had
-  const [tagging, setTagging] = useState(false);
+  const [tagging, setTagging] = useState(startOk && !startHasItems && bill.items.length > 0);
   const [picks, setPicks] = useState<Record<string, number>>({});
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState('');
@@ -116,13 +119,6 @@ export default function ShareView({ bill, token, start }: { bill: SharedBill; to
     } else setTagging(false);
   };
   const payee = bill.payee_name || 'your friend';
-  useEffect(() => {
-    if (start && bill.people.some((p) => p.id === start && p.name !== 'Me')) {
-      pick(start);
-      setSolo(true);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [start]);
 
   const lines = (pid: string) =>
     bill.items
@@ -324,8 +320,8 @@ export default function ShareView({ bill, token, start }: { bill: SharedBill; to
           ) : null}
         </section>
 
-        <h2 style={s.h2}>Everyone's share</h2>
-        {bill.people.map((p) => {
+        <h2 style={s.h2}>{solo ? 'Your share' : "Everyone's share"}</h2>
+        {bill.people.filter((p) => !solo || p.id === me).map((p) => {
           const ls = lines(p.id);
           const cov = covering(p.id);
           const isMe = me === p.id;

@@ -181,6 +181,7 @@ console.log('\n📤 Friend opens their own WhatsApp bill link (website)');
   await p.goto(page('billpage') + '#p=al'); await p.waitForTimeout(500);
   check('opens straight on Alina ("Hi Alina!")', await has('Hi Alina!'));
   check("other people's faces are hidden", !(await has('Tap your face')) && !(await p.getByRole('button', { name: /Kanchan/ }).count()));
+  check("no one else's amount anywhere on the page", !(await has('Kanchan')) && !(await has('Anuraj')) && !(await has("Everyone's share")) && (await has('Your share')));
   check('shows Pay with UPI and I\'ve paid', (await has('with UPI')) && (await has("I've paid")));
   check('shows a UPI QR', (await p.locator('[data-testid="pay-qr"]').count()) === 1);
   check('QR holds the same UPI payment', /^upi:\/\/pay\?pa=musthaq%40upi.*am=175\.00/.test(await p.evaluate(() => window.__qr || '')));
