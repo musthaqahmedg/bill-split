@@ -20,18 +20,26 @@ const stubs = {
     b.onResolve({ filter: /^react-native$/ }, () => ({ path: join(mobile, 'node_modules/react-native-web/dist/index.js') }));
     // one React for everything (the website and the app folders each have their own copy)
     b.onResolve({ filter: /^react(-dom)?(\/.*)?$/ }, (x) => ({ path: require.resolve(x.path, { paths: [mobile] }) }));
-    b.onResolve({ filter: /^expo-haptics$|services\/profile$|supabaseBrowser$/ }, (a) => ({ path: a.path, namespace: 'stub' }));
+    b.onResolve({ filter: /^expo-haptics$|services\/profile$|supabaseBrowser$|services\/bills$|services\/pockets$|services\/upi$|^expo-sharing$|^react-native-view-shot$/ }, (a) => ({ path: a.path, namespace: 'stub' }));
     b.onLoad({ filter: /.*/, namespace: 'stub' }, (a) => ({
       loader: 'js',
       contents: a.path === 'expo-haptics'
         ? 'export const selectionAsync=()=>{};export const impactAsync=()=>{};export const notificationAsync=()=>{};export const ImpactFeedbackStyle={};export const NotificationFeedbackType={};'
+        : a.path.endsWith('services/bills')
+          ? 'const n=async()=>{};export const getBill=async()=>window.__bill;export const getSelfClaims=async()=>[];export const getBillPhones=async()=>window.__phones||{};export const setBillsSent=async(id,s)=>{window.__sent.push(s);return s?"x":null;};export const applySelfClaims=(f)=>f;export const billToFlow=(b)=>b;export const archiveBill=n,deleteBill=n,dismissSelfClaims=n,setNote=n,setPaid=n,setPayer=n;'
+        : a.path.endsWith('services/pockets')
+          ? 'export const getPockets=async()=>({setup:false,pockets:[]});export const billPocketOf=async()=>null;export const alertAfterSpend=()=>{};export const suggestBillPocket=()=>null;export const tagBill=async()=>{};'
+        : a.path.endsWith('services/upi')
+          ? 'export const knownUpi=async()=>null;export const openUpi=async()=>{};export const rememberUpi=async()=>{};export const UPI_APPS=[];export const validUpi=()=>true;'
+        : a.path === 'expo-sharing' ? 'export const shareAsync=async()=>{};export const isAvailableAsync=async()=>false;'
+        : a.path === 'react-native-view-shot' ? 'export const captureRef=async()=>"";'
         : a.path.endsWith('supabaseBrowser')
           ? 'export const supabase = () => ({ rpc: async (n, x) => { window.__rpc.push([n, x]); return { error: null }; } });'
           : 'export const getNoAlcohol = async () => false; export const getProfile = async () => window.__profile || {}; export const saveUpi = async (u) => { window.__savedUpi.push(u); }; export const isValidUpi = (v) => /^[\\w.\\-]{2,}@[a-zA-Z]{2,}$/.test((v || "").trim());',
     }));
   },
 };
-const ENTRY = { items: 'items.harness.jsx', billpage: 'billpage.harness.tsx', invite: 'invite.harness.tsx', billqr: 'billqr.harness.jsx' };
+const ENTRY = { items: 'items.harness.jsx', billpage: 'billpage.harness.tsx', invite: 'invite.harness.tsx', billqr: 'billqr.harness.jsx', sendbills: 'sendbills.harness.jsx' };
 for (const name of Object.keys(ENTRY)) {
   const entry = join(here, ENTRY[name]);
   await esbuild.build({
@@ -162,6 +170,53 @@ console.log('\n📲 QR sheet asks for the payer\'s UPI ID (app)');
   check('saves the UPI ID', saved[0] === 'gautham@okhdfc');
   check('then shows where the money goes', await has('Money goes straight to your UPI (gautham@okhdfc)'));
   check('the ask disappears once saved', !(await has('Where should friends pay you?')));
+  await p.close();
+}
+
+console.log('\n📤 Friend opens their own WhatsApp bill link (website)');
+{
+  const p = await newPage();
+  const has = async (t) => (await p.getByText(t, { exact: false }).count()) > 0;
+  await p.goto(page('billpage') + '#p=al'); await p.waitForTimeout(500);
+  check('opens straight on Alina ("Hi Alina!")', await has('Hi Alina!'));
+  check("other people's faces are hidden", !(await has('Tap your face')) && !(await p.getByRole('button', { name: /Kanchan/ }).count()));
+  check('shows Pay with UPI and I\'ve paid', (await has('with UPI')) && (await has("I've paid")));
+  check('shows a UPI QR', (await p.locator('[data-testid="pay-qr"]').count()) === 1);
+  const upi = await p.getByText('with UPI').first().getAttribute('href');
+  check('UPI link has amount to 2 decimals and INR', !!upi && /am=175\.00&cu=INR/.test(upi) && upi.includes('pa=musthaq%40upi'));
+  await p.getByRole('button', { name: "✅ I've paid" }).click(); await p.waitForTimeout(200);
+  const rpc = await p.evaluate(() => window.__rpc);
+  check("I've paid tells the payer", rpc.some((x) => x[0] === 'bill_claim_paid' && x[1].p_participant === 'al'));
+  await p.close();
+}
+
+console.log('\n📤 Send each friend their bill (app)');
+{
+  const p = await newPage();
+  const has = async (t) => (await p.getByText(t, { exact: false }).count()) > 0;
+  await p.goto(page('sendbills')); await p.waitForTimeout(800);
+  check('shows the Send bills card', await has('SEND EACH FRIEND THEIR BILL'));
+  check('warns about unclaimed items', await has('₹90 not claimed by anyone'));
+  check('Send bill button per friend who owes', (await p.getByText('Send bill', { exact: true }).count()) === 2);
+  check('Send all button', await has('SEND ALL ON WHATSAPP'));
+  check('Copy message only for the friend with no number', (await p.getByText('Copy message', { exact: true }).count()) === 1);
+  check('friend who already paid is not listed', !(await has('Kanchan ·')));
+  await p.getByText('Send bill', { exact: true }).nth(1).click(); await p.waitForTimeout(200);
+  let opened = await p.evaluate(() => window.__opened);
+  const u = opened[0] || '';
+  const text = decodeURIComponent(u.split('text=')[1] || '');
+  check('opens WhatsApp chat with that friend\'s number', u.startsWith('https://wa.me/919847012345?text='));
+  check('message has only her share, total and UPI ID', text.includes('Hi Alina! Your share:') && text.includes('Total: ₹175') && text.includes('UPI ID: musthaq@upi') && !text.includes('Vijay'));
+  check('message links to her own pay page', text.includes('/b/tok-9?p=al'));
+  check('sending locks the bill', (await p.evaluate(() => window.__sent))[0] === true && (await has('Sent · amounts locked')));
+  await p.getByText('SEND ALL ON WHATSAPP').click(); await p.waitForTimeout(200);
+  check('Send all steps one by one', await has('Next: Vijay → Send (1/2)'));
+  await p.getByText(/Next: Vijay/).click(); await p.waitForTimeout(200);
+  opened = await p.evaluate(() => window.__opened);
+  check('no number → WhatsApp asks which chat', (opened[opened.length - 1] || '').startsWith('https://wa.me/?text='));
+  check('then the next friend', await has('Next: Alina → Send (2/2)'));
+  await p.getByText(/Next: Alina/).click(); await p.waitForTimeout(200);
+  check('queue ends after the last friend', !(await has('Next:')));
   await p.close();
 }
 

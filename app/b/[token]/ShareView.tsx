@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import QRCode from 'qrcode';
 import { supabase } from '../../../lib/supabaseBrowser';
 
 type Claim = { participant_id: string; paid_by: string | null; units?: number };
@@ -54,13 +55,15 @@ const money = (n: number) => '₹' + (Math.round((Number(n) || 0) * 100) / 100).
 
 // Opens GPay / PhonePe / Paytm with the amount filled in
 const upiLink = (upi: string, name: string, amount: number, note: string) =>
-  `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(name)}&am=${Math.round(amount)}&cu=INR&tn=${encodeURIComponent(note)}`;
+  `upi://pay?pa=${encodeURIComponent(upi)}&pn=${encodeURIComponent(name)}&am=${(Math.round(amount * 100) / 100).toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`;
 
 const FACES = ['#E2FF3B', '#FF4FA0', '#55E0F0', '#FF8A3D', '#A98BFF', '#7CFFB2'];
 const ini = (n: string) => n.trim().slice(0, 2).toUpperCase();
 
-export default function ShareView({ bill, token }: { bill: SharedBill; token: string }) {
+export default function ShareView({ bill, token, start }: { bill: SharedBill; token: string; start?: string }) {
   const [me, setMe] = useState<string | null>(null);
+  const [solo, setSolo] = useState(false); // 📤 opened from their own WhatsApp bill: only their share shows
+  const [qr, setQr] = useState('');
   const [claimed, setClaimed] = useState(false); // 💸 said "I've paid" (the host still confirms)
   const claimPaid = async () => {
     if (!me) return;
@@ -113,6 +116,13 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
     } else setTagging(false);
   };
   const payee = bill.payee_name || 'your friend';
+  useEffect(() => {
+    if (start && bill.people.some((p) => p.id === start && p.name !== 'Me')) {
+      pick(start);
+      setSolo(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start]);
 
   const lines = (pid: string) =>
     bill.items
@@ -145,6 +155,13 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
   const mine = bill.people.find((p) => p.id === me) || null;
   const moves = transfers(bill);
   const myMoves = mine ? moves.filter((m) => m.from === mine.id) : [];
+  // 📷 QR of the same UPI payment (scan it from another phone)
+  const toPayee = myMoves.find((m) => nameOf[m.to] === 'Me');
+  const qrLink = toPayee && bill.payee_upi ? upiLink(bill.payee_upi, payee, toPayee.amount, `${bill.restaurant || 'Bill'} split`) : '';
+  useEffect(() => {
+    if (!qrLink) return setQr('');
+    QRCode.toDataURL(qrLink, { margin: 1, width: 220 }).then(setQr).catch(() => setQr(''));
+  }, [qrLink]);
   const getsBack = mine ? moves.filter((m) => m.to === mine.id).reduce((a, m) => a + m.amount, 0) : 0;
   const nameFor = (id: string) => (nameOf[id] === 'Me' ? payee : nameOf[id]);
 
@@ -180,6 +197,10 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
         </p>
 
         <section style={s.box}>
+          {solo && mine ? (
+            <p style={s.boxTitle}>Hi {mine.name}! 👋 <button onClick={() => setSolo(false)} style={{ background: 'none', border: 'none', color: '#9A98A6', fontSize: 13, textDecoration: 'underline', cursor: 'pointer', padding: 0, marginLeft: 6 }}>Not you?</button></p>
+          ) : (
+          <>
           <p style={s.boxTitle}>Tap your face 👇</p>
           <div style={s.faces}>
             {bill.people.filter((p) => p.name !== 'Me').map((p) => (
@@ -191,6 +212,8 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
               </button>
             ))}
           </div>
+          </>
+          )}
 
           {mine && !(tagging && lines(mine.id).length === 0) && (
             <div style={s.you}>
@@ -239,6 +262,12 @@ export default function ShareView({ bill, token }: { bill: SharedBill; token: st
                       {copied ? 'Copied ✅' : `Copy UPI ID: ${bill.payee_upi}`}
                     </button>
                     <p style={s.youNote}>If the Pay button doesn't open your UPI app, copy the ID and pay in GPay / PhonePe / Paytm.</p>
+                    {qr ? (
+                      <div style={{ textAlign: 'center', marginTop: 12 }}>
+                        <img src={qr} alt={`UPI QR to pay ${inr(m.amount)}`} data-testid="pay-qr" style={{ width: 180, height: 180, borderRadius: 12, background: '#fff', padding: 8 }} />
+                        <p style={s.youNote}>Or scan this from another phone</p>
+                      </div>
+                    ) : null}
                   </div>
                 ) : (
                   <p key={'pay' + m.to} style={s.youNote}>💸 Pay {nameFor(m.to)} {inr(m.amount)} by UPI (ask them for their UPI ID).</p>

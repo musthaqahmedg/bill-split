@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getSelfClaims, setNote, setPaid, setPayer } from '../services/bills';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { applySelfClaims, archiveBill, billToFlow, deleteBill, dismissSelfClaims, getBill, getBillPhones, getSelfClaims, setBillsSent, setNote, setPaid, setPayer } from '../services/bills';
+import { buildBillMessage, payLink, personLines, unclaimed, waUrl } from '../services/billMessage';
 import { savedPaidMap, transfers } from '../services/settle';
 import PayUpiSheet from './PayUpiSheet';
 import { getProfile } from '../services/profile';
@@ -45,6 +46,8 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 
   // 🙋 friends who tagged their own items on the share link
   const [picks, setPicks] = useState([]);
+  const [phones, setPhones] = useState({}); // 📤 name → WhatsApp number (from the plan's guest list)
+  const [sendQ, setSendQ] = useState(null); // 📤 Send all: { ids, at }
   useEffect(() => {
     getSelfClaims(billId).then(setPicks).catch(() => {});
   }, [billId]);
@@ -58,6 +61,10 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
       })
       .catch(() => setLoadErr(true));
   }, [billId, loadTry]);
+
+  useEffect(() => {
+    if (bill && bill.party_id) getBillPhones(bill.party_id).then(setPhones).catch(() => {});
+  }, [bill && bill.party_id]);
 
   if (!bill && loadErr) return <LoadError what="this bill" onRetry={() => { setLoadErr(false); setLoadTry((n) => n + 1); }} onBack={onBack} />;
   if (!bill) {
@@ -168,6 +175,45 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     });
   };
 
+  // ---- 📤 Send each friend their own bill on WhatsApp ----
+  const owedToMe = (p) => Math.round(outOf(p.name).filter((m) => m.to === 'Me').reduce((s, m) => s + m.amount, 0) * 100) / 100;
+  const sendable = bill.paid_mode === 'unpaid' ? [] : people.filter((p) => p.name !== 'Me' && !p.paid_at && owedToMe(p) > 0);
+  const left = unclaimed(items);
+  const dateShort = new Date(bill.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const phoneOf = (p) => phones[String(p.name).trim().toLowerCase()] || '';
+  const messageFor = (p) =>
+    buildBillMessage({
+      title: bill.title || bill.restaurant,
+      date: dateShort,
+      name: show(p.name),
+      lines: personLines(items, p.id),
+      total: owedToMe(p),
+      link: bill.share_token ? payLink(bill.share_token, p.id) : '',
+      upi: myUpi,
+    });
+  const markSent = () => {
+    if (bill.sent_at) return;
+    setBill((b) => ({ ...b, sent_at: new Date().toISOString() }));
+    setBillsSent(bill.id, true).catch(() => {});
+  };
+  const copyBill = (p) => { Share.share({ message: messageFor(p) }); markSent(); };
+  const sendBill = (p) => {
+    const text = messageFor(p);
+    Linking.openURL(waUrl(phoneOf(p), text)).catch(() => Share.share({ message: text }));
+    markSent();
+  };
+  const askUpiFirst = (go) =>
+    myUpi ? go() : Alert.alert('Add your UPI ID first?', 'So friends can pay you straight away. You can still send without it.', [
+      { text: 'Send anyway', onPress: go },
+      { text: 'Add UPI ID', onPress: () => setQrOpen(true) },
+    ]);
+  const startSendAll = () => askUpiFirst(() => setSendQ({ ids: sendable.map((p) => p.id), at: 0 }));
+  const sendNext = () => {
+    const p = participants.find((x) => x.id === sendQ.ids[sendQ.at]);
+    if (p) sendBill(p);
+    setSendQ((q) => (q.at + 1 < q.ids.length ? { ...q, at: q.at + 1 } : null));
+  };
+
   // Guest link: friends open it in the browser, see their share and pay with UPI
   const shareLink = () =>
     Share.share({
@@ -238,7 +284,15 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
     }
   };
 
-  const startEdit = () => onEdit(billToFlow(bill), bill.id);
+  const doEdit = () => onEdit(billToFlow(bill), bill.id);
+  // 🔒 Bills already sent: unlock first, then resend after editing
+  const startEdit = () =>
+    bill.sent_at
+      ? Alert.alert('Bills already sent 🔒', "Friends already have their amounts. Unlock and edit? You'll need to send the bills again.", [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Unlock & edit', onPress: async () => { try { await setBillsSent(bill.id, false); } catch (e) {} doEdit(); } },
+        ])
+      : doEdit();
   const taggers = [...new Set(picks.map((p) => (participants.find((x) => x.id === p.participant_id) || {}).name).filter(Boolean))];
   const reviewPicks = () => onEdit(applySelfClaims(billToFlow(bill), bill, picks), bill.id, 'items');
   const dismissPicks = () =>
@@ -402,6 +456,41 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
           </View>
         ) : null}
 
+        {sendable.length > 0 ? (
+          <View style={styles.sendCard}>
+            <Text style={styles.sendTitle}>📤 SEND EACH FRIEND THEIR BILL</Text>
+            <Text style={styles.sendSub}>{bill.sent_at ? '🔒 Sent · amounts locked' : 'Each friend gets only their own amount, with your UPI ID'}</Text>
+            {left.count > 0 ? (
+              <Text style={styles.unclaimed}>⚠️ {inr(left.amount)} not claimed by anyone ({left.count} item{left.count > 1 ? 's' : ''})</Text>
+            ) : null}
+            {sendQ ? (
+              <View style={styles.queueRow}>
+                <TouchableOpacity style={styles.sendAllBtn} onPress={sendNext} activeOpacity={0.85}>
+                  <Text style={styles.sendAllText}>Next: {show(nameOf[sendQ.ids[sendQ.at]])} → Send ({sendQ.at + 1}/{sendQ.ids.length})</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => setSendQ(null)}><Text style={styles.queueStop}>Stop</Text></TouchableOpacity>
+              </View>
+            ) : sendable.length > 1 ? (
+              <TouchableOpacity style={styles.sendAllBtn} onPress={startSendAll} activeOpacity={0.85}>
+                <Text style={styles.sendAllText}>📲 SEND ALL ON WHATSAPP</Text>
+              </TouchableOpacity>
+            ) : null}
+            {sendable.map((p) => (
+              <View key={'send' + p.id} style={styles.sendRow}>
+                <Text style={styles.sendName} numberOfLines={1}>{show(p.name)} · {inr(owedToMe(p))}</Text>
+                {phoneOf(p) ? null : (
+                  <TouchableOpacity style={styles.copyBtn} onPress={() => copyBill(p)}>
+                    <Text style={styles.copyText}>Copy message</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity style={styles.sendBtn} onPress={() => askUpiFirst(() => sendBill(p))}>
+                  <Text style={styles.sendText}>Send bill</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
         <Text style={styles.tapHint}>Tap any item to see what it is 🔍</Text>
 
         {people.map((p) => {
@@ -511,6 +600,20 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
 }
 
 const styles = StyleSheet.create({
+  sendCard: { backgroundColor: C.card, borderRadius: 20, padding: 16, marginTop: 14, borderWidth: 1, borderColor: C.lime },
+  sendTitle: { color: C.lime, fontFamily: F.display, fontSize: 14, letterSpacing: 1 },
+  sendSub: { color: C.sub, fontSize: 13, marginTop: 4 },
+  unclaimed: { color: C.amber, fontFamily: F.bold, fontSize: 13, marginTop: 8 },
+  sendAllBtn: { flex: 1, backgroundColor: C.lime, borderRadius: 14, padding: 12, alignItems: 'center', marginTop: 10 },
+  sendAllText: { color: C.onLime, fontFamily: F.display, fontSize: 14 },
+  queueRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  queueStop: { color: C.sub, fontFamily: F.bold, fontSize: 14, marginTop: 10 },
+  sendRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
+  sendName: { flex: 1, color: C.text, fontFamily: F.bold, fontSize: 15 },
+  sendBtn: { backgroundColor: '#25D366', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 14 },
+  sendText: { color: '#0B0B0F', fontFamily: F.display, fontSize: 13 },
+  copyBtn: { borderRadius: 12, paddingVertical: 8, paddingHorizontal: 10, borderWidth: 1, borderColor: C.sub },
+  copyText: { color: C.text, fontFamily: F.bold, fontSize: 12 },
   qrBtn: { backgroundColor: C.lime, borderRadius: 20, padding: 16, alignItems: 'center', marginTop: 14, borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' },
   qrBtnText: { color: C.onLime, fontSize: 16, fontWeight: '900' },
   qrBtnSub: { color: C.onLime, fontSize: 12, fontWeight: '600', marginTop: 3, opacity: 0.8 },

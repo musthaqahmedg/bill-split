@@ -13,4 +13,4 @@ const bill: any = {
     { id: 'i4', name: 'Coke', price: 90, quantity: 1, kind: 'soft', about: null, claims: [] },
   ],
 };
-createRoot(document.getElementById('root')!).render(<ShareView bill={bill} token="t1" />);
+createRoot(document.getElementById('root')!).render(<ShareView bill={bill} token="t1" start={location.hash.startsWith('#p=') ? location.hash.slice(3) : undefined} />);

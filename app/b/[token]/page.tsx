@@ -35,10 +35,12 @@ export async function generateMetadata(
 }
 
 export default async function SharedBillPage(
-  { params }: { params: Promise<{ token: string }> }
+  { params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ p?: string }> }
 ) {
   const { token } = await params;
+  const { p } = await searchParams;
   const bill = await getBill(token);
   if (!bill) notFound();
-  return <ShareView bill={bill} token={token} />;
+  // 📤 ?p=<friend> comes from the WhatsApp bill: open straight on that friend's share
+  return <ShareView bill={bill} token={token} start={typeof p === 'string' ? p : undefined} />;
 }

@@ -308,3 +308,21 @@ export async function billsForParty(partyId) {
   if (error) throw error;
   return data || [];
 }
+
+// 📤 Phone numbers for the people on a bill (from the plan's guest list, matched by name)
+export async function getBillPhones(partyId) {
+  if (!partyId) return {};
+  const { data, error } = await supabase.from('party_members').select('name, phone').eq('party_id', partyId);
+  if (error) return {};
+  const out = {};
+  for (const m of data || []) if (m.phone && m.name) out[m.name.trim().toLowerCase()] = m.phone;
+  return out;
+}
+
+// 🔒 Bills sent: amounts are locked until you unlock (then resend)
+export async function setBillsSent(billId, sent) {
+  const sent_at = sent ? new Date().toISOString() : null;
+  const { error } = await supabase.from('bills').update({ sent_at }).eq('id', billId);
+  if (error) throw error;
+  return sent_at;
+}
