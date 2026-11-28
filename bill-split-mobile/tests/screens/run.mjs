@@ -20,7 +20,7 @@ const stubs = {
     b.onResolve({ filter: /^react-native$/ }, () => ({ path: join(mobile, 'node_modules/react-native-web/dist/index.js') }));
     // one React for everything (the website and the app folders each have their own copy)
     b.onResolve({ filter: /^react(-dom)?(\/.*)?$/ }, (x) => ({ path: require.resolve(x.path, { paths: [mobile] }) }));
-    b.onResolve({ filter: /^expo-haptics$|services\/profile$|supabaseBrowser$|services\/bills$|services\/pockets$|services\/upi$|^expo-sharing$|^react-native-view-shot$/ }, (a) => ({ path: a.path, namespace: 'stub' }));
+    b.onResolve({ filter: /^expo-haptics$|services\/profile$|supabaseBrowser$|services\/bills$|services\/pockets$|services\/upi$|^expo-sharing$|^react-native-view-shot$|^qrcode$/ }, (a) => ({ path: a.path, namespace: 'stub' }));
     b.onLoad({ filter: /.*/, namespace: 'stub' }, (a) => ({
       loader: 'js',
       contents: a.path === 'expo-haptics'
@@ -32,6 +32,7 @@ const stubs = {
         : a.path.endsWith('services/upi')
           ? 'export const knownUpi=async()=>null;export const openUpi=async()=>{};export const rememberUpi=async()=>{};export const UPI_APPS=[];export const validUpi=()=>true;'
         : a.path === 'expo-sharing' ? 'export const shareAsync=async()=>{};export const isAvailableAsync=async()=>false;'
+        : a.path === 'qrcode' ? 'export default { toDataURL: async (t) => { window.__qr = t; return "data:image/png;base64,iVBORw0KGgo="; } };'
         : a.path === 'react-native-view-shot' ? 'export const captureRef=async()=>"";'
         : a.path.endsWith('supabaseBrowser')
           ? 'export const supabase = () => ({ rpc: async (n, x) => { window.__rpc.push([n, x]); return { error: null }; } });'
@@ -182,6 +183,7 @@ console.log('\n📤 Friend opens their own WhatsApp bill link (website)');
   check("other people's faces are hidden", !(await has('Tap your face')) && !(await p.getByRole('button', { name: /Kanchan/ }).count()));
   check('shows Pay with UPI and I\'ve paid', (await has('with UPI')) && (await has("I've paid")));
   check('shows a UPI QR', (await p.locator('[data-testid="pay-qr"]').count()) === 1);
+  check('QR holds the same UPI payment', /^upi:\/\/pay\?pa=musthaq%40upi.*am=175\.00/.test(await p.evaluate(() => window.__qr || '')));
   const upi = await p.getByText('with UPI').first().getAttribute('href');
   check('UPI link has amount to 2 decimals and INR', !!upi && /am=175\.00&cu=INR/.test(upi) && upi.includes('pa=musthaq%40upi'));
   await p.getByRole('button', { name: "✅ I've paid" }).click(); await p.waitForTimeout(200);
