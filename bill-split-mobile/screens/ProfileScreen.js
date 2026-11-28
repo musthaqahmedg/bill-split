@@ -12,7 +12,7 @@ import { levelOf, myXp } from '../services/xp';
 import { getShowActive, setShowActive } from '../services/active';
 import { getFunNotifs, getPushPreview, setFunNotifs, setPushPreview } from '../services/push';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 import { CITIES, RADII, getEventAlerts, getRadius, setEventAlerts, setRadius } from '../services/events';
 
 export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, onSaveAccount, onYourData, onMoney }) {
@@ -326,7 +326,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
           autoCapitalize="none"
           autoCorrect={false}
         />
-        <Text style={styles.hintSmall}>Only your friends on Vibe Out can see your photo, bio and links.</Text>
+        <Text style={styles.hintSmall}>Only your friends on {BRAND.name} can see your photo, bio and links.</Text>
 
         <Text style={styles.label}>Your UPI ID</Text>
         <TextInput
@@ -396,7 +396,7 @@ export default function ProfileScreen({ onBack, onLogout, onHelp, onBug, guest, 
           <Text style={styles.logoutText}>Log out</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.linkBtn} onPress={() => Linking.openURL('https://bill-split-flax.vercel.app/privacy')}>
+        <TouchableOpacity style={styles.linkBtn} onPress={() => Linking.openURL(BRAND.site + '/privacy')}>
           <Text style={styles.linkText}>Privacy policy</Text>
         </TouchableOpacity>
 

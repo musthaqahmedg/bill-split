@@ -5,7 +5,7 @@ import { show } from '../services/names';
 import { badgeOf } from '../services/parties';
 import { kindOf } from '../services/partyKinds';
 import { listPhotos } from '../services/photos';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 import { nightLength } from '../services/when';
 import NightRecap from './NightRecap';
 
@@ -52,7 +52,7 @@ export default function MorningRecap({ visible, onClose, party }) {
         total ? `🧾 ${inr(total)} split to the rupee${settled ? ', all settled ✅' : ''}` : null,
         home ? `🏠 ${home} got home safe` : null,
         awards.length ? `😎 ${awards.slice(0, 3).map(([m, b]) => `${show(m.name)}: ${b}`).join(' · ')}` : null,
-        'Planned on VibeOut ✨',
+        `Planned on ${BRAND.name} ✨`,
       ].filter(Boolean).join('\n'),
     }).catch(() => {});
 

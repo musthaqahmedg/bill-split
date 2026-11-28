@@ -1,12 +1,12 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // Shown when the app opens and you're already logged in: unlock with Face ID
 export default function LockScreen({ onUnlock, onUseAnother }) {
   return (
     <View style={styles.container}>
       <Text style={styles.logo}>🌙</Text>
-      <Text style={styles.title}>Vibe Out</Text>
+      <Text style={styles.title}>{BRAND.name}</Text>
       <Text style={styles.subtitle}>Welcome back ✨</Text>
       <TouchableOpacity style={styles.button} onPress={onUnlock}>
         <Text style={styles.buttonText}>🔓 Unlock with Face ID</Text>

@@ -5,7 +5,7 @@ import { activeLabel } from '../services/active';
 import { profileCard } from '../services/friends';
 import { avatarUrl, instaUrl, linkedinUrl } from '../services/profile';
 import { levelOf } from '../services/xp';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 // 👤 A friend's profile card: photo, bio, level, links, plans together
 export default function FriendCard({ userId, onClose }) {
@@ -63,7 +63,7 @@ export default function FriendCard({ userId, onClose }) {
                   </TouchableOpacity>
                 ) : null}
               </View>
-              <Text style={styles.faint}>On Vibe Out since {p.joined}</Text>
+              <Text style={styles.faint}>On {BRAND.name} since {p.joined}</Text>
             </View>
           ) : null}
         </TouchableOpacity>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { BRAND } from '../lib/brand';
 
 interface Settlement {
   from: string;
@@ -60,7 +61,7 @@ export default function PaymentGateway({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: 'INR',
-        name: 'Bill Split',
+        name: BRAND.name,
         description: `Split bill for ${peopleNames.length} people`,
         order_id: orderData.id,
         handler: async (response: any) => {

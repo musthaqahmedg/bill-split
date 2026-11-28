@@ -3,6 +3,7 @@
 import QRCode from 'qrcode';
 import { CSSProperties, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabaseBrowser';
+import { BRAND } from '../../lib/brand';
 
 // 🍽️ Partner dashboard: restaurants log in, add their menu and tables, print QR codes
 
@@ -96,7 +97,7 @@ function Shell({ children, onLogout, email }: { children: React.ReactNode; onLog
     <div style={S.page}>
       <style>{`@media print { .no-print { display: none !important; } body { background: #fff !important; } }`}</style>
       <div style={S.topbar} className="no-print">
-        <div style={S.brand}><span style={S.logo}>🌙</span> Vibe Out <span style={S.brandSub}>for Restaurants</span></div>
+        <div style={S.brand}><span style={S.logo}>🌙</span> {BRAND.name} <span style={S.brandSub}>for Restaurants</span></div>
         {onLogout ? (
           <div style={S.row}>
             {email ? <span style={{ ...S.muted, marginRight: 12 }}>{email}</span> : null}
@@ -137,7 +138,7 @@ function Login() {
 
   return (
     <div style={S.hero}>
-      <h1 style={S.heroTitle}>Your restaurant, on Vibe Out 🍽️</h1>
+      <h1 style={S.heroTitle}>Your restaurant, on {BRAND.name} 🍽️</h1>
       <p style={S.heroSub}>Digital menu · QR ordering from the table · live orders · bills that split themselves</p>
       <div style={{ ...S.card, maxWidth: 400, margin: '28px auto 0', textAlign: 'left' }}>
         {!sent ? (

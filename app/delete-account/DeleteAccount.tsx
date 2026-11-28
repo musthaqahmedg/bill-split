@@ -2,6 +2,7 @@
 
 import { CSSProperties, useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseBrowser';
+import { BRAND } from '../../lib/brand';
 
 // 🗑️ Delete your account from the web (Google Play requires this as well as the in-app button)
 export default function DeleteAccount() {
@@ -56,7 +57,7 @@ export default function DeleteAccount() {
 
         {done ? (
           <>
-            <p style={S.p}>✅ Your account and all your data have been deleted. Thanks for trying Vibe Out 💜</p>
+            <p style={S.p}>✅ Your account and all your data have been deleted. Thanks for trying {BRAND.name} 💜</p>
           </>
         ) : !user ? (
           <>
@@ -83,7 +84,7 @@ export default function DeleteAccount() {
                 <li>Your profile, photo and login</li>
                 <li>Bills and plans you created, with their chats and photos</li>
                 <li>Friends, notifications, saved places, bookings and messages</li>
-                <li>Any restaurant page you own on Vibe Out</li>
+                <li>Any restaurant page you own on {BRAND.name}</li>
               </ul>
               Bills and plans that <b>friends</b> created stay with them, but your account is unlinked from them.
             </div>

@@ -8,7 +8,7 @@ import { getProfile } from '../services/profile';
 import { show } from '../services/names';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
 import LoadError from '../components/LoadError';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 import ItemInfo from './ItemInfo';
 import RecapCard from './RecapCard';
 import PocketPicker from '../components/PocketPicker';
@@ -171,7 +171,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
         `💸 ${bill.title || 'Last night'}: settle-up time 🙏\n` +
         due.map((m) => `• ${show(m.from)} → ${m.to === 'Me' ? 'me' : show(m.to)}: ${inr(m.amount)}`).join('\n') +
         (myUpi ? `\n\nUPI: ${myUpi}` : '') +
-        `\n\nSee your share and pay here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}`,
+        `\n\nSee your share and pay here 👇\n${BRAND.site}/b/${bill.share_token}`,
     });
   };
 
@@ -217,7 +217,7 @@ export default function BillDetailScreen({ billId, onBack, onDeleted, onEdit, on
   // Guest link: friends open it in the browser, see their share and pay with UPI
   const shareLink = () =>
     Share.share({
-      message: `🌙 ${bill.title || 'Our night out'}: see what you had and pay your share here 👇\nhttps://bill-split-flax.vercel.app/b/${bill.share_token}\n\nSomething wrong? Tap your name → 🙋 Tag what you had`,
+      message: `🌙 ${bill.title || 'Our night out'}: see what you had and pay your share here 👇\n${BRAND.site}/b/${bill.share_token}\n\nSomething wrong? Tap your name → 🙋 Tag what you had`,
     });
 
   const confirmDelete = () =>

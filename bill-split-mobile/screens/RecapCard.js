@@ -2,7 +2,7 @@ import * as Sharing from 'expo-sharing';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { captureRef } from 'react-native-view-shot';
-import { F } from '../services/theme';
+import { F, BRAND } from '../services/theme';
 
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
 
@@ -111,7 +111,7 @@ export default function RecapCard({ bill, visible, onClose }) {
             </View>
           )}
 
-          <Text style={styles.footer}>Split fairly with Vibe Out</Text>
+          <Text style={styles.footer}>Split fairly with {BRAND.name}</Text>
         </View>
 
         <View style={styles.buttons}>

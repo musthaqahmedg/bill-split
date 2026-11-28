@@ -61,9 +61,13 @@ export const F = {
 export const STICK = { borderRightWidth: 3, borderBottomWidth: 4, borderRightColor: '#F7F7F9', borderBottomColor: '#F7F7F9' };
 
 // 🏷️ Brand words in ONE place: change the app name here when it's final
+// Rename checklist: 1) BRAND below  2) ../lib/brand.ts (website)  3) app.json "name"  4) icon + splash images.
+// Keep as they are: the store package id (com.maginfosystems.vibeout) and "vibeout.*" phone storage keys,
+// so people don't lose their saved data. tests/brand.test.js fails if the name gets typed into a screen again.
 export const BRAND = {
   name: 'VibeOut',
   upper: 'VIBEOUT',
   tagline: 'PULL UP ✦ LINK UP',
   footer: 'PLAN IT. PULL UP. GET HOME SAFE.',
+  site: 'https://bill-split-flax.vercel.app', // the website: bill pages, invites, privacy
 };

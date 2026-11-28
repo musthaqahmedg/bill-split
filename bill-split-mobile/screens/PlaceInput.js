@@ -4,7 +4,7 @@ import { DONE_ID } from './KeyboardDone';
 import { CATEGORIES, currentAddress, findPlaces, getMyLocation, knownPlaces, openPhoneSettings, showKm } from '../services/places';
 import { getProfile, saveHome } from '../services/profile';
 import { Alert } from 'react-native';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 // "Where" box: shows places near you straight away, and searches as you type.
 export default function PlaceInput({ value, onChange, onFocus, categories = ['all', 'food', 'bars', 'cafes', 'hotels'] }) {
@@ -182,7 +182,7 @@ export default function PlaceInput({ value, onChange, onFocus, categories = ['al
 
           {!loading && known.length > 0 && (
             <>
-              <Text style={styles.section}>🔥 On Vibe Out · has a menu</Text>
+              <Text style={styles.section}>🔥 On {BRAND.name} · has a menu</Text>
               {known.map((k) => (
                 <TouchableOpacity key={'k' + k.name} style={styles.row} onPress={() => pick({ name: k.name, area: '' })}>
                   <View style={styles.rowTop}>

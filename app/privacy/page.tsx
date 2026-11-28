@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { BRAND } from '../../lib/brand';
 
-export const metadata: Metadata = { title: 'Privacy Policy · Vibe Out' };
+export const metadata: Metadata = { title: `Privacy Policy · ${BRAND.name}` };
 
 const CONTACT = 'maginfosystems@gmail.com';
 const UPDATED = '12 November 2026';
@@ -65,7 +66,7 @@ export default function Privacy() {
 
         <h2 style={s.h2}>Deleting your data</h2>
         <p style={s.p}>
-          In the app, go to <b>Profile → Delete my account</b>, or on the web at <a href="/delete-account" style={{ textDecoration: 'underline' }}>bill-split-flax.vercel.app/delete-account</a>. This permanently deletes your account and all your data: bills and plans you created, photos, friends, messages and notifications.
+          In the app, go to <b>Profile → Delete my account</b>, or on the web at <a href="/delete-account" style={{ textDecoration: 'underline' }}>{BRAND.host}/delete-account</a>. This permanently deletes your account and all your data: bills and plans you created, photos, friends, messages and notifications.
         </p>
 
         <h2 style={s.h2}>Your rights</h2>
@@ -90,7 +91,7 @@ export default function Privacy() {
         </p>
 
         <h2 style={s.h2}>Contact us</h2>
-        <p style={s.p}>Vibe Out is made by <b>MAG Infosystems</b>. Questions about your data? Write to us: <a href={`mailto:${CONTACT}`} style={s.link}>{CONTACT}</a></p>
+        <p style={s.p}>{BRAND.name} is made by <b>MAG Infosystems</b>. Questions about your data? Write to us: <a href={`mailto:${CONTACT}`} style={s.link}>{CONTACT}</a></p>
       </div>
     </main>
   );

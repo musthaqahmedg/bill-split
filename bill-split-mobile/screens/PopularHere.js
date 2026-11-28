@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, Easing, StyleSheet, Text, View } from 'react-native';
 import { supabase } from '../services/supabaseClient';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 const EMOJI = { food: '🍽️', alcohol: '🍸', soft: '🥤' };
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -89,7 +89,7 @@ export default function PopularHere({ place, quietIfEmpty = false }) {
           <View key={k} style={[styles.dot, k === i && styles.dotOn]} />
         ))}
       </View>
-      <Text style={styles.source}>Price per item on real bills here, before tax · from bills scanned on Vibe Out</Text>
+      <Text style={styles.source}>Price per item on real bills here, before tax · from bills scanned on {BRAND.name}</Text>
     </View>
   );
 }

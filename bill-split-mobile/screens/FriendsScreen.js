@@ -14,9 +14,9 @@ import { activeLabel } from '../services/active';
 import { findUser, friendsAtParties, myFriends, removeFriend, respond } from '../services/friends';
 import { avatarUrl } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
-const INVITE = 'Join me on Vibe Out 🎉 Plan parties, split bills, no fights → https://bill-split-flax.vercel.app';
+const INVITE = `Join me on ${BRAND.name} 🎉 Plan parties, split bills, no fights → ${BRAND.site}`;
 
 // 👫 Your circle: who's vibing now, all friends, requests, and ＋ Add friends
 export default function FriendsScreen({ onBack, startAdding = false, onOpenPlan }) {
@@ -149,7 +149,7 @@ export default function FriendsScreen({ onBack, startAdding = false, onOpenPlan 
               <View style={styles.emptyBox}>
                 <Text style={styles.emptyEmoji}>🌙</Text>
                 <Text style={styles.emptyTitle}>Nobody’s vibing right now</Text>
-                <Text style={styles.faint}>{friends.length ? 'Your friends show up here when they open Vibe Out.' : 'Add friends to see when they’re around.'}</Text>
+                <Text style={styles.faint}>{friends.length ? `Your friends show up here when they open ${BRAND.name}.` : 'Add friends to see when they’re around.'}</Text>
               </View>
             ) : (
               <View style={styles.grid}>
@@ -367,7 +367,7 @@ function AddSheet({ visible, onClose }) {
           {busy && <ActivityIndicator color={C.accentSoft} style={styles.mt} />}
           {found === null && (
             <View style={styles.notFound}>
-              <Text style={styles.name}>Not on Vibe Out yet</Text>
+              <Text style={styles.name}>Not on {BRAND.name} yet</Text>
               <Text style={styles.faint}>Send them an invite. You can add them once they join.</Text>
               <TouchableOpacity style={[styles.findBtn, styles.inviteBtn]} onPress={() => Share.share({ message: INVITE })}>
                 <Text style={styles.addText}>📨 Invite</Text>
@@ -386,11 +386,11 @@ function AddSheet({ visible, onClose }) {
           {onApp === null ? (
             <TouchableOpacity style={styles.scanBtn} onPress={scanContacts} disabled={scanning}>
               <Text style={styles.scanTitle}>{scanning ? 'Looking…' : '📇 Find friends from contacts'}</Text>
-              <Text style={styles.faint}>We check which of your contacts already use Vibe Out.</Text>
+              <Text style={styles.faint}>We check which of your contacts already use {BRAND.name}.</Text>
               <Text style={styles.safe}>🔒 Your contacts never leave your phone. We only check scrambled codes, and nothing is saved.</Text>
             </TouchableOpacity>
           ) : onApp.length === 0 ? (
-            <Text style={styles.faint}>None of your contacts are on Vibe Out yet. Invite them 👇</Text>
+            <Text style={styles.faint}>None of your contacts are on {BRAND.name} yet. Invite them 👇</Text>
           ) : (
             onApp.map((u) => (
               <View key={u.user_id} style={styles.row}>
@@ -402,7 +402,7 @@ function AddSheet({ visible, onClose }) {
           )}
 
           <TouchableOpacity style={styles.shareRow} onPress={() => Share.share({ message: INVITE })}>
-            <Text style={styles.scanTitle}>📨 Invite friends to Vibe Out</Text>
+            <Text style={styles.scanTitle}>📨 Invite friends to {BRAND.name}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>

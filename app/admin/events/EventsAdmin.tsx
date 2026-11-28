@@ -2,6 +2,7 @@
 
 import { CSSProperties, useEffect, useState, useRef } from 'react';
 import { supabase } from '../../../lib/supabaseBrowser';
+import { BRAND } from '../../../lib/brand';
 
 // 🎉 Big events admin: add / edit / remove the events that pop up in the app. Admins only (checked here AND by database rules).
 
@@ -118,7 +119,7 @@ export default function EventsAdmin() {
   if (!ready) return <Page><p style={S.muted}>Loading…</p></Page>;
   if (!user) return <Page><Login /></Page>;
   if (admin === null) return <Page><p style={S.muted}>Checking access…</p></Page>;
-  if (!admin) return <Page><p style={S.muted}>This page is for the Vibe Out team only.</p><button style={S.link} onClick={() => sb.auth.signOut()}>Log out</button></Page>;
+  if (!admin) return <Page><p style={S.muted}>This page is for the {BRAND.name} team only.</p><button style={S.link} onClick={() => sb.auth.signOut()}>Log out</button></Page>;
 
   const f = form;
   return (

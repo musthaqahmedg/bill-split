@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { knownUpi, openUpi, rememberUpi, UPI_APPS, validUpi } from '../services/upi';
-import { C, F, STICK } from '../services/theme';
+import { C, F, STICK, BRAND } from '../services/theme';
 
 // 💸 Pay ₹X with UPI: picks up their UPI ID (or you type it once), then opens your UPI app with everything filled in
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -67,7 +67,7 @@ export default function PayUpiSheet({ visible, onClose, to, amount, note, partic
                     <Text style={styles.doneText}>✅ I've paid, mark it</Text>
                   </TouchableOpacity>
                 ) : null}
-                <Text style={styles.note}>Money goes straight from your UPI app to them. VibeOut never touches it.</Text>
+                <Text style={styles.note}>Money goes straight from your UPI app to them. {BRAND.name} never touches it.</Text>
               </>
             )}
           </Pressable>

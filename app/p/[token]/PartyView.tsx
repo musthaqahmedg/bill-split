@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { BRAND } from '../../../lib/brand';
 
 type Message = { id: string; member_id: string | null; sender_name: string; body: string; kind: 'text' | 'system'; poll_id: string | null; created_at: string; is_pay?: boolean };
 type Item = { id: string; name: string; done: boolean; claimed_by: string | null; claimed_name: string | null; asked_to?: string | null; asked_name?: string | null };
@@ -525,7 +526,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
               </div>
             );
           })()}
-          <div style={{ ...s.itemWho, marginTop: 8 }}>Get the Vibe Out app to build your 🔥 safe-night streak.</div>
+          <div style={{ ...s.itemWho, marginTop: 8 }}>Get the {BRAND.name} app to build your 🔥 safe-night streak.</div>
         </div>
 
         {photos.length > 0 && (
@@ -687,7 +688,7 @@ export default function PartyView({ party, token, supabaseUrl, supabaseKey }: {
           </div>
         ))}
 
-        <p style={s.footer}>Made with Vibe Out 🌙 · <a href="/privacy" style={{ color: '#8C7AAE' }}>Privacy</a></p>
+        <p style={s.footer}>Made with {BRAND.name} 🌙 · <a href="/privacy" style={{ color: '#8C7AAE' }}>Privacy</a></p>
       </div>
     </main>
   );

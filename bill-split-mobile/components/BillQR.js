@@ -2,11 +2,11 @@ import { useEffect, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, Share, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { getProfile, isValidUpi, saveUpi } from '../services/profile';
 import QRCode from './QRCode';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // 📲 "Show QR to the table": friends scan with their camera, tap their name, see their share
 // (or tick what they had) and pay with UPI. No app needed.
-export const billUrl = (token) => `https://bill-split-flax.vercel.app/b/${token}`;
+export const billUrl = (token) => `${BRAND.site}/b/${token}`;
 
 export default function BillQR({ visible, token, title, byItems, mePaid, onClose }) {
   // 💸 friends can only pay you if your UPI ID is set: ask for it right here

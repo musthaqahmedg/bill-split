@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { BRAND } from '../lib/brand';
 
 export const metadata: Metadata = {
-  title: "Bill Split - Split receipts easily",
+  title: `${BRAND.name} · Split bills, plan nights`,
   description: "Upload receipts, select items, and split bills with friends",
 };
 

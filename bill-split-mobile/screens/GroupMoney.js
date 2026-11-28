@@ -3,7 +3,7 @@ import { ActivityIndicator, Alert, Share, StyleSheet, Text, TouchableOpacity, Vi
 import PayUpiSheet from './PayUpiSheet';
 import { fmt, groupBalances, SETTLEMENT } from '../services/manualSplit';
 import { asBalanceRow, deleteGroupExpense, groupPeople, listGroupExpenses, recordSettlement } from '../services/groupExpenses';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // ✍️ Manual Split money for one group: your balance, settle up (fewest payments), everyone's numbers, all expenses.
 
@@ -66,7 +66,7 @@ export default function GroupMoney({ group, onAdd, onEdit, onCount }) {
       '',
       ...(bal.moves.length ? bal.moves.map((m) => `• ${show(m.from) === 'You' ? 'I' : m.from} → ${m.to === 'Me' ? 'me' : m.to}: ${fmt(m.amount)}`) : ['All settled ✅']),
       '',
-      'Split on VibeOut',
+      `Split on ${BRAND.name}`,
     ];
     Share.share({ message: lines.join('\n') }).catch(() => {});
   };

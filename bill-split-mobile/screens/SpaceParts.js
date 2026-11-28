@@ -4,7 +4,7 @@ import { billsForParty } from '../services/bills';
 import { billBalance, spaceNet } from '../services/settle';
 import { show } from '../services/names';
 import PayUpiSheet from './PayUpiSheet';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // 🗂️ Pieces of a Space: its bills (tap to open) and its money (spent so far vs the budget)
 const inr = (n) => '₹' + Math.round(Number(n) || 0).toLocaleString('en-IN');
@@ -55,7 +55,7 @@ export function SpaceBalances({ partyId }) {
         onClose={() => setPay(null)}
         to={pay ? pay.to : ''}
         amount={pay ? pay.amount : 0}
-        note="VibeOut Space"
+        note={`${BRAND.name} Space`}
         participantId={pay ? pay.participantId : null}
         shareToken={pay ? pay.shareToken : null}
         isCreator

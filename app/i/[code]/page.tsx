@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { BRAND } from '../../../lib/brand';
 
 // 🎁 Invite link: shows who invited you + the code to enter after signing up.
 export const dynamic = 'force-dynamic';
@@ -25,7 +26,7 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   const { code } = await params;
   const name = await inviter(code.toUpperCase());
   return {
-    title: `${name || 'A friend'} invited you to VibeOut 🌙`,
+    title: `${name || 'A friend'} invited you to ${BRAND.name} 🌙`,
     description: 'Plan nights out, book tables and split bills without the drama.',
   };
 }
@@ -51,7 +52,7 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
   return (
     <main style={s.page}>
       <div style={s.card}>
-        <div style={s.kicker}>🌙 VIBEOUT</div>
+        <div style={s.kicker}>🌙 {BRAND.upper}</div>
         <h1 style={s.title}>{name} invited you!</h1>
         <p style={s.sub}>Plan nights out, book tables and split bills without the drama.</p>
         <div style={s.codeBox}>
@@ -59,11 +60,11 @@ export default async function InvitePage({ params }: { params: Promise<{ code: s
           <div style={s.code}>{code}</div>
         </div>
         <div style={s.steps}>
-          1️⃣ Get the VibeOut app<br />
+          1️⃣ Get the {BRAND.name} app<br />
           2️⃣ Sign up, then open <b>Me → 🎁 Invite</b><br />
           3️⃣ Enter <b>{code}</b> — you and {name} become friends instantly 🎉
         </div>
-        <p style={s.foot}>VibeOut is in early testing. Ask {name} to get you in.</p>
+        <p style={s.foot}>{BRAND.name} is in early testing. Ask {name} to get you in.</p>
       </div>
     </main>
   );

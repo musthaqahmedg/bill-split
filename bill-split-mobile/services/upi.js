@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Linking, Platform } from 'react-native';
 import { supabase } from './supabaseClient';
+import { BRAND } from './theme';
 
 // 💸 Pay with UPI: open the person's UPI app with the amount and UPI ID filled in. Money goes straight between friends.
 export const validUpi = (v) => /^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$/.test(String(v || '').trim());
 
 const query = ({ upi, name, amount, note }) =>
-  `pa=${encodeURIComponent(upi.trim())}&pn=${encodeURIComponent(name || 'Friend')}&am=${Math.round(Number(amount) || 0)}&cu=INR&tn=${encodeURIComponent((note || 'VibeOut').slice(0, 40))}`;
+  `pa=${encodeURIComponent(upi.trim())}&pn=${encodeURIComponent(name || 'Friend')}&am=${Math.round(Number(amount) || 0)}&cu=INR&tn=${encodeURIComponent((note || BRAND.name).slice(0, 40))}`;
 
 // Android: the plain upi:// link shows the phone's own list of UPI apps.
 // iPhone: there is no such list, so each app has its own link.

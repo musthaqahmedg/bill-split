@@ -5,7 +5,7 @@ import { kindOf } from '../services/partyKinds';
 import { supabase } from '../services/supabaseClient';
 import { billsForParty } from '../services/bills';
 import { badgeOf } from '../services/parties';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 const { width: W, height: H } = Dimensions.get('window');
 const SLIDE_MS = 3800;
@@ -67,7 +67,7 @@ export default function NightRecap({ visible, onClose, party, photos }) {
         bg: '#A98BFF', emoji: '🏠', big: `${home} got home safe`,
         small: [first ? `🏆 First home: ${show(first.name)} at ${new Date(first.home_at).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' })}` : null, driver ? `🛡️ ${show(driver.name)} was the driver. Legend.` : null].filter(Boolean).join('\n') || 'Safe nights only 💙',
       });
-      out.push({ bg: '#0E0E13', emoji: '✨', big: 'What a night', small: 'Planned on Vibe Out', end: true });
+      out.push({ bg: '#0E0E13', emoji: '✨', big: 'What a night', small: `Planned on ${BRAND.name}`, end: true });
       setSlides(out);
     })();
     return () => {

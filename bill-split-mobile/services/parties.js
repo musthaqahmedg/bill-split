@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { track } from './track';
+import { BRAND } from './theme';
 
 // Split the budget equally in whole rupees, so the shares add up exactly to the budget
 export function splitEqually(budget, count) {
@@ -89,7 +90,7 @@ export async function deleteParty(id) {
   const { error } = await supabase.from('parties').delete().eq('id', id);
   if (error) throw error;
 }
-export const partyLink = (party) => `https://bill-split-flax.vercel.app/p/${party.share_token}`;
+export const partyLink = (party) => `${BRAND.site}/p/${party.share_token}`;
 
 // WhatsApp wants the number with country code and no "+" or spaces
 export const waNumber = (phone) => {

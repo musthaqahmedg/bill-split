@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { supabase } from '../services/supabaseClient';
 import KeyboardDone, { DONE_ID } from './KeyboardDone';
-import { C, F, G } from '../services/theme';
+import { C, F, G, BRAND } from '../services/theme';
 
 // Accepts "8606670896", "918606670896" or "+918606670896" → "+918606670896"
 const toE164 = (raw) => {
@@ -124,7 +124,7 @@ export default function LoginScreen({ onLoginSuccess, onBack, onGuest, linking: 
         </TouchableOpacity>
       ) : null}
       <Text style={styles.logo}>{linking ? '🔒' : '🌙'}</Text>
-      <Text style={styles.title}>{linking ? 'Save your account' : 'Vibe Out'}</Text>
+      <Text style={styles.title}>{linking ? 'Save your account' : BRAND.name}</Text>
       <Text style={styles.subtitle}>{linking ? 'Keep your bills and plans safe, and add friends' : 'The night, sorted ✨'}</Text>
 
       {!showOtp ? (

@@ -6,6 +6,7 @@ import ItemSelection from '@/components/ItemSelection';
 import SettlementSummary from '@/components/SettlementSummary';
 import PaymentGateway from '@/components/PaymentGateway';
 import { ChevronLeft, CheckCircle } from 'lucide-react';
+import { BRAND } from '../lib/brand';
 
 interface ExtractedItem {
   id: string;
@@ -76,7 +77,7 @@ export default function Home() {
       <div className="w-full max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <header className="mb-12">
-          <h1 className="text-4xl font-bold mb-2">Bill Split</h1>
+          <h1 className="text-4xl font-bold mb-2">{BRAND.name}</h1>
           <p className="text-gray-600">Upload receipt → Select items → Split bill → Pay securely</p>
         </header>
 
@@ -195,7 +196,7 @@ export default function Home() {
 
         {/* Footer */}
         <footer className="mt-12 text-center text-sm text-gray-500">
-          <p>Bill Split • Made with ❤️ for fair bill splitting</p>
+          <p>{BRAND.name} • Made with ❤️ for fair bill splitting</p>
           <p className="mt-1">Phase 1-3 Complete: Ready for Production ✨</p>
         </footer>
       </div>

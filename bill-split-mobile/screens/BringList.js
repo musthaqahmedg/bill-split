@@ -5,7 +5,7 @@ import {
 import { waNumber } from '../services/parties';
 import { baseName, canPlan, planFor } from '../services/planner';
 import { supabase } from '../services/supabaseClient';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 import { costIn } from '../services/houseplan';
 
 // Quick ideas by plan type
@@ -85,7 +85,7 @@ export default function BringList({ party }) {
         {
           text: 'WhatsApp',
           onPress: () => {
-            const msg = `Hey ${person.name}! Can you bring ${item.name} for ${party.title}? 🙏\nhttps://bill-split-flax.vercel.app/p/${token}`;
+            const msg = `Hey ${person.name}! Can you bring ${item.name} for ${party.title}? 🙏\n${BRAND.site}/p/${token}`;
             Linking.openURL(`whatsapp://send?phone=${waNumber(person.phone)}&text=${encodeURIComponent(msg)}`).catch(() => {});
           },
         },

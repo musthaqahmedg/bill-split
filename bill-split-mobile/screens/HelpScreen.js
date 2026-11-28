@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { LayoutAnimation, Linking, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { FAQ, SUPPORT_EMAIL } from '../services/support';
 import { isAdmin } from '../services/track';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) UIManager.setLayoutAnimationEnabledExperimental(true);
 
@@ -30,7 +30,7 @@ export default function HelpScreen({ onBack, onChat, onInbox, onBugs }) {
           <View style={styles.logo}>
             <Text style={styles.logoText}>🌙</Text>
           </View>
-          <Text style={styles.name}>Vibe Out</Text>
+          <Text style={styles.name}>{BRAND.name}</Text>
           <Text style={styles.tag}>The night, sorted ✨</Text>
           <Text style={styles.meta}>Version {version}</Text>
         </View>
@@ -78,7 +78,7 @@ export default function HelpScreen({ onBack, onChat, onInbox, onBugs }) {
             <Text style={styles.rowText}>✉️ Email us</Text>
             <Text style={styles.sub}>{SUPPORT_EMAIL}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.item, styles.line]} onPress={() => Linking.openURL('https://bill-split-flax.vercel.app/privacy')}>
+          <TouchableOpacity style={[styles.item, styles.line]} onPress={() => Linking.openURL(BRAND.site + '/privacy')}>
             <Text style={styles.rowText}>🔒 Privacy policy</Text>
             <Text style={styles.chev}>›</Text>
           </TouchableOpacity>

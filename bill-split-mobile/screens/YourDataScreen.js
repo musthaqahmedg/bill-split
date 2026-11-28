@@ -4,7 +4,7 @@ import { listBills } from '../services/bills';
 import { listParties } from '../services/parties';
 import { getProfile } from '../services/profile';
 import { supabase } from '../services/supabaseClient';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // 🔒 Your data, in plain words: what we keep, what we never do, who sees what, and your controls
 const NEVER = [
@@ -73,7 +73,7 @@ export default function YourDataScreen({ onBack, onDelete }) {
         groupExpenses(), invite(), mine('pocket_setup'), mine('pockets'), mine('bill_pockets'), mine('pocket_moves'), mine('bill_feedback'),
       ]);
       const data = { exported_at: new Date().toISOString(), profile, bills, group_expenses, plans, spends, events_going: going, saved_places: places, groups, feedback, notifications, invites, pocket_setup, pockets, bill_pockets, pocket_moves, bill_feedback };
-      await Share.share({ title: 'My Vibe Out data', message: JSON.stringify(data, null, 2) });
+      await Share.share({ title: `My ${BRAND.name} data`, message: JSON.stringify(data, null, 2) });
     } catch (e) {
       Alert.alert("Couldn't export", e.message);
     } finally {
@@ -130,7 +130,7 @@ export default function YourDataScreen({ onBack, onDelete }) {
           </View>
           {busy ? <ActivityIndicator color={C.accentSoft} /> : <Text style={styles.chev}>›</Text>}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.action} onPress={() => Linking.openURL('https://bill-split-flax.vercel.app/privacy')}>
+        <TouchableOpacity style={styles.action} onPress={() => Linking.openURL(BRAND.site + '/privacy')}>
           <Text style={styles.actionEmoji}>📄</Text>
           <View style={{ flex: 1 }}>
             <Text style={styles.actionTitle}>Full privacy policy</Text>

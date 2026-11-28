@@ -1,7 +1,8 @@
-// 📤 "Send each friend their own bill" — the WhatsApp message and links (pure: no app or database code).
+
+import { BRAND } from './theme.js';// 📤 "Send each friend their own bill" — the WhatsApp message and links (pure: no app or database code).
 // Amounts come from the existing split; this only describes them. Each message holds ONE person's amounts.
 
-const SITE = 'https://bill-split-flax.vercel.app';
+const SITE = BRAND.site;
 
 // ₹538 or ₹538.50 (never more than 2 decimals)
 export function rupees(n) {

@@ -72,7 +72,7 @@ import SplitScreen from './screens/SplitScreen';
 import UploadScreen from './screens/UploadScreen';
 import { kindOf } from './services/kinds';
 import { supabase } from './services/supabaseClient';
-import { C } from './services/theme';
+import { C, BRAND } from './services/theme';
 
 // After Recheck, find where each new item was in the old list (-1 = new item)
 function matchItems(oldItems: any[], newItems: any[]) {
@@ -366,7 +366,7 @@ function App({ onScreen, registerNav, onBug }: { onScreen?: (s: string) => void;
       const enrolled = await LocalAuthentication.isEnrolledAsync();
       if (!hasHardware || !enrolled) return letIn();
       const result: any = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Unlock Vibe Out',
+        promptMessage: `Unlock ${BRAND.name}`,
         fallbackLabel: 'Use passcode',
       });
       if (result.success) return letIn();

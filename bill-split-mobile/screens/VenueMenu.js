@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { getVenueMenu, placeName, scanMenu } from '../services/menus';
-import { C } from '../services/theme';
+import { C, BRAND } from '../services/theme';
 
 const inr = (n) => (n ? '₹' + Math.round(Number(n)).toLocaleString('en-IN') : '');
 
@@ -82,7 +82,7 @@ export default function VenueMenu({ place }) {
                 <Text style={styles.icon}>{i.kind === 'alcohol' ? '🍸' : i.kind === 'soft' ? '🧃' : '🍽️'}</Text>
                 <View style={styles.flex}>
                   <Text style={styles.name}>{i.name}</Text>
-                  {Number(i.orders) > 0 ? <Text style={styles.hot}>🔥 Ordered {i.orders}× on Vibe Out</Text> : null}
+                  {Number(i.orders) > 0 ? <Text style={styles.hot}>🔥 Ordered {i.orders}× on {BRAND.name}</Text> : null}
                 </View>
                 <Text style={styles.price}>{inr(i.price)}</Text>
               </View>

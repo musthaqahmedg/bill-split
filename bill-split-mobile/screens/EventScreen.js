@@ -3,7 +3,7 @@ import { Going } from './EventPopup';
 import AffordChip from '../components/AffordChip';
 import { goingOutGuard } from '../services/pockets';
 import { EVENT_CATS, eventKm, eventPrice } from '../services/events';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // 🎟️ One event: poster, when & where, price, about, who's going → Book now (organiser's link) / Plan with squad
 
@@ -41,7 +41,7 @@ export default function EventScreen({ event: e, onBack, onPlan }) {
   };
   const share = () =>
     Share.share({
-      message: [`${c ? c.emoji + ' ' : ''}${e.title}`, `📅 ${w.day}, ${w.time}`, `📍 ${[e.venue_name, e.city].filter(Boolean).join(', ')}`, price ? `🎟️ ${price}` : null, e.booking_url || null, '', 'Found on VibeOut 🌙']
+      message: [`${c ? c.emoji + ' ' : ''}${e.title}`, `📅 ${w.day}, ${w.time}`, `📍 ${[e.venue_name, e.city].filter(Boolean).join(', ')}`, price ? `🎟️ ${price}` : null, e.booking_url || null, '', `Found on ${BRAND.name} 🌙`]
         .filter((x) => x !== null).join('\n'),
     }).catch(() => {});
 

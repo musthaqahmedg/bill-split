@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../services/supabaseClient';
-import { C, F } from '../services/theme';
+import { C, F, BRAND } from '../services/theme';
 
 // ✍️ Privacy notice + consent (India DPDP Act 2023 / Rules 2025).
 // Shown once to everyone (guests too) before we use their data, and again if the notice changes.
@@ -91,13 +91,13 @@ export default function ConsentScreen({ onDone, onDecline }) {
           {' '}(we reply within 7 days). You can also complain to the Data Protection Board of India.
         </Text>
 
-        <TouchableOpacity onPress={() => Linking.openURL('https://bill-split-flax.vercel.app/privacy')}>
+        <TouchableOpacity onPress={() => Linking.openURL(BRAND.site + '/privacy')}>
           <Text style={styles.full}>Read the full privacy policy ›</Text>
         </TouchableOpacity>
 
         <View style={styles.ticks}>
           <Tick on={adult} onPress={tap(() => setAdult(!adult))}>I’m <Text style={styles.b}>18 or older</Text></Tick>
-          <Tick on={agree} onPress={tap(() => setAgree(!agree))}>I agree to Vibe Out using my data as explained above</Tick>
+          <Tick on={agree} onPress={tap(() => setAgree(!agree))}>I agree to {BRAND.name} using my data as explained above</Tick>
         </View>
       </ScrollView>
 
